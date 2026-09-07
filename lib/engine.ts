@@ -53,6 +53,7 @@ export const noticingChoices = [
 ] as const;
 export type Candidate = {
   resistanceNote?: string;
+  userAction?: string;
   title: string;
   action: string;
   minutes: number;
@@ -84,15 +85,22 @@ export function infer(situation: string): {
   confident: boolean;
 } {
   const s = situation.toLowerCase();
-  if (/\b(recheck|checking|polishing|perfect)\b/.test(s))
-    return { resistance: 'checking', confident: false };
-  if (
-    /\b(afraid|worried|judg|embarrass)/.test(s) &&
-    /\b(ask|boss|send|question|people|present)/.test(s)
-  )
-    return { resistance: 'judged', confident: true };
-  if (/\b(unsure|uncertain|understand|structure|research)\b/.test(s))
-    return { resistance: 'understand', confident: false };
+  // Lexical hints are tentative. Negation and overlapping signals need a correction opportunity.
+  const checking =
+    /\b(recheck(?:ing)?|checking|polishing|perfect(?:ion)?|reread(?:ing)?)\b/.test(
+      s,
+    );
+  const judged =
+    /\b(afraid|worried|judg\w*|embarrass\w*)\b/.test(s) &&
+    /\b(ask|boss|send|question|people|present\w*)\b/.test(s);
+  const uncertain = /\b(unsure|uncertain|understand|structure|research)\b/.test(
+    s,
+  );
+  const negated = /\b(not|never|isn't|aren't|don't|doesn't)\b/.test(s);
+  if (checking) return { resistance: 'checking', confident: false };
+  if (judged)
+    return { resistance: 'judged', confident: !uncertain && !negated };
+  if (uncertain) return { resistance: 'understand', confident: false };
   return { resistance: 'start', confident: false };
 }
 export function candidate(
@@ -100,41 +108,109 @@ export function candidate(
   resistance: Resistance,
   history: Encounter[] = [],
 ): Candidate {
+  const normalized = situation.trim().toLowerCase();
   const prior = history.filter(
-    (e) => e.situation === situation && e.outcome !== 'not_started',
+    (e) =>
+      e.situation.trim().toLowerCase() === normalized &&
+      e.resistance === resistance,
   );
   const last = prior.at(-1);
+  const attempted = prior.filter((e) => e.outcome !== 'not_started');
   const smaller =
-    last && (last.outcome === 'stopped' || (last.actual ?? 0) >= 8);
+    !!last && (last.outcome !== 'attempted' || (last.actual ?? 0) >= 8);
   const minutes = smaller ? 1 : 3;
+  const span = `${minutes} minute${minutes === 1 ? '' : 's'}`;
   const territory: Territory = (
     {
       understand: 'fog',
       start: 'fog',
       judged: 'spotlight',
-      unpleasant: 'water',
+      unpleasant:
+        /\b(feeling|emotion|restless|boredom|sadness|distraction|scrolling)\b/i.test(
+          situation,
+        )
+          ? 'water'
+          : 'unknown',
       other: 'unknown',
       checking: 'loop',
     } as const
   )[resistance];
   let title = 'Take One Small Step',
-    action = '';
+    action = '',
+    template = 'user-action';
+  const writing = /\b(proposal|document|design doc|essay|report|draft)\b/i.test(
+    situation,
+  );
+  const message = /\b(message|email|reply)\b/i.test(situation);
+  const question = /\b(ask|question|clarification)\b/i.test(situation);
+  const conversation = /\b(conversation|talk|speak|call)\b/i.test(situation);
   if (territory === 'fog') {
     title =
-      prior.length && !smaller
+      attempted.length && !smaller
         ? 'Keep Going Before Checking'
         : 'Start Before You Know';
-    if (/\b(proposal|document|design doc)\b/i.test(situation))
+    if (writing) {
+      template = 'draft';
       action =
-        prior.length && !smaller
-          ? `Open the draft and spend ${minutes} minutes adding to one section before checking whether it is right.`
-          : `Open the draft and spend ${minutes} minute${minutes === 1 ? '' : 's'} writing three possible sections, even if you’re unsure.`;
-    else if (/\b(message|email|reply)\b/i.test(situation))
-      action = `Open the message and spend ${minutes} minute${minutes === 1 ? '' : 's'} writing a first sentence before revising it.`;
+        attempted.length && !smaller
+          ? `Open the draft and spend ${span} adding to one section before checking whether it is right.`
+          : `Open the draft and spend ${span} writing three possible sections, even if you’re unsure.`;
+    } else if (message) {
+      template = 'reply';
+      action = `Open the message and spend ${span} writing a first sentence before revising it.`;
+    } else if (question) {
+      template = 'question';
+      action = `Spend ${span} writing the one question you need answered. Ask it without researching the answer first.`;
+      title = 'Ask Before You’re Sure';
+    }
   }
-  if (territory === 'spotlight') title = 'Let It Be Seen';
-  if (territory === 'loop') title = 'Stop After Enough';
-  if (territory === 'water') title = 'Stay With It for a Moment';
+  if (territory === 'spotlight') {
+    title = 'Let It Be Seen';
+    if (question) {
+      template = 'visible-question';
+      title = 'Ask Before You’re Sure';
+      action = `Write the one question you need answered, then ask the person you had in mind without rehearsing it again. Allow ${span}.`;
+    } else if (message) {
+      template = 'visible-message';
+      title = 'Send Without Another Rehearsal';
+      action = `Spend ${span} writing the message. Check the recipient and essential details, then send it without another wording pass.`;
+    } else if (writing) {
+      template = 'visible-draft';
+      action = `Choose one unfinished section you are willing to share. Spend ${span} checking essential details, then ask for feedback on that section.`;
+    } else if (conversation) {
+      template = 'conversation';
+      title = 'Begin the Conversation';
+      action = `Ask the person you had in mind for a suitable time to talk. Start with one sentence about what matters, without rehearsing the whole conversation. Allow ${span}.`;
+    }
+  }
+  if (territory === 'loop') {
+    title = 'Stop After Enough';
+    if (writing || message) {
+      template = 'end-checking';
+      action = `Spend ${span} doing the necessary functional check. Then close the draft without one more polishing pass.`;
+    }
+  }
+  if (territory === 'water') {
+    title = 'Stay With It for a Moment';
+    template = 'notice-feeling';
+    action =
+      'For 1 minute, notice the feeling you named before opening a distraction. You can stop whenever you need to.';
+  }
+  // Preserve the concrete action the user wrote instead of discarding it on the next visit.
+  const lastDefault = last ? candidate(last.situation, last.resistance) : null;
+  const userAction =
+    last?.userAction ??
+    (last?.template.endsWith('-v1') &&
+    lastDefault &&
+    last.action !== lastDefault.action
+      ? last.action
+      : undefined);
+  if (userAction?.trim()) {
+    action = smaller
+      ? `For ${span}, try just the beginning of this step: ${userAction}`
+      : userAction;
+    template = 'user-action';
+  }
   if (smaller) title = 'Make the Step Smaller';
   return {
     title,
@@ -143,8 +219,10 @@ export function candidate(
     territory,
     secondary: [],
     resistance,
-    template: `${resistance}-${prior.length ? 'continue' : 'first'}-v1`,
-    situation,
+    template: `${template}-${attempted.length ? 'continue' : 'first'}-v2`,
+    situation: situation.trim(),
+    resistanceNote: last?.resistanceNote,
+    userAction,
   };
 }
 export function validScale(n: unknown): n is number {
@@ -208,58 +286,98 @@ export function toggleNotice(current: string[], code: string) {
 export function appendEncounter(all: Encounter[], e: Encounter) {
   return all.some((x) => x.id === e.id) ? all : [...all, e];
 }
-export function discoveries(all: Encounter[]) {
+export type Discovery = {
+  id: string;
+  territory: Territory;
+  title: string;
+  body: string;
+  evidence: string[];
+  support: string[];
+  contrary: string[];
+  rule: 'doorway' | 'carried';
+  establishedAt: number;
+};
+export function supports(e: Encounter, rule: 'doorway' | 'carried') {
+  if (
+    e.outcome !== 'attempted' ||
+    e.urge === 'stopped' ||
+    e.notices.includes('nothing')
+  )
+    return false;
+  if (rule === 'doorway') return e.notices.includes('doorway');
+  return (
+    e.notices.includes('carried') &&
+    (e.actual ?? 0) > 0 &&
+    ['stayed', 'returned', 'no'].includes(e.urge)
+  );
+}
+export function discoveries(all: Encounter[]): Discovery[] {
+  const unique = [...new Map(all.map((e) => [e.id, e])).values()].sort(
+    (a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id),
+  );
   return (
     ['fog', 'spotlight', 'loop', 'water', 'unknown'] as Territory[]
-  ).flatMap((territory) => {
-    const eligible = all.filter(
-      (e) => e.territory === territory && e.outcome !== 'not_started',
-    );
-    for (let end = 4; end <= eligible.length; end++) {
-      const sample = eligible.slice(Math.max(0, end - 6), end);
-      const supporting = sample.filter(
-        (e) => observation(e).code === 'doorway',
+  ).flatMap((territory) =>
+    (['doorway', 'carried'] as const).flatMap((rule) => {
+      const eligible = unique.filter(
+        (e) => e.territory === territory && e.outcome !== 'not_started',
       );
-      if (
-        new Set(sample.map((e) => e.localDate)).size < 3 ||
-        supporting.length < 3 ||
-        supporting.length / sample.length < 0.75
-      )
-        continue;
-      const evidence = [
-        ...new Map(
-          [...sample, ...eligible.slice(end)].map((e) => [e.id, e]),
-        ).values(),
-      ];
-      const support = evidence.filter((e) => observation(e).code === 'doorway');
-      const mixed = support.length / evidence.length < 0.75;
-      return [
-        {
-          id: `doorway-${territory}`,
-          territory,
-          title: 'The Doorway Is Worse Than the Room',
-          body: mixed
-            ? 'This pattern appeared in earlier encounters. More recent evidence is mixed.'
-            : 'Across these encounters, starting often felt harder than continuing.',
-          evidence: evidence.map((e) => e.id),
-          support: support.map((e) => e.id),
-          contrary: evidence
-            .filter((e) => !support.includes(e))
-            .map((e) => e.id),
-        },
-      ];
-    }
-    return [];
-  });
+      for (let end = 4; end <= eligible.length; end++) {
+        const sample = eligible.slice(Math.max(0, end - 6), end);
+        const supporting = sample.filter((e) => supports(e, rule));
+        if (
+          new Set(sample.map((e) => e.localDate)).size < 3 ||
+          supporting.length < 3 ||
+          supporting.length / sample.length < 0.75
+        )
+          continue;
+        const evidence = [...sample, ...eligible.slice(end)];
+        const support = evidence.filter((e) => supports(e, rule));
+        const mixed = support.length / evidence.length < 0.75;
+        return [
+          {
+            id: `${rule}-${territory}`,
+            territory,
+            rule,
+            title:
+              rule === 'doorway'
+                ? 'The Doorway Is Worse Than the Room'
+                : 'You Can Act While Uncomfortable',
+            body: mixed
+              ? 'This pattern appeared in earlier encounters. More recent evidence is mixed.'
+              : rule === 'doorway'
+                ? 'Across these encounters, starting often felt harder than continuing.'
+                : 'Across these encounters, you acted while discomfort was still present.',
+            evidence: evidence.map((e) => e.id),
+            support: support.map((e) => e.id),
+            contrary: evidence
+              .filter((e) => !support.includes(e))
+              .map((e) => e.id),
+            establishedAt: sample.at(-1)!.createdAt,
+          },
+        ];
+      }
+      return [];
+    }),
+  );
 }
 export function isCandidate(e: unknown): e is Candidate {
   if (!e || typeof e !== 'object') return false;
   const x = e as Candidate;
   return (
     typeof x.situation === 'string' &&
+    x.situation.length <= 2000 &&
     typeof x.action === 'string' &&
+    x.action.length <= 2000 &&
     typeof x.title === 'string' &&
-    x.territory in territories &&
+    x.title.length <= 200 &&
+    typeof x.template === 'string' &&
+    (x.userAction === undefined ||
+      (typeof x.userAction === 'string' && x.userAction.length <= 1000)) &&
+    (x.resistanceNote === undefined ||
+      (typeof x.resistanceNote === 'string' &&
+        x.resistanceNote.length <= 1000)) &&
+    Object.hasOwn(territories, x.territory) &&
     [
       'understand',
       'start',
@@ -272,7 +390,7 @@ export function isCandidate(e: unknown): e is Candidate {
     x.minutes > 0 &&
     x.minutes <= 30 &&
     Array.isArray(x.secondary) &&
-    x.secondary.every((t) => t in territories)
+    x.secondary.every((t) => Object.hasOwn(territories, t))
   );
 }
 export function isSession(e: unknown): e is Session {
@@ -280,12 +398,15 @@ export function isSession(e: unknown): e is Session {
   const x = e as Session;
   return (
     typeof x.id === 'string' &&
+    x.id.length > 0 &&
+    x.id.length <= 200 &&
+    typeof x.stopped === 'boolean' &&
     validScale(x.prediction) &&
     (x.actual === null || validScale(x.actual)) &&
     Number.isFinite(x.startedAt) &&
     ['', 'no', 'stayed', 'returned', 'stopped'].includes(x.urge) &&
     Array.isArray(x.notices) &&
-    x.notices.every((n) => typeof n === 'string') &&
+    x.notices.every((n) => noticingChoices.some(([code]) => code === n)) &&
     typeof x.predictionNote === 'string' &&
     typeof x.note === 'string'
   );
@@ -297,6 +418,7 @@ export function isEncounter(e: unknown): e is Encounter {
     ['attempted', 'stopped', 'not_started'].includes(x.outcome) &&
     (x.outcome === 'not_started' ? x.actual === null : validScale(x.actual)) &&
     Number.isFinite(x.createdAt) &&
-    typeof x.localDate === 'string'
+    typeof x.localDate === 'string' &&
+    /^\d{4}-\d{1,2}-\d{1,2}$/.test(x.localDate)
   );
 }

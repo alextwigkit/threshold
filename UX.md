@@ -39,3 +39,8 @@ Explain device-local storage and no transmission in the first build. Export data
 
 ## Recovery and accessibility
 Storage failure must be visible; never imply a saved record if writing failed. Preserve usable in-memory state and allow export. Invalid imported/stored data cannot crash launch. Focus moves to the new screen heading; progressive sections announce politely without stealing focus. Touch targets 44px where possible; scale wraps. Reduced motion removes route animation. Offline shell must load all essential assets. Session timer, reflection and map restore after reload.
+
+## Backup restore and map history
+Me offers Restore a backup next to Export. Parse and validate locally before staging a review. A confirmation summarizes encounters to add and duplicate IDs to skip. Merge without deleting local records or replacing current drafts/active sessions. Local copies win ID conflicts. Unsupported, corrupt or oversized files leave existing data untouched. A restore is not counted as a new real-world encounter.
+
+Known territory labels on the map open the corresponding Atlas history. Keyboard and touch both work. The Atlas filter can be cleared to show all history. New discoveries may use the existing observation reveal screen with evidence drawn from the eligible encounters; no additional first-use screen is added.

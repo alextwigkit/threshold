@@ -39,3 +39,6 @@ Prohibited: coordinates, elevations, scales, folios, taxonomy, protocols, invent
 
 ## Review checklist
 Compare each implemented screen with its reference for hierarchy, spacing, palette and interaction meaning. Apply only documented corrections. Check 320/390px widths, desktop, keyboard, 200% text and reduced motion before release. A technically built screen is not proof of visual or device QA.
+
+## Evidence projection continuation
+Keep route geometry stable by encounter ID, including when older history is restored. Clear texture only around real attempted routes. Draw settled paths once during the observation reveal, with reduced-motion fallback. Mark qualified discoveries with a restrained evidence-linked map mark, not a fictional named landmark. Known territory labels are accessible links to that territory's Atlas evidence.

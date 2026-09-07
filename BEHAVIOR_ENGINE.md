@@ -68,3 +68,9 @@ Keep secrets server-side; validate structured responses and treat user text as d
 
 ## Required tests
 Prediction zero accepted; missing prediction rejected; correction changes routing; no fixed Fog next action; not-started never changes map; stopped does not imply stayed; higher discomfort can support approach; neutral noticing yields neutral observation; one attempt cannot create discovery; duplicates cannot inflate evidence; mixed evidence suppresses discovery; clock-based timer survives backgrounding; records survive reload; invalid storage degrades visibly.
+
+## Local engine continuation
+- A plain statement that beginning feels unpleasant is not sufficient to classify Still Water. Use an unclassified step unless the situation explicitly concerns staying with an internal feeling; this preserves the distinction between starting a task and practicing non-escape.
+- Reviewed actions cover drafting, replying, asking, beginning a conversation and stopping an extra checking pass. Retain user edits when offering a repeat. No automatic action for an ambiguous high-stakes decision.
+- Doorway and acting-while-uncomfortable evidence are evaluated independently from compatible noticing selections; the displayed primary observation cannot discard additional evidence.
+- Discovery thresholds apply separately to each family. A carried-discomfort discovery requires an attempted outcome, actual discomfort above zero, and an explicit compatible noticing response. Lower discomfort is never required.

@@ -29,3 +29,8 @@ Add explicitly designed identity/sync and conflict handling without lengthening 
 
 ## Scope decision log
 Device-local storage and deterministic routing are provisional first-build choices. They support a usable offline vertical slice without pretending the unfinished model engine or cross-device product already exists. Future implementation must preserve the same UX constraints.
+
+## Completed continuation
+Expanded reviewed action templates, independent multi-select discovery evidence, carried-discomfort discovery, stable evidence-driven map paths, territory-to-Atlas navigation and discovery marks. Added validated backup restore with merge preview, collision handling and draft/session preservation. Another-tab changes freeze saving and offer export/reload rather than silently overwriting local work.
+
+Next: secure structured inference and evaluated action coverage; cross-device identity/sync; physical-device, accessibility and visual validation; authored inhabitants once repeated behavior supports them. A live model integration still requires a configured server-side provider and its consent/retention design; no user situations are transmitted by the current app.

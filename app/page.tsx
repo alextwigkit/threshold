@@ -25,53 +25,22 @@ import {
   appendEncounter,
   toggleNotice,
   validScale,
-  isEncounter,
-  isCandidate,
-  isSession,
-  type Candidate,
   type Resistance,
   type Territory,
   type Session,
   type Encounter,
   type Urge,
 } from '@/lib/engine';
-type Screen =
-  | 'name'
-  | 'clarify'
-  | 'setup'
-  | 'active'
-  | 'return'
-  | 'observation'
-  | 'map'
-  | 'atlas'
-  | 'me';
-type Saved = {
-  version: 1;
-  screen: Screen;
-  situation: string;
-  resistance: Resistance;
-  custom: string;
-  draft: Candidate | null;
-  prediction: number | null;
-  predictionNote: string;
-  session: Session | null;
-  encounters: Encounter[];
-  lastId: string | null;
-};
-const initial: Saved = {
-  version: 1,
-  screen: 'name',
-  situation: '',
-  resistance: 'start',
-  custom: '',
-  draft: null,
-  prediction: null,
-  predictionNote: '',
-  session: null,
-  encounters: [],
-  lastId: null,
-};
-const KEY = 'edge-atlas-v1';
+import MapFragment from './map-fragment';
+import {
+  KEY,
+  initial,
+  parseSaved,
+  mergeBackup,
+  restoreSummary,
+  type Saved,
+  type Screen,
+} from '@/lib/storage';
 const urgeChoices: [Urge, string][] = [
   ['no', 'No'],
   ['stayed', 'Yes, and I stayed'],
@@ -131,146 +100,18 @@ function Primary({
     </button>
   );
 }
-function MapFragment({
-  encounters,
-  territory,
-  compact = false,
-}: {
-  encounters: Encounter[];
-  territory?: Territory;
-  compact?: boolean;
-}) {
-  const attempted = encounters.filter((e) => e.outcome !== 'not_started');
-  const known = [
-    ...new Set([
-      ...attempted.map((e) => e.territory),
-      ...(territory ? [territory] : []),
-    ]),
-  ];
-  const positions: Record<Territory, [number, number]> = {
-    fog: [260, 130],
-    spotlight: [280, 310],
-    loop: [95, 170],
-    water: [115, 350],
-    unknown: [200, 230],
-  };
-  return (
-    <div className={`map-fragment ${compact ? 'compact' : ''}`}>
-      <svg
-        viewBox="0 0 400 470"
-        role="img"
-        aria-label={
-          attempted.length
-            ? `Your map: ${attempted.length} real attempt${attempted.length === 1 ? '' : 's'} in ${known.map((t) => territories[t].name).join(', ')}.`
-            : 'An unresolved map. Your first route is still ahead.'
-        }
-      >
-        <defs>
-          <pattern
-            id="dots"
-            width="15"
-            height="15"
-            patternUnits="userSpaceOnUse"
-          >
-            <circle cx="3" cy="3" r=".7" fill="#85887e" opacity=".22" />
-          </pattern>
-        </defs>
-        <rect width="400" height="470" fill="url(#dots)" />
-        {Array.from({ length: 7 }, (_, i) => (
-          <path
-            key={i}
-            d={`M -25 ${85 + i * 54} C 100 ${15 + i * 61}, 135 ${170 + i * 32}, 230 ${95 + i * 41} S 350 ${100 + i * 42}, 445 ${20 + i * 57}`}
-            fill="none"
-            stroke="#777e70"
-            strokeWidth=".8"
-            opacity={0.1 + Math.min(attempted.length, 6) * 0.025}
-          />
-        ))}
-        {known.map((t) => {
-          const [x, y] = positions[t];
-          return (
-            <g key={t}>
-              <text x={x} y={y - 28} textAnchor="middle" className="map-label">
-                {territories[t].name}
-              </text>
-              {t === 'loop' &&
-                [25, 40, 55].map((r) => (
-                  <path
-                    key={r}
-                    d={`M ${x + r} ${y} A ${r} ${r} 0 1 1 ${x + r - 8} ${y - 18}`}
-                    fill="none"
-                    stroke="#777e70"
-                    opacity=".25"
-                  />
-                ))}
-              {t === 'water' &&
-                [0, 10, 20].map((d) => (
-                  <path
-                    key={d}
-                    d={`M ${x - 55} ${y + d} Q ${x} ${y + d + 15} ${x + 55} ${y + d}`}
-                    fill="none"
-                    stroke="#777e70"
-                    opacity=".3"
-                  />
-                ))}
-            </g>
-          );
-        })}
-        {attempted.map((e, i) => {
-          const [x, y] = positions[e.territory];
-          const j = attempted
-            .slice(0, i)
-            .filter((v) => v.territory === e.territory).length;
-          const dx = ((j % 5) - 2) * 9;
-          const stopped = e.outcome === 'stopped';
-          return (
-            <g key={e.id} className="route-reveal">
-              <path
-                d={`M 90 410 Q 140 ${330 - j * 3} ${x + dx - 35} ${y + 85} T ${x + dx} ${y + (stopped ? 65 : 20)}`}
-                fill="none"
-                stroke={i === attempted.length - 1 ? '#ac3d24' : '#7d8176'}
-                strokeWidth={i === attempted.length - 1 ? 2.1 : 1}
-                opacity={i === attempted.length - 1 ? 1 : 0.4}
-                strokeDasharray={stopped ? '3 4' : undefined}
-              />
-              <circle
-                cx={x + dx}
-                cy={y + (stopped ? 65 : 20)}
-                r="3"
-                fill="#ac3d24"
-              />
-              {stopped && i === attempted.length - 1 && (
-                <text
-                  x={x + dx - 5}
-                  y={y + 84}
-                  textAnchor="middle"
-                  className="map-note"
-                >
-                  stopped here
-                </text>
-              )}
-            </g>
-          );
-        })}
-        {territory && (
-          <path
-            d={`M 90 410 Q 170 280 ${positions[territory][0]} ${positions[territory][1] + 20}`}
-            fill="none"
-            stroke="#ac3d24"
-            strokeWidth="1.3"
-            strokeDasharray="3 6"
-            opacity=".6"
-          />
-        )}
-      </svg>
-    </div>
-  );
-}
 export default function Home() {
   const [s, setS] = useState<Saved>(initial);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
   const [now, setNow] = useState(0);
+  const [atlasTerritory, setAtlasTerritory] = useState<Territory | null>(null);
+  const [backup, setBackup] = useState<Saved | null>(null);
+  const [restoreError, setRestoreError] = useState('');
+  const [restoreMessage, setRestoreMessage] = useState('');
+  const fileInput = useRef<HTMLInputElement>(null);
+  const rawUnreadable = useRef<string | null>(null);
+
   const [install, setInstall] = useState<any>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const saveBlocked = useRef(false);
@@ -279,34 +120,9 @@ export default function Home() {
     try {
       const raw = localStorage.getItem(KEY);
       if (raw) {
-        const parsed = JSON.parse(raw);
-        if (
-          parsed.version !== 1 ||
-          !Array.isArray(parsed.encounters) ||
-          !parsed.encounters.every(isEncounter) ||
-          ![
-            'name',
-            'clarify',
-            'setup',
-            'active',
-            'return',
-            'observation',
-            'map',
-            'atlas',
-            'me',
-          ].includes(parsed.screen) ||
-          typeof parsed.situation !== 'string'
-        )
-          throw Error('invalid');
-        if (parsed.session && !isSession(parsed.session))
-          throw Error('invalid');
-        if (['active', 'return'].includes(parsed.screen) && !parsed.session)
-          throw Error('invalid');
-        if (parsed.screen === 'setup' && !isCandidate(parsed.draft))
-          throw Error('invalid');
-        if (parsed.screen === 'observation' && !parsed.encounters.length)
-          throw Error('invalid');
-        setS({ ...initial, ...parsed });
+        rawUnreadable.current = raw;
+        setS(parseSaved(raw));
+        rawUnreadable.current = null;
       }
     } catch {
       saveBlocked.current = true;
@@ -322,6 +138,14 @@ export default function Home() {
       setInstall(e);
     };
     window.addEventListener('beforeinstallprompt', prompt);
+    const changedElsewhere = (event: StorageEvent) => {
+      if (event.key !== KEY) return;
+      saveBlocked.current = true;
+      setError(
+        'Your map changed in another tab. Export any unfinished work here, then reload to use the latest map.',
+      );
+    };
+    window.addEventListener('storage', changedElsewhere);
     if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production')
       navigator.serviceWorker
         .register('/sw.js')
@@ -331,6 +155,7 @@ export default function Home() {
     return () => {
       clearInterval(tick);
       window.removeEventListener('beforeinstallprompt', prompt);
+      window.removeEventListener('storage', changedElsewhere);
     };
   }, []);
   useEffect(() => {
@@ -489,11 +314,74 @@ export default function Home() {
     ? candidate(last.situation, last.resistance, s.encounters)
     : null;
   const found = discoveries(s.encounters);
+  const previousDiscoveryIds = new Set(
+    discoveries(s.encounters.filter((e) => e.id !== last?.id)).map((d) => d.id),
+  );
+  const newDiscovery = found.find((d) => !previousDiscoveryIds.has(d.id));
+  const discoveryEvidence = newDiscovery
+    ? s.encounters.filter((e) => newDiscovery.evidence.includes(e.id))
+    : [];
+  const expectedMean = discoveryEvidence.length
+    ? discoveryEvidence.reduce((n, e) => n + e.prediction, 0) /
+      discoveryEvidence.length
+    : 0;
+  const experiencedMean = discoveryEvidence.length
+    ? discoveryEvidence.reduce((n, e) => n + (e.actual ?? 0), 0) /
+      discoveryEvidence.length
+    : 0;
+  const filteredEncounters = atlasTerritory
+    ? s.encounters.filter((e) => e.territory === atlasTerritory)
+    : s.encounters;
+  const filteredDiscoveries = atlasTerritory
+    ? found.filter((d) => d.territory === atlasTerritory)
+    : found;
+  const backupSummary = backup ? restoreSummary(s, backup) : null;
+  function showTerritory(t: Territory) {
+    setAtlasTerritory(t);
+    go('atlas');
+  }
+  async function stageBackup(file: File | undefined) {
+    setRestoreError('');
+    setRestoreMessage('');
+    if (!file) return;
+    if (file.size > 10_000_000) {
+      setRestoreError('Choose an Edge backup smaller than 10 MB.');
+      return;
+    }
+    try {
+      setBackup(parseSaved(await file.text()));
+    } catch (e) {
+      setRestoreError(
+        e instanceof Error ? e.message : 'This backup could not be read.',
+      );
+    }
+  }
+  function confirmRestore() {
+    if (!backup) return;
+    if (saveBlocked.current) {
+      setRestoreError(
+        'Export the unreadable data, then clear this device’s map before restoring a backup.',
+      );
+      return;
+    }
+    const merged = mergeBackup(s, backup);
+    try {
+      localStorage.setItem(KEY, JSON.stringify(merged));
+      setS(merged);
+      setRestoreMessage('Your backup has been merged into this map.');
+      setBackup(null);
+    } catch {
+      setRestoreError(
+        'Your browser could not save the restored map. Your existing map has not changed.',
+      );
+    }
+  }
+
   const nav = ['map', 'atlas', 'me'].includes(s.screen);
   const active = s.session;
   function exportData() {
     const raw = saveBlocked.current
-      ? localStorage.getItem(KEY)
+      ? rawUnreadable.current
       : JSON.stringify(s, null, 2);
     const url = URL.createObjectURL(
       new Blob([raw || JSON.stringify(s, null, 2)], {
@@ -666,7 +554,13 @@ export default function Home() {
                     : 'Name one small, concrete thing you can do toward this situation.'
             }
             onChange={(e) =>
-              patch({ draft: { ...s.draft!, action: e.target.value } })
+              patch({
+                draft: {
+                  ...s.draft!,
+                  action: e.target.value,
+                  userAction: e.target.value,
+                },
+              })
             }
           />
           <div className="duration">
@@ -815,23 +709,35 @@ export default function Home() {
       )}
       {s.screen === 'observation' && last && (
         <section>
-          <MapFragment encounters={s.encounters} />
+          <MapFragment encounters={s.encounters} revealId={last.id} />
           <p className="eyebrow">
-            {last.outcome === 'not_started'
-              ? 'This time'
-              : s.encounters.filter((e) => e.outcome !== 'not_started')
-                    .length === 1
-                ? 'First observation'
-                : 'Observation'}
+            {newDiscovery
+              ? 'Discovery'
+              : last.outcome === 'not_started'
+                ? 'This time'
+                : s.encounters.filter((e) => e.outcome !== 'not_started')
+                      .length === 1
+                  ? 'First observation'
+                  : 'Observation'}
           </p>
-          {title(observation(last).title)}
+          {title(newDiscovery?.title ?? observation(last).title)}
           {last.actual !== null && (
             <p className="evidence">
-              Expected {last.prediction} <span aria-hidden="true">→</span>{' '}
-              Experienced {last.actual}
+              Expected{' '}
+              {newDiscovery ? expectedMean.toFixed(1) : last.prediction}{' '}
+              <span aria-hidden="true">→</span> Experienced{' '}
+              {newDiscovery ? experiencedMean.toFixed(1) : last.actual}
             </p>
           )}
-          <p className="serif observation-copy">{observation(last).body}</p>
+          <p className="serif observation-copy">
+            {newDiscovery?.body ?? observation(last).body}
+          </p>
+          {newDiscovery && (
+            <p className="optional">
+              Across {discoveryEvidence.length} encounters with{' '}
+              {territories[newDiscovery.territory].name}.
+            </p>
+          )}
           <Primary onClick={() => go('map')}>See my map</Primary>
         </section>
       )}
@@ -842,7 +748,10 @@ export default function Home() {
               <h1 className="sr-only" ref={heading} tabIndex={-1}>
                 Your map
               </h1>
-              <MapFragment encounters={s.encounters} />
+              <MapFragment
+                encounters={s.encounters}
+                onTerritory={showTerritory}
+              />
             </>
           ) : (
             <>
@@ -886,13 +795,23 @@ export default function Home() {
       )}
       {s.screen === 'atlas' && (
         <section>
-          {title('Your atlas')}
+          {title(
+            atlasTerritory ? territories[atlasTerritory].name : 'Your atlas',
+          )}
+          {atlasTerritory && (
+            <button
+              className="text-button"
+              onClick={() => setAtlasTerritory(null)}
+            >
+              See all of my atlas
+            </button>
+          )}
           {!s.encounters.length && (
             <p>
               Your observations will appear here after you try an expedition.
             </p>
           )}
-          {found.map((d) => (
+          {filteredDiscoveries.map((d) => (
             <article className="atlas-entry" key={d.id}>
               <p className="eyebrow">
                 Discovery · {territories[d.territory].name}
@@ -916,7 +835,7 @@ export default function Home() {
               </details>
             </article>
           ))}
-          {[...s.encounters].reverse().map((e) => (
+          {[...filteredEncounters].reverse().map((e) => (
             <article className="atlas-entry" key={e.id}>
               <p className="eyebrow">
                 {new Date(e.createdAt).toLocaleDateString(undefined, {
@@ -968,6 +887,14 @@ export default function Home() {
             Edge currently offers a small set of editable suggestions. You
             decide what fits and what step to take.
           </p>
+          {saveBlocked.current && (
+            <button
+              className="text-button"
+              onClick={() => window.location.reload()}
+            >
+              Reload the saved map
+            </button>
+          )}
           <h2>Keep your map</h2>
           <p>
             Clearing browser data will remove it. Save a copy whenever you want
@@ -976,6 +903,55 @@ export default function Home() {
           <button className="text-button" onClick={exportData}>
             Export my data
           </button>
+          <input
+            ref={fileInput}
+            type="file"
+            accept=".json,application/json"
+            hidden
+            onChange={(e) => {
+              void stageBackup(e.target.files?.[0]);
+              e.target.value = '';
+            }}
+          />
+          <button
+            className="text-button"
+            onClick={() => fileInput.current?.click()}
+          >
+            Restore a backup
+          </button>
+          {restoreError && (
+            <p className="error" role="alert">
+              {restoreError}
+            </p>
+          )}
+          {restoreMessage && <p role="status">{restoreMessage}</p>}
+          <AlertDialog
+            open={!!backup}
+            onOpenChange={(open) => {
+              if (!open) setBackup(null);
+            }}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  Merge this backup into your map?
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  {backupSummary?.added ?? 0} encounters will be added.{' '}
+                  {backupSummary?.duplicates ?? 0} already on this device will
+                  be kept as they are. Your current step and unfinished
+                  expedition will stay here.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div role="alert">{restoreError}</div>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={confirmRestore}>
+                  Merge backup
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           <h2 className="section-heading">Keep Edge nearby</h2>
           {install ? (
             <Primary
@@ -1016,6 +992,11 @@ export default function Home() {
                       localStorage.removeItem(KEY);
                       saveBlocked.current = false;
                       setS(initial);
+                      rawUnreadable.current = null;
+                      setBackup(null);
+                      setRestoreError('');
+                      setRestoreMessage('');
+                      setAtlasTerritory(null);
                       setError('');
                     } catch {
                       setError(
@@ -1037,7 +1018,10 @@ export default function Home() {
             <button
               key={n}
               aria-current={s.screen === n ? 'page' : undefined}
-              onClick={() => go(n)}
+              onClick={() => {
+                if (n === 'atlas') setAtlasTerritory(null);
+                go(n);
+              }}
             >
               <span aria-hidden="true">{['↗', '▤', '○'][i]}</span>
               {n[0].toUpperCase() + n.slice(1)}
