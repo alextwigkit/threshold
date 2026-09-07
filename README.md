@@ -15,3 +15,6 @@ Requires Node 22.13 or newer. Run `npm install`, `npm run dev`. `npm test` runs 
 Serve dist/client over HTTPS (or localhost) to test installation and offline behavior. Device data belongs to its origin: local preview and hosted preview have separate maps. Export is a portable JSON record; restore merges encounter history after review; sync is not implemented yet.
 
 See VALIDATION.md for verified checks and outstanding release work.
+
+## Prepared model integration
+The server-only structured inference adapter and guarded handler are implemented and tested with injected provider responses. They are not routed or imported into the published client. See [INFERENCE_INTEGRATION.md](INFERENCE_INTEGRATION.md) for key setup, consent, authenticated routing, durable quotas and live evaluation before activation.

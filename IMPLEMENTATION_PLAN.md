@@ -34,3 +34,6 @@ Device-local storage and deterministic routing are provisional first-build choic
 Expanded reviewed action templates, independent multi-select discovery evidence, carried-discomfort discovery, stable evidence-driven map paths, territory-to-Atlas navigation and discovery marks. Added validated backup restore with merge preview, collision handling and draft/session preservation. Another-tab changes freeze saving and offer export/reload rather than silently overwriting local work.
 
 Next: secure structured inference and evaluated action coverage; cross-device identity/sync; physical-device, accessibility and visual validation; authored inhabitants once repeated behavior supports them. A live model integration still requires a configured server-side provider and its consent/retention design; no user situations are transmitted by the current app.
+
+## Prepared server boundary
+Added validated structured inference, controlled template rendering and a guarded HTTP handler with injected verified identity and quota enforcement. It is not publicly routed or active. See INFERENCE_INTEGRATION.md for the concrete provider, consent, authentication and rollout prerequisites. Live activation is blocked by missing secure provider setup; no user input is transmitted by this work.

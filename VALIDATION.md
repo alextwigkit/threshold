@@ -12,7 +12,7 @@
 - Static PWA manifest, 192/512 icons and asset-complete offline service worker.
 
 ## Automated verification
-25 targeted behavioral tests pass. Type checking and final production build are recorded in the task. Core rules cover zero prediction, timing, routing correction, calibration, honest claims, multi-select, idempotency, sparse/mixed evidence and record validation.
+37 targeted behavioral and integration-boundary tests pass. Type checking and final production build are recorded in the task. Core rules cover zero prediction, timing, routing correction, calibration, honest claims, multi-select, idempotency, sparse/mixed evidence and record validation.
 
 ## Explicit gaps
 - Physical iOS/Android installation, offline restart, keyboard/screen-reader and responsive visual QA have not been performed. Build success is not a substitute. Browser testing was not requested.
@@ -27,3 +27,6 @@ This is a working first PWA implementation constrained by the approved specs, no
 
 ## Continuation checks
 Added coverage for independent multi-select evidence, duplicate suppression, conservative classification, concrete action templates, preserved edits, backup validation/merging, active-session collisions, and stable map geometry after older history is restored. Browser/device testing remains unperformed.
+
+## Prepared live-inference boundary
+Twelve additional mocked-provider tests cover consent/schema validation, grounded template slots, user correction precedence, minimal request data, refusal/truncation, timeouts, bounded payloads, authentication/origin checks, missing quotas and fail-closed fallback. Type checking passes. No live provider calls were made; the published app remains version 2 and device-local until activation prerequisites in INFERENCE_INTEGRATION.md are met.
