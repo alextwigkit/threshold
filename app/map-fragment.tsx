@@ -9,6 +9,7 @@ import {
   labelAnchors,
   compactCrops,
   notePlacement,
+  noteInk,
 } from '@/lib/map';
 export default function MapFragment({
   encounters,
@@ -70,12 +71,7 @@ export default function MapFragment({
           </radialGradient>
           <mask id={`${id}-known`}>
             <rect width="400" height="470" fill="white" />
-            {/*
-             * The corridor only thins the texture; the ground is fully cleared
-             * where a mark actually landed. A uniform full-width clearing used
-             * to bleach the whole approach on the first few routes, so the map
-             * read as known long before it was.
-             */}
+            {/* The corridor only thins the texture; the ground is fully cleared where a mark landed. */}
             {map.routes.map((r) => (
               <path
                 key={r.id}
@@ -116,10 +112,7 @@ export default function MapFragment({
         {known.map((t) => {
           const [x, y] = positions[t];
           const n = map.familiarity[t] ?? 0;
-          /*
-           * Approaches 0.35 without ever arriving, so a territory keeps
-           * deepening with use and never reads as complete.
-           */
+          // Approaches 0.35 without ever arriving, so it never reads as complete.
           const ink = 0.13 + 0.22 * (n / (n + 5));
           const faint = n < 2 ? '3 6' : undefined;
           return (
@@ -182,11 +175,7 @@ export default function MapFragment({
                 fill="none"
                 stroke={current ? '#ac3d24' : '#7d8176'}
                 strokeWidth={current ? 2 : 1}
-                /*
-                 * Held constant so repeated routes through the same gate
-                 * composite into a darker trunk. The depth is the repetition
-                 * itself, not a number derived from it.
-                 */
+                // Held constant so repeated routes through the same gate composite into a darker trunk.
                 opacity={current ? 1 : 0.2}
                 strokeDasharray={r.stopped ? '3 4' : undefined}
               />
@@ -199,14 +188,10 @@ export default function MapFragment({
                 stroke={r.stopped ? (current ? '#ac3d24' : '#7d8176') : 'none'}
                 strokeWidth={r.stopped ? 1 : undefined}
               />
-              {/*
-               * Not in the preview: it frames one territory, and a note from
-               * an unrelated earlier encounter arrives clipped at the crop
-               * edge, which reads as damage rather than as information.
-               */}
+              {/* Not in the preview: a clipped note from an unrelated earlier encounter reads as damage. */}
               {r.stopped && current && !compact && (
                 <text
-                  x={r.end[0] - 5}
+                  x={r.end[0] + noteInk.dx}
                   y={r.end[1] + notePlacement(r.end)}
                   textAnchor="middle"
                   className="map-note"
@@ -259,19 +244,19 @@ export default function MapFragment({
                   ? `See encounters in ${territories[t].name}`
                   : undefined
               }
-              onClick={() => onTerritory?.(t)}
-              onKeyDown={(e) => {
-                if (onTerritory && (e.key === 'Enter' || e.key === ' ')) {
-                  e.preventDefault();
-                  onTerritory(t);
-                }
-              }}
+              onClick={onTerritory ? () => onTerritory(t) : undefined}
+              onKeyDown={
+                onTerritory
+                  ? (e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onTerritory(t);
+                      }
+                    }
+                  : undefined
+              }
             >
-              {/*
-               * A hit target and focus ring only. The name used to sit on an
-               * opaque plate, which erased whatever route ran beneath it; it
-               * now carries its own halo instead, so routes read through.
-               */}
+              {/* Hit target and focus ring only; the name carries its own halo, not an opaque plate. */}
               <rect
                 x={x - 79}
                 y={y - 22}

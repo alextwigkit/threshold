@@ -391,11 +391,7 @@ fieldset.choices {
   font-size: 24px;
   fill: #40443b;
   letter-spacing: -1px;
-  /*
-   * The name carries its own halo instead of sitting on an opaque plate. A
-   * plate erased whatever route ran beneath it; a halo lets the route read
-   * through, and it cannot collide with anything by being in the wrong place.
-   */
+  /* Halo instead of an opaque plate, so a route drawn underneath still reads through. */
   paint-order: stroke fill;
   stroke: #f4f1eb;
   stroke-width: 5px;
@@ -410,11 +406,7 @@ fieldset.choices {
   stroke-width: 3px;
   stroke-linejoin: round;
 }
-/*
- * The preview frames the one territory being entered, using its own viewBox
- * window. A portrait map cannot fill a wide short slot without either letterbox
- * bars or losing its bottom quarter, and it used to silently lose the quarter.
- */
+/* The preview frames one territory in its own viewBox window rather than letterboxing the full map. */
 .compact {
   margin-bottom: 16px;
 }
@@ -658,9 +650,7 @@ details p {
 }
 .territory-link:focus-visible rect {
   stroke: var(--accent);
-  /* User-space units, and the map draws at roughly 0.85, so 1.5 landed near a
-   * single hairline pixel. The group sets outline: none, so this is the only
-   * focus indicator there is. */
+  /* User-space units on a map rendered at less than 1:1 scale; .territory-link sets outline: none. */
   stroke-width: 3;
 }
 .draw-route {
