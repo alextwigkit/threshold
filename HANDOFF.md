@@ -152,6 +152,10 @@ Parent projectless working directory is not the app repository. Work in the app 
 
 Documentation commits after the published source commit do not imply a new live app release. Reuse `.openai/hosting.json`; never create a replacement Site or widen its audience to make a test work.
 
+**Version 4 is staged but not published.** The accessibility and text-resize fixes are committed at `df72c8c`, and a release candidate built from that commit is at `../../work/edge-v4-release.tar.gz`. It was verified to contain no value from `.env.local` (boolean-only comparison, no value printed) and to leave the published migration byte-identical. Publishing needs the Sites building/hosting skills and Sites-issued transient git credentials, which exist in the owning Codex environment and not in every session; a session without them cannot publish, and must not substitute a direct Wrangler deploy, which would put the Worker outside the trusted dispatcher.
+
+Note when packaging: `npm run start` writes local Miniflare state under `dist/server/.wrangler/`, including a local D1 database. The version 3 package shipped that scratch directory. Exclude `.wrangler` when packaging; `dist/server/wrangler.json` is the only Wrangler file that belongs in a release.
+
 Architecture: React 19.2.8 + vinext 1.0.0-beta.9 + Vite 8.2.2. Preserve `package-lock.json` and use its versions. `next.config.ts` intentionally retains `output: 'export'` for the interface. The build then creates a separate small Worker for API requests, serving compiled assets through `ASSETS`. **This is a static interface plus API Worker, not a static-only deployment.** Hosting declares D1 binding `DB`, no `static` stanza. Do not “fix” this by adding static hosting mode or exposing the framework's RSC handler.
 
 File map:
