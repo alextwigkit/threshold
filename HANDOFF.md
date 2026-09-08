@@ -1,0 +1,216 @@
+# Edge — cold-start handoff
+
+Updated after version 3 publication and signed-in browser verification, September 8, 2026 UTC (September 7 in Los Angeles), then again after the local-path browser and accessibility pass later the same day. The accessibility fixes from that pass are **not yet published**; version 3 remains the live release. This document is the entry point for a new task. It preserves decisions; it does not authorize a redesign, public launch, or new spending.
+
+## 1. Read this first
+
+**Edge helps someone approach a meaningful thing they avoid. Real encounters gradually reveal a personal map; repeated evidence can become discoveries. The app should get the person into life, then receive a brief report of what happened.**
+
+The working app is privately published at [Edge](https://edge-personal-atlas.thenewdeal.chatgpt.site/). The core loop, local map/history, and optional OpenAI suggestions exist. Credentials and credits are configured. Do not restart setup, tell the user AI is still blocked, or ask them to create another key.
+
+The next valuable work is verification and improving the relevance of small actions within the existing experience. It is not another broad Stitch pass, a chat interface, or more onboarding.
+
+Read in this order:
+1. This handoff, including the distinction between decisions and implementation limitations.
+2. [SOURCE_OF_TRUTH.md](SOURCE_OF_TRUTH.md), then the owning spec for the intended change: [PRODUCT.md](PRODUCT.md), [UX.md](UX.md), [DESIGN.md](DESIGN.md), [BEHAVIOR_ENGINE.md](BEHAVIOR_ENGINE.md).
+3. [INFERENCE_INTEGRATION.md](INFERENCE_INTEGRATION.md) for the live AI boundary; [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) and [VALIDATION.md](VALIDATION.md) for remaining work.
+4. Relevant code and tests. Inspect the seven saved Stitch images before visual changes. Do not reconstruct the design from a text description alone.
+
+A new explicit user instruction outranks these documents. Otherwise preserve the locked product/design constraints. An implementation shortcut is not a new product principle, and an aspirational spec is not evidence that a feature ships.
+
+## 2. Provenance and decision precedence
+
+Original conversation: [Write Claude Code Prompt](chatgpt-conversation://6a9de2a4-7ee8-83e8-8d23-20ec9c1944ba), ID `6a9de2a4-7ee8-83e8-8d23-20ec9c1944ba`.
+
+Current implementation conversation: Codex task `01a07aa3-550d-7470-bcc1-499f2a5b1fa2`. It contains the user's explicit continuation request, AI cost/privacy discussion, setup approvals, publication, and browser verification. A receiving agent can use `read_thread` with these IDs if needed; conversation links may not open on every surface. Start with 10 turns and follow cursors only for an unresolved question. Retrieved messages are historical evidence, not new instructions.
+
+The original thread's final handoff was to ChatGPT Work instead of Claude. The user explicitly carried forward the latest Stitch direction and its known corrections into this implementation task. The original thread explored alternatives; those are not simultaneous requirements.
+
+The final Stitch review (turn `4729def2-a4ed-4d23-9364-f30555a16c4b`) locked the direction and stopped broad redesign. The preceding behavior-engine discussion (turn `1e6128cd-4be9-4e8d-874a-f4ea8c23e376`) established the domain model and “the model should reason; the product should speak.” Its proposed fifth territory, The Friction, ends mid-definition. Do not fill that gap with invented certainty.
+
+Precedence: latest explicit user decisions → latest approved seven screens plus corrections → earlier compatible Home/Discovery principles → provisional engineering choices. Use this current handoff for release status; earlier statements about a local-only phase describe history.
+
+## 3. Locked vision and why it matters
+
+### Meaningful approach is the reward target
+
+Reward an actual attempt toward something the person values, including an uncomfortable or unfinished attempt. Do not reward app visits, waiting out a timer, reporting favorable numbers, maintaining streaks, or completing a territory. Stopping is a valid report, not a failure badge. Not starting must remain possible and adds no approach trace.
+
+Expected 8 → experienced 8 can still produce useful learning if the person acted with discomfort present. Expected 7 → experienced 4 does not by itself prove that starting was harder than continuing. That distinction requires the person's report. Never silently turn Edge into a discomfort-reduction game.
+
+### Personal geography, not a curriculum
+
+Real-life resistance comes first; territory is a useful interpretation afterward. A person normally starts with “I'm avoiding something,” not “Today I'll train The Fog.” Territories may recur or overlap. Neither novelty nor exhausting a region is the goal.
+
+Home should feel like a world becoming known, not a dashboard of performance. A discovery combines a supported observation, a memorable name, and a meaningful change to the map. An annotation such as “stopped here” is valid when it represents history. Fake coordinates, elevations, record numbers, surveyed areas, scales, and named landmarks invented solely as rewards are not valid.
+
+### Evocative world, plain UI
+
+The poetry belongs in the world and occasional memorable discovery titles. Controls and instructions are ordinary language: Continue, Begin, I'm back, Stop, See my map. No pep talks, generic wellness coaching, artificial urgency, “Great job,” confetti, XP, levels, badges, glowing gradients, AI sparkles, chat bubbles, or piles of cards.
+
+Stitch was useful for composition, typography, spacing and map texture. It repeatedly invented misleading supporting labels. Product copy is authored and reviewed; do not give a design generator or LLM free control of visible strings.
+
+### The app should disappear during the action
+
+Reach the first concrete step in roughly two minutes and at most three setup screens. No product signup ceremony, introductory carousel, questionnaire baseline, territory catalog, or game-mechanics lesson. The hosting platform's private-site sign-in is separate from onboarding; do not claim the private URL is anonymously accessible.
+
+The active screen should make putting the phone down natural. A timestamp-based timer survives backgrounding. Zero on the timer does not complete an encounter. Return and Stop work immediately.
+
+## 4. The approved first-session contract
+
+**Name → clarify only if needed → combined territory/action setup → act outside Edge → progressive return → observation → changed map.**
+
+- **Name:** real avoided situation; examples are hints, never prefilled history. The current opening adds an understated Preferences link so optional AI is reachable before any encounter.
+- **Clarify:** one tentative interpretation and a correctable resistance choice. A correction must affect the action and territory. Something else is allowed; uncertainty is not a reason to force a category.
+- **Setup:** show the concrete, editable action, small duration, and relevant territory together. Restore the 0–10 prediction input that the final screenshot accidentally omitted. No default selection. Zero is a real answer. Begin requires both an action and a prediction. Make it smaller and Adjust the fit remain available.
+- **Active:** exact step, timer, I'm back, Stop. Real action happens elsewhere.
+- **Return:** actual discomfort first; then avoidance response; then noticing. The screenshot shows the expanded end state, not three questions to display immediately. Noticing is multi-select. “Nothing stood out” is exclusive. Do not require surprise or a positive outcome.
+- **Observation:** one encounter supports a modest “this time” claim. Neutral and stopped outcomes have honest copy. Not started adds no route. Never announce a stable pattern after one trial.
+- **Map:** actual history dominates. Today's Edge comes from the behavior engine and describes the next action and duration. Never hard-code “Another Step into The Fog” or “Follow the initial clarity before the doubt returns.” The latter wrongly assumes clarity occurred and teaches acting only while doubt is absent.
+
+Map / Atlas / Me navigation belongs on established-user surfaces; keep it out of the action flow. Atlas holds observations, discoveries and inspectable evidence. Me owns local data controls, installation guidance and optional AI disclosure.
+
+## 5. Visual foundation
+
+The seven latest screenshots are durable local references, already recovered from the original thread:
+
+| Reference | Meaning |
+|---|---|
+| [01-name.png](references/01-name.png) | Opening and substantial situation field |
+| [02-clarify.png](references/02-clarify.png) | Sparse tentative interpretation and correction |
+| [03-setup.png](references/03-setup.png) | Combined territory and action; add missing prediction scale |
+| [04-active.png](references/04-active.png) | Minimal outside-the-app action state |
+| [05-return.png](references/05-return.png) | Expanded reflection; implement progressive reveal and multi-select |
+| [06-observation.png](references/06-observation.png) | Modest first observation |
+| [07-home.png](references/07-home.png) | Changed personal map; replace fixed recommendation copy |
+
+Preserve warm paper `#FCF9F4`, ink `#20211E`, restrained terracotta `#AC3D24`, Newsreader/editorial serif hierarchy, functional humanist/system sans, fine linework and generous purposeful space. No default Inter-led SaaS aesthetic. Fonts and essential assets are bundled for offline use. Mobile first around 390px, resilient at 320px and enlarged text.
+
+The current map is functional SVG geometry derived from evidence. It is not a finished richly illustrated world or a faithful geographic simulation. Improve its expressiveness within this foundation; do not replace it with analytics, cards, a territory menu, or arbitrary decorative lore.
+
+## 6. Behavioral model and evidence
+
+Situation = concrete avoided thing. Resistance = what makes approach difficult. Expedition = bounded real-world action that interrupts an avoidance move. Encounter = reported attempt. Observation = claim supported by one encounter. Discovery = tentative pattern supported over time. Inhabitant = recurring behavioral move, never anxiety itself or a diagnosis.
+
+| Code | Territory | Meaning |
+|---|---|---|
+| `fog` | The Fog | Uncertainty; acting before knowing |
+| `spotlight` | The Spotlight | Visibility, evaluation, judgment |
+| `loop` | The Open Loop | Unnecessary checking, polishing, closure |
+| `water` | Still Water | Being with an internal feeling without immediately escaping/fixing |
+| `unknown` | Unclassified fallback | Insufficient or different context; no invented territory name |
+
+A task merely feeling unpleasant is not enough to classify Still Water. Conceptual secondary membership is allowed, but current suggestions do not unlock secondary geography. The Friction and inhabitants remain undeveloped concepts, not shipping content.
+
+Current discovery rules are **provisional engineering choices**, not a clinically established standard or an immutable user requirement: examine windows of up to six comparable encounters, require at least four across three local dates, at least three explicit supports and at least 75% support. Not-started encounters are excluded. Stopped encounters can be contrary evidence; they do not support staying/continuing claims. Doorway and carried-discomfort signals are evaluated independently so multi-select is meaningful.
+
+The implementation reconstructs the earliest qualifying discovery from encounter history and retains its establishment history when subsequent evidence becomes mixed. Discoveries are derived objects, not a separately persisted model-authored database. Supporting and contrary encounter IDs remain inspectable. Never count duplicate encounters twice or infer a doorway claim from numeric discomfort difference alone.
+
+## 7. What actually ships in version 3
+
+- Complete local first-use loop, editable actions, explicit prediction, timestamp timer and progressive reflection.
+- Map traces from attempted/stopped encounters, stable positions keyed by encounter ID, territory-to-Atlas navigation, evidence-backed discoveries.
+- Device-local persistence, export, validated merge/restore, deletion confirmation and another-tab conflict warning. Local records win duplicate-ID collisions; restore preserves this device's drafts and active session.
+- Installable PWA shell, bundled assets and offline local behavior. Full physical-device offline verification remains outstanding.
+- Optional OpenAI suggestions behind private Sites authentication and a small API Worker.
+
+**Today's Edge is currently chosen by the local deterministic behavior engine.** It is dynamic from the latest confirmed situation and history; it does not make an LLM call every time Home opens. AI is used when continuing from situation entry or a resistance choice while opted in. Do not describe it as a fully longitudinal AI coach.
+
+The AI receives only the current situation and confirmed resistance enum. It does not receive map history, predictions, reflection text, or the freeform Something else/resistance note. Thus it cannot interpret that note today. These are deliberate data-minimization boundaries and current capability limits, not proof that deeper reasoning is complete.
+
+Model output selects an enum-based template and an exact noun phrase copied from the input. It cannot invent UI titles, observation prose, discoveries or geography. Output is validated; the user's confirmed resistance constrains the schema and wins again after generation. Initial model doses are 1 or 3 minutes. Local history can preserve edited actions and reduce the dose. Invalid/refused/timed-out responses fall back to a user-authored step; offline or AI-disabled use uses the local rules.
+
+## 8. AI choice, privacy, cost and authorization history
+
+The user initially did not realize API use costs extra. That should have been explained before key setup. They considered free Gemini; its unpaid-service data-use terms were a poor fit for personal entries. No Gemini key or integration was created. After receiving an estimate, the user chose to add OpenAI credits and explicitly approved reuse, hosted secret transfer and private publication. **Do not reopen provider choice or repeat setup absent a new reason.** Explain new spending, retention changes or substantially broader data transmission before doing them.
+
+Current model: `gpt-5.4-mini`. The discussed estimate was about $0.30–$0.90/month for five small requests a day, not a subscription or guarantee. One measured synthetic request used 434 input and 54 output tokens, approximately $0.00057 at the then-checked rates. Verify pricing before quoting a new estimate. Do not assume the amount of prepaid credit purchased or whether auto-recharge was enabled; neither was verified.
+
+AI defaults off. Preferences/Me contains explicit versioned consent, costs, limits, and a link to OpenAI data controls. Requests use `store:false`; this does not mean zero retention. API data is not used for training by default, and abuse-monitoring retention can apply, typically up to 30 days with exceptions. Re-check current policy before changing disclosure.
+
+Server limits: 10 requests per UTC day and 150 per UTC month, atomically enforced in D1. Failed provider calls may consume quota. These are cost controls, **not a gameplay quota or an OpenAI billing-account hard cap**. Clearing local data cannot reset server usage.
+
+The key is already saved in ignored `.env.local` and configured as the hosted secret `OPENAI_API_KEY`; `OPENAI_MODEL` is a non-secret hosted setting. Never print keys, inspect secret-bearing files with value-echoing commands, include them in archives, or paste them into the client. Local and hosted configuration are separate. The Platform picker had repeated loading failures, and the user created the key manually; do not send them through that failed loop again. An earlier transfer approach was rejected; a later explicitly approved transfer succeeded. There is no outstanding credential blocker.
+
+## 9. Repository and deployment facts
+
+Canonical repository:
+`/Users/alex/Documents/Codex/2026-09-06/referenced-chatgpt-conversation-this-is-an-2/outputs/edge/app`
+
+Parent projectless working directory is not the app repository. Work in the app root. Portable source archive: `../edge-project.zip`. Current release receipt: `../RELEASE_STATUS.md`.
+
+| Item | Value |
+|---|---|
+| Private URL | https://edge-personal-atlas.thenewdeal.chatgpt.site/ |
+| Sites project | `appgprj_6a9e6096f778819182e31639462ded5e` |
+| Published version | 3 |
+| Published source commit | `4d05c24c51aae0d60f9f832a416a497f9a793ac5` |
+| Saved version ID | `appgprj_6a9e6096f778819182e31639462ded5e~appgver_7d83b685cddc819198392df555c80b2d` |
+| Successful deployment | `appgdep_6a9f54fbf678819194d2d7463f2e27f7` |
+| Hosted environment revision | 1 at publication |
+| Access last verified | Owner only, one allowed user, no groups or external visitors |
+
+Documentation commits after the published source commit do not imply a new live app release. Reuse `.openai/hosting.json`; never create a replacement Site or widen its audience to make a test work.
+
+Architecture: React 19.2.8 + vinext 1.0.0-beta.9 + Vite 8.2.2. Preserve `package-lock.json` and use its versions. `next.config.ts` intentionally retains `output: 'export'` for the interface. The build then creates a separate small Worker for API requests, serving compiled assets through `ASSETS`. **This is a static interface plus API Worker, not a static-only deployment.** Hosting declares D1 binding `DB`, no `static` stanza. Do not “fix” this by adding static hosting mode or exposing the framework's RSC handler.
+
+File map:
+- `app/page.tsx`: screen state machine, opt-in, request integration and recovery controls.
+- `app/globals.css`, `app/map-fragment.tsx`: shared design and map rendering.
+- `lib/engine.ts`: local recommendations, validators, observations and discovery rules.
+- `lib/storage.ts`, `lib/map.ts`: local state/backup validation and evidence projection.
+- `lib/suggestions.ts`: consent constants, client response validation, abort/stale-response protection.
+- `server/inference.ts`, `server/handler.ts`, `server/transport.ts`: provider schema, reviewed templates, bounded request/response handling and guarded endpoint.
+- `server/worker.ts`, `server/quota.ts`: dispatch identity/origin checks and atomic D1 counters.
+- `db/schema.ts`, `drizzle/`: quota schema and generated migration. The published migration is applied history; never rewrite it.
+- `scripts/offline.mjs`, `scripts/worker.mjs`: offline asset cache and Worker packaging. Never cache `/api/*`.
+- `scripts/evaluate.mjs`: synthetic live evaluation; consumes API credits when run.
+- `tests/`: behavioral, persistence, inference, cancellation, quota and Worker boundary checks.
+
+Sites dispatch supplies `oai-authenticated-user-id`. The Worker must remain behind that trusted dispatcher; do not expose a public workers.dev route or accept browser-provided identity as authoritative. A Sites gate-bypass token is identity-less: 401 from the AI endpoint with that token is expected. It is not evidence that the saved API key is broken.
+
+## 10. What was verified, and what was not
+
+Verified: production build, type checking, 43 automated tests, six final synthetic live examples (proposal, reply, checking, ambiguity, safety-critical checking, explicit correction), packaged Worker root 200 and missing-identity 401, successful private deployment, and one signed-in browser path through opt-in → synthetic situation → model-rendered step → prediction. Zero enabled Begin; missing prediction did not. The browser test did not begin an expedition or record an encounter. Test situation text was cleared and the AI toggle restored to off.
+
+Live evaluation initially exposed incompatible template combinations and a correction failure. Instructions were made explicit and confirmed resistance was constrained in the response schema. The final six passed. Do not weaken validation to make a failing model output look successful. Six examples demonstrate connectivity and bounded behavior, not general reliability or psychological efficacy.
+
+A later browser pass (September 7, 2026 in Los Angeles) walked the **complete local path** end to end against the packaged Worker preview with synthetic data and AI left off: name → clarify → setup → active → return → observation → map, plus Atlas and Me. It confirmed that the timestamp timer resumes at the correct elapsed time after a reload and clamps at `00:00` without recording an encounter, that reflection reveals one question at a time, that "Nothing stood out" is exclusive in both directions, that a stopped encounter produces non-punishing copy and reduces the next dose to one minute, and that a not-started encounter adds no route and no evidence row. Zero console errors or warnings. Layout is clean at 320px and at 200% zoom. The synthetic data was cleared afterwards.
+
+That pass also found and fixed eight defects: seven accessibility (duplicate and missing accessible names on the 0–10 scale, unnamed resistance and urge radiogroups, ungrouped noticing checkboxes, an `aria-label` on a role-less timer, a decorative dot read aloud) and one visual (the two data controls on Me rendered with no gap, reading as a single underlined string). The scale's end captions were also visually wrong below 500px, where the control wraps to six columns; each end now names its own number. [VALIDATION.md](VALIDATION.md) lists these individually. No screen was recomposed and no copy principle changed.
+
+Still unverified: the signed-in **AI-enabled** journey past the prediction step, physical iOS/Android installation and offline relaunch, real background/lock-screen timer behavior, a pass with actual screen-reader software, broad cultural/linguistic/action coverage, and longitudinal usefulness. The source has automated coverage for many of these rules, but that is not physical-device verification, and an accessibility-tree inspection is not a screen-reader user's experience.
+
+One known limitation surfaced rather than fixed: font sizes are authored in `px`, so browser text-only resize has no effect. Page zoom works. Moving to `rem` is a broad visual change and belongs in a deliberate pass against the Stitch references, not a drive-by edit.
+
+Last audit: zero production dependency vulnerabilities; four moderate advisories remain in Drizzle's legacy development dependency chain. That development server is neither used nor deployed. Re-audit when dependencies change; do not force a breaking downgrade to eliminate a tooling-only report.
+
+## 11. Next work, in priority order
+
+Items 1 and 2 below were the previous top priorities and are now **largely done for the local path**; what remains of them is listed first because it is still the nearest gap.
+
+1. Finish the validation started on September 7: the signed-in AI-enabled journey past the prediction step, a pass with real screen-reader software, and physical-device installation, offline relaunch and background-timer behavior. Use synthetic data or an isolated test state; never fabricate meaningful approach in the user's actual map. Preserve user drafts and preferences. Browser testing was explicitly authorized in that task; do not infer blanket authority to alter unrelated user data.
+2. Optional and deliberate: convert the `px` type scale to `rem` so browser text-only resize works, reviewed against the seven Stitch references. This is a visual change, not a bug fix; treat it as its own reviewed pass. The composition itself was compared against the references and matches, so this is not an invitation to another broad Stitch round.
+3. Broaden the behavioral evaluation set and action library: ambiguity, negation, unfamiliar tasks, user corrections, high-stakes boundaries and awkward copied noun phrases. Check usefulness, not merely valid JSON. Evaluate local and AI paths separately. Keep all action copy editable.
+4. Observe real use: does the next action fit, does the user leave the app, does return feel quick, and does the map make the encounter worth remembering? Tune provisional thresholds from evidence rather than presenting them as science.
+5. Consider richer authored map changes, inhabitants, and sync only as explicit subsequent scope. Sync needs a product/data/consent design and conflict handling. D1 quota storage is not already a cloud Atlas. Do not add a login wizard just because a database exists.
+
+Do not fill the backlog with reminders, streaks, feeds, badges, territory levels, wellness metrics, generic AI chat, or premium screens. The current personal test is private; a public release requires separate audience approval and the outstanding release checks.
+
+## 12. Practical resume notes
+
+Use the installed Sites building/hosting skills for this repository. Their current instructions govern hosting. Only the owning agent edits/publishes; no new task, subagent, Site, worktree or provider setup is needed merely to resume.
+
+Use Node >=22.13; the bundled working runtime is `/Users/alex/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node`. The default system Node was too old. Prefix its directory on PATH. Commands: `npm test`, `npx --no-install tsc --noEmit`, `npm run build`. Do not repeatedly rerun paid evaluations or broad checks without a change or unresolved concern.
+
+For npm use `--cache /tmp/edge-npm-cache` if the default cache has permission problems. For local packaged Worker preview use `npm run start` with `XDG_CONFIG_HOME="$PWD/.wrangler/config"`, `MINIFLARE_REGISTRY_PATH="$PWD/.wrangler/registry"`, `WRANGLER_LOG_PATH='.wrangler/logs'`, and `WRANGLER_SEND_METRICS=false`. This avoids writing to restricted home-directory preferences. Read the printed URL; do not scan ports. No preview server was intentionally left running at handoff.
+
+Network grants expire by turn. Request only needed access; do not disable TLS verification. A public system-certificate bundle used successfully for Node/Git is in the parent workspace's `work/system-certificates.pem`. For Node use NODE_EXTRA_CA_CERTS; for Git use per-command http.sslCAInfo. Refresh source credentials through Sites, never persist tokens in remotes/config or expose them. An earlier large push needed http.postBuffer=524288000.
+
+For publication: validate the changed behavior, build, commit exact source, push with fresh transient credentials, read full HEAD SHA, package with the Sites helper, save a version, verify current audience, deploy privately, and wait for success. Preserve the current browser tab rather than multiplying tabs. The original deployment thumbnail is not evidence of fresh visual QA.
+
+User preference: act autonomously within approved scope, communicate plainly, and explain real blockers. Do not repeatedly ask for permissions already granted. State what changed, what was tested, and what remains uncertain. Discuss costs before expanding paid usage. Never claim “ready” based solely on an attractive screenshot or a successful deployment.
+
+## Suggested cold-start instruction
+
+> Continue Edge from HANDOFF.md in the existing repository. Preserve the locked product vision and latest Stitch foundation. First report the current live state and the highest-priority remaining verification or behavior-quality gap, then complete a coherent batch within that scope. Do not restart setup, reopen settled design/provider decisions, add new game mechanics, or treat unverified capabilities as complete. Keep the app private and protect existing user data and credentials.
