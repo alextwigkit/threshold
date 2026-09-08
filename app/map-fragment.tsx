@@ -1,32 +1,58 @@
 'use client';
 import { useId } from 'react';
 import { territories, type Encounter, type Territory } from '@/lib/engine';
-import { projectMap, positions } from '@/lib/map';
+import {
+  projectMap,
+  positions,
+  fields,
+  gates,
+  labelAnchors,
+  compactCrops,
+  notePlacement,
+} from '@/lib/map';
 export default function MapFragment({
   encounters,
   territory,
   compact = false,
   revealId,
+  newDiscoveryId,
   onTerritory,
 }: {
   encounters: Encounter[];
   territory?: Territory;
   compact?: boolean;
   revealId?: string;
+  newDiscoveryId?: string;
   onTerritory?: (t: Territory) => void;
 }) {
   const id = useId().replace(/:/g, '');
   const map = projectMap(encounters);
   const known = [...new Set([...map.known, ...(territory ? [territory] : [])])];
-  const description = map.routes.length
-    ? `Your map shows real attempts in ${map.known.map((t) => territories[t].name).join(', ')}. Select a territory to see its encounters.`
-    : 'An unresolved map. Your first route is still ahead.';
+  const latest = map.routes.at(-1);
+  const describe = () => {
+    if (compact && territory)
+      return `A closer view of ${territories[territory].name}, and the way there.`;
+    if (!map.routes.length)
+      return 'An unresolved map. Your first route is still ahead.';
+    const where = map.known.map((t) => territories[t].name).join(', ');
+    const count =
+      map.routes.length === 1 ? 'one route' : `${map.routes.length} routes`;
+    const last = latest
+      ? ` Your most recent ${latest.stopped ? 'route stopped at the edge of' : 'route reached'} ${territories[latest.territory].name}.`
+      : '';
+    const found = map.discoveries.length
+      ? ` ${map.discoveries.length === 1 ? 'One discovery is marked' : `${map.discoveries.length} discoveries are marked`} on it.`
+      : '';
+    // Only claim the territories are selectable where they actually are.
+    const how = onTerritory ? ' Select a territory to see its encounters.' : '';
+    return `Your map shows ${count} in ${where}.${last}${found}${how}`;
+  };
   return (
     <div className={`map-fragment ${compact ? 'compact' : ''}`}>
       <svg
-        viewBox="0 0 400 470"
+        viewBox={compact && territory ? compactCrops[territory] : '0 0 400 470'}
         role={onTerritory ? 'group' : 'img'}
-        aria-label={description}
+        aria-label={describe()}
       >
         <defs>
           <pattern
@@ -37,16 +63,36 @@ export default function MapFragment({
           >
             <circle cx="3" cy="3" r=".7" fill="#85887e" opacity=".26" />
           </pattern>
+          {/* Black clears the texture, white keeps it. */}
+          <radialGradient id={`${id}-clear`}>
+            <stop offset="0%" stopColor="#000" />
+            <stop offset="100%" stopColor="#fff" />
+          </radialGradient>
           <mask id={`${id}-known`}>
             <rect width="400" height="470" fill="white" />
+            {/*
+             * The corridor only thins the texture; the ground is fully cleared
+             * where a mark actually landed. A uniform full-width clearing used
+             * to bleach the whole approach on the first few routes, so the map
+             * read as known long before it was.
+             */}
             {map.routes.map((r) => (
               <path
                 key={r.id}
                 d={r.path}
                 fill="none"
-                stroke="black"
-                strokeWidth="38"
+                stroke="#8c8c8c"
+                strokeWidth="20"
                 strokeLinecap="round"
+              />
+            ))}
+            {map.routes.map((r) => (
+              <circle
+                key={`clear-${r.id}`}
+                cx={r.end[0]}
+                cy={r.end[1]}
+                r="26"
+                fill={`url(#${id}-clear)`}
               />
             ))}
           </mask>
@@ -69,28 +115,35 @@ export default function MapFragment({
         ))}
         {known.map((t) => {
           const [x, y] = positions[t];
-          const familiarity = Math.min(map.familiarity[t] ?? 0, 8);
+          const n = map.familiarity[t] ?? 0;
+          /*
+           * Approaches 0.35 without ever arriving, so a territory keeps
+           * deepening with use and never reads as complete.
+           */
+          const ink = 0.13 + 0.22 * (n / (n + 5));
+          const faint = n < 2 ? '3 6' : undefined;
           return (
             <g key={t}>
               {t === 'fog' &&
-                [0, 15, 30].map((n) => (
+                [0, 15, 30].map((k) => (
                   <path
-                    key={n}
-                    d={`M ${x - 70} ${y + n} Q ${x - 20} ${y + n + 35} ${x + 50} ${y + n - 8}`}
+                    key={k}
+                    d={`M ${x - 70} ${y + k} Q ${x - 20} ${y + k + 35} ${x + 50} ${y + k - 8}`}
                     fill="none"
                     stroke="#777e70"
-                    strokeDasharray={familiarity < 2 ? '3 6' : undefined}
-                    opacity={0.14 + familiarity * 0.025}
+                    strokeDasharray={faint}
+                    opacity={ink}
                   />
                 ))}
               {t === 'spotlight' &&
-                [-45, -15, 15, 45].map((n) => (
+                [-45, -15, 15, 45].map((k) => (
                   <path
-                    key={n}
-                    d={`M ${x + n} ${y - 4} L ${x + n * 1.4} ${y + 55}`}
+                    key={k}
+                    d={`M ${x + k} ${y - 4} L ${x + k * 1.4} ${y + 55}`}
                     fill="none"
                     stroke="#777e70"
-                    opacity={0.15 + familiarity * 0.02}
+                    strokeDasharray={faint}
+                    opacity={ink}
                   />
                 ))}
               {t === 'loop' &&
@@ -100,63 +153,81 @@ export default function MapFragment({
                     d={`M ${x + r} ${y} A ${r} ${r} 0 1 1 ${x + r - 8} ${y - 18}`}
                     fill="none"
                     stroke="#777e70"
-                    opacity={0.17 + familiarity * 0.02}
+                    strokeDasharray={faint}
+                    opacity={ink}
                   />
                 ))}
               {t === 'water' &&
-                [0, 10, 20].map((n) => (
+                [0, 10, 20].map((k) => (
                   <path
-                    key={n}
-                    d={`M ${x - 55} ${y + n} Q ${x} ${y + n + 15} ${x + 55} ${y + n}`}
+                    key={k}
+                    d={`M ${x - 55} ${y + k} Q ${x} ${y + k + 15} ${x + 55} ${y + k}`}
                     fill="none"
                     stroke="#777e70"
-                    opacity={0.17 + familiarity * 0.02}
+                    strokeDasharray={faint}
+                    opacity={ink}
                   />
                 ))}
             </g>
           );
         })}
-        {map.routes.map((r, i) => (
-          <g key={r.id}>
-            <path
-              className={r.id === revealId ? 'draw-route' : ''}
-              pathLength="1"
-              d={r.path}
-              fill="none"
-              stroke={i === map.routes.length - 1 ? '#ac3d24' : '#7d8176'}
-              strokeWidth={i === map.routes.length - 1 ? 2 : 1}
-              opacity={i === map.routes.length - 1 ? 1 : 0.35}
-              strokeDasharray={r.stopped ? '3 4' : undefined}
-            />
-            <circle
-              cx={r.end[0]}
-              cy={r.end[1]}
-              r="3"
-              fill={i === map.routes.length - 1 ? '#ac3d24' : '#7d8176'}
-            />
-            {r.stopped && i === map.routes.length - 1 && (
-              <text
-                x={r.end[0] - 5}
-                y={r.end[1] + 18}
-                textAnchor="middle"
-                className="map-note"
-              >
-                stopped here
-              </text>
-            )}
-          </g>
-        ))}
-        {map.discoveries.map((d, i) => {
-          const r = map.routes.find((r) => d.support.includes(r.id));
+        {map.routes.map((r) => {
+          const current = r.id === latest?.id;
+          return (
+            <g key={r.id}>
+              <path
+                className={r.id === revealId ? 'draw-route' : ''}
+                pathLength="1"
+                d={r.path}
+                fill="none"
+                stroke={current ? '#ac3d24' : '#7d8176'}
+                strokeWidth={current ? 2 : 1}
+                /*
+                 * Held constant so repeated routes through the same gate
+                 * composite into a darker trunk. The depth is the repetition
+                 * itself, not a number derived from it.
+                 */
+                opacity={current ? 1 : 0.2}
+                strokeDasharray={r.stopped ? '3 4' : undefined}
+              />
+              {/* Hollow where the person stopped short, solid where they arrived. */}
+              <circle
+                cx={r.end[0]}
+                cy={r.end[1]}
+                r={current ? 3.2 : 2.2}
+                fill={r.stopped ? 'none' : current ? '#ac3d24' : '#7d8176'}
+                stroke={r.stopped ? (current ? '#ac3d24' : '#7d8176') : 'none'}
+                strokeWidth={r.stopped ? 1 : undefined}
+              />
+              {/*
+               * Not in the preview: it frames one territory, and a note from
+               * an unrelated earlier encounter arrives clipped at the crop
+               * edge, which reads as damage rather than as information.
+               */}
+              {r.stopped && current && !compact && (
+                <text
+                  x={r.end[0] - 5}
+                  y={r.end[1] + notePlacement(r.end)}
+                  textAnchor="middle"
+                  className="map-note"
+                >
+                  stopped here
+                </text>
+              )}
+            </g>
+          );
+        })}
+        {map.discoveries.map((d) => {
+          const r = map.routes.find((x) => d.support.includes(x.id));
           return r ? (
             <circle
               key={d.id}
-              className={
-                revealId === map.routes.at(-1)?.id ? 'discovery-mark' : ''
-              }
+              // Only the discovery that just resolved animates. Replaying every
+              // established one on each observation would grow them on reopening.
+              className={d.id === newDiscoveryId ? 'discovery-mark' : ''}
               cx={r.end[0]}
               cy={r.end[1]}
-              r={9 + (i % 2) * 4}
+              r={d.rule === 'doorway' ? 9 : 13}
               fill="none"
               stroke="#ac3d24"
               strokeWidth="1"
@@ -167,7 +238,7 @@ export default function MapFragment({
         })}
         {territory && (
           <path
-            d={`M 90 410 Q 170 280 ${positions[territory][0]} ${positions[territory][1] + 20}`}
+            d={`M 200 437 Q ${gates[territory][0]} ${gates[territory][1]} ${fields[territory].c[0]} ${fields[territory].c[1]}`}
             fill="none"
             stroke="#ac3d24"
             strokeWidth="1.3"
@@ -176,7 +247,7 @@ export default function MapFragment({
           />
         )}
         {known.map((t) => {
-          const [x, y] = positions[t];
+          const [x, y] = labelAnchors[t];
           return (
             <g
               key={`label-${t}`}
@@ -196,16 +267,20 @@ export default function MapFragment({
                 }
               }}
             >
+              {/*
+               * A hit target and focus ring only. The name used to sit on an
+               * opaque plate, which erased whatever route ran beneath it; it
+               * now carries its own halo instead, so routes read through.
+               */}
               <rect
                 x={x - 79}
-                y={y - 58}
+                y={y - 22}
                 width="158"
                 height="44"
                 rx="4"
-                fill="#f4f1eb"
-                fillOpacity=".82"
+                fill="transparent"
               />
-              <text x={x} y={y - 28} textAnchor="middle" className="map-label">
+              <text x={x} y={y + 8} textAnchor="middle" className="map-label">
                 {territories[t].name}
               </text>
             </g>

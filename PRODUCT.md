@@ -1,5 +1,7 @@
 # Edge — product
 
+Current release: private version 3, including optional AI. Read [HANDOFF.md](HANDOFF.md) for current status, decision precedence and verification boundaries. Sections describing the initial build are historical where explicitly labeled.
+
 ## Purpose
 Edge helps a person approach something meaningful they habitually avoid. A real attempt makes their personal map more known; evidence from attempts can become useful discoveries. Success means acting with resistance present, not feeling better, completing a timer, or spending more time in Edge.
 
@@ -17,12 +19,12 @@ Name a current situation → identify resistance and avoidance move → choose a
 - Inhabitant: recurring behavioral move, never a diagnosis, emotion-monster, coach or mascot.
 
 ## First implementation scope
-A mobile-first installable PWA: real situation entry, optional clarification, editable expedition, prediction, resumable active session, progressive reflection, evidence-grounded observation, persistent personal map, Atlas evidence and device data controls. Device-local storage must be clearly described in Me. No account is required. The app must work after initial loading without a network connection.
+A mobile-first installable PWA: real situation entry, optional clarification, editable expedition, prediction, resumable active session, progressive reflection, evidence-grounded observation, persistent personal map, Atlas evidence and device data controls. Device-local storage must be clearly described in Me. No product-account onboarding is added; the privately hosted Site requires platform sign-in. The app must work after initial loading without a network connection.
 
-The initial engine uses controlled templates and explicit user choices. It must not pretend to infer a psychological truth from keyword matches. Users can correct every suggestion and name their own action. No external model receives their situation in this phase.
+The initial engine uses controlled templates and explicit user choices. It must not pretend to infer a psychological truth from keyword matches. Users can correct every suggestion and name their own action. In version 3, explicit optional consent enables a server-side model request for the current situation and resistance choice; history and reflections remain local.
 
 ## Reward rules
-Attempted approach adds a trace even when uncomfortable or unfinished. Stopping produces an honest stopped trace; never a failure badge or punishment. Merely opening the app, waiting, or tapping Begin cannot reveal explored terrain. Equal or greater actual discomfort can still support meaningful learning. No points, streaks, levels, leaderboards, quotas, notifications by default, or territory completion percentages.
+Attempted approach adds a trace even when uncomfortable or unfinished. Stopping produces an honest stopped trace; never a failure badge or punishment. Merely opening the app, waiting, or tapping Begin cannot reveal explored terrain. Equal or greater actual discomfort can still support meaningful learning. No points, streaks, levels, leaderboards, gameplay quotas, notifications by default, or territory completion percentages. Separate server request limits control API costs.
 
 ## Scope boundaries
 No diagnostic claims, treatment promises, social feed, chat assistant, productivity task manager, forced exposure, premium gates, fabricated geography measurements or prescribed curriculum. Never encourage unsafe actions or removal of necessary safety checks. Respect a person's decision to stop or decline. Specific safeguards for a later model service require separate evaluation before launch.
@@ -37,7 +39,7 @@ No diagnostic claims, treatment promises, social feed, chat assistant, productiv
 - All core interactions work with keyboard, touch, screen reader and reduced motion.
 
 ## Deferred release work
-Secure cross-device identity and sync, validated structured model inference, broader expedition library, longitudinal discovery evaluation, richer evidence-linked map geography and inhabitants, user research and physical-device install/offline accessibility testing. These are release work, not grounds to improvise additional onboarding.
+Secure cross-device identity and sync, broader model evaluation and expedition library, longitudinal discovery evaluation, richer evidence-linked map geography and inhabitants, user research and physical-device install/offline accessibility testing. These are release work, not grounds to improvise additional onboarding.
 
 
 ## September 7 integration update

@@ -1,5 +1,7 @@
 # Edge — implementation plan
 
+Current release: private version 3, including optional AI. Read [HANDOFF.md](HANDOFF.md) for current status, decision precedence and verification boundaries. Sections describing the initial build are historical where explicitly labeled.
+
 ## 1. Consolidation
 Preserve source images, record precedence, write product/UX/design/engine contracts. Do not reopen broad design exploration. Done when every known correction maps to a test or explicit UI behavior.
 
@@ -33,10 +35,10 @@ Device-local storage and deterministic routing are provisional first-build choic
 ## Completed continuation
 Expanded reviewed action templates, independent multi-select discovery evidence, carried-discomfort discovery, stable evidence-driven map paths, territory-to-Atlas navigation and discovery marks. Added validated backup restore with merge preview, collision handling and draft/session preservation. Another-tab changes freeze saving and offer export/reload rather than silently overwriting local work.
 
-Next: secure structured inference and evaluated action coverage; cross-device identity/sync; physical-device, accessibility and visual validation; authored inhabitants once repeated behavior supports them. A live model integration still requires a configured server-side provider and its consent/retention design; no user situations are transmitted by the current app.
+Next: broader evaluated action coverage; complete browser/device/accessibility verification; then explicitly scoped sync and richer authored geography. Optional structured inference is live with consent and server-side credentials.
 
 ## Prepared server boundary
-Added validated structured inference, controlled template rendering and a guarded HTTP handler with injected verified identity and quota enforcement. It is not publicly routed or active. See INFERENCE_INTEGRATION.md for the concrete provider, consent, authentication and rollout prerequisites. Live activation is blocked by missing secure provider setup; no user input is transmitted by this work.
+Added validated structured inference, controlled template rendering and a guarded HTTP handler with injected verified identity and quota enforcement. This boundary is now routed behind private Sites authentication in version 3. See INFERENCE_INTEGRATION.md for the live provider, consent and quota contract; HANDOFF.md owns current release status.
 
 
 ## September 7 integration update

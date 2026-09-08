@@ -1,5 +1,7 @@
 # Edge — UX contract
 
+Current release: private version 3, including optional AI. Read [HANDOFF.md](HANDOFF.md) for current status, decision precedence and verification boundaries. Sections describing the initial build are historical where explicitly labeled.
+
 ## Global
 Mobile-first at 390px, resilient at 320px and on desktop. Readable central column on large screens. One primary action per step; semantic headings, visible focus, named controls, back navigation preserving drafts. No bottom navigation during the first expedition. Save the active session and reflection draft so closing Edge does not erase the experience.
 
@@ -35,7 +37,7 @@ Dominant continuous map, actual route history, known territory names, current ca
 Observations and discoveries with source situation, date, expected/actual values and behavior. Inspect supporting and contrary encounters. No KPI dashboard. Empty copy: “Your observations will appear here after you try an expedition.”
 
 ### Me
-Explain device-local storage and no transmission in the first build. Export data, delete with explicit confirmation, and practical installation guidance. No invented identity or wellbeing metrics.
+Explain device-local history and the version-3 optional AI transmission boundary. Preferences is reachable before the first encounter; AI defaults off. Export data, delete with explicit confirmation, and practical installation guidance. No invented identity or wellbeing metrics.
 
 ## Recovery and accessibility
 Storage failure must be visible; never imply a saved record if writing failed. Preserve usable in-memory state and allow export. Invalid imported/stored data cannot crash launch. Focus moves to the new screen heading; progressive sections announce politely without stealing focus. Touch targets 44px where possible; scale wraps. Reduced motion removes route animation. Offline shell must load all essential assets. Session timer, reflection and map restore after reload.

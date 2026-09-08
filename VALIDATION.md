@@ -56,6 +56,34 @@ Two things stayed in `px` on purpose: **map text**, which sits inside a `viewBox
 
 Verified afterwards at a doubled root font size across name, clarify, setup, active, return, observation, map, Atlas and Me: no horizontal overflow, no clipped text, no content behind the nav. Also verified unchanged at normal size, at 320px, and at the 195px equivalent of 200% zoom. Zero console messages throughout.
 
+## Map scrutiny pass
+
+The map had never been rendered by a test: the runner is plain Node with no DOM, so only `projectMap()` was covered, by two assertions that compared its output against itself. Scrutinising the geometry numerically over the full reachable range of every hash seed, rather than by eye, found that the map was stating things that were not true.
+
+**A one-time relocation was accepted.** The endpoint formula was wrong, so correcting it moves existing routes once. This is a deliberate correction, not the random per-render drift the design forbids; after it, positions are stable and remain a pure function of the encounter id. A golden-coordinate test now pins the exact numbers, which nothing did before, so a future change to the hash or the layout cannot silently relocate a person's whole history with the structural tests still green.
+
+Corrected:
+
+- **Endpoints landed outside their own terrain.** Every endpoint was displaced a fixed distance *below* its anchor rather than scattered around it, putting Fog marks at y 155..208 against terrain ending at 165, and Still Water at y 377..430 against waves ending at 372. Endpoints are now sampled area-uniformly in an ellipse fitted inside each territory's drawn glyph.
+- **Still Water collided with the route origin**, so an encounter there was indistinguishable from one that never left home. The origin moved to bottom-centre and the unrequested `+35` displacement penalty for stopping was dropped.
+- **Unknown endpoints were painted over** by the Spotlight label, which was drawn after the routes on an opaque plate. Names now carry a halo instead of a plate, so routes read through them.
+- **Established discoveries re-animated on every observation.** The reveal was gated on a condition that never referenced the discovery, so finishing any encounter replayed the pop for every discovery ever made. It is now gated on the discovery the last encounter actually established. Ring radius derives from the rule rather than array position, which previously made the first and third discoveries collide exactly.
+- **A stopped route halted at a fraction of the way along the curve**, which stranded 57% of stopped Fog routes inside another territory's label. It now ends where the curve first meets the field. The obvious follow-up fix, trimming a flat percentage of the curve, was also wrong: the Bézier parameter is not arc length, so it dragged marks a whole field-width back down the approach. The pullback is measured in map units.
+- **The texture saturated after 20-30 encounters** and repeated encounters drew parallel strands rather than the specified line continuity. Routes now pass through a shared per-territory gate, so repetition composites into a darkening trunk. This needs no sibling awareness, so every route's geometry stays a pure function of its own id.
+- **The compact setup preview cropped away everything below y 343** and wasted 43% of its width, which for Still Water meant a label and nothing else. Each territory now has its own viewBox window.
+- **The map announced "Select a territory to see its encounters" on screens where nothing was selectable.** That sentence now appears only where `onTerritory` is passed, and the description names the route count, the most recent territory and whether it was stopped.
+- The territory focus ring rendered at ~1.28 CSS px under `outline: none`; it is now 2.86.
+
+Found by the browser pass, after the numeric work was already green:
+
+- **The "stopped here" note printed straight through The Spotlight.** The tests checked marks against labels but not the note, and the note is the only place the map says a word about what happened. Measured from the rendered SVG: a 22×11 unit overlap. The note now tries below, then above, then further out, and a test sweeps every reachable mark in every territory against every name.
+- **The label extents used by the tests were guesses, and wrong in both directions** — too wide, and 1.3 units too short to cover ink below the anchor. They are now measured from the rendered SVG and exported once, shared by the placement code and the tests rather than duplicated as magic numbers.
+- The note is now haloed like the labels, since its own route ran under it, and it is suppressed in the compact preview, where a note from an unrelated earlier encounter arrived clipped at the crop edge.
+
+Verified against the packaged Worker preview with synthetic data: all five territories with attempted and stopped encounters; Still Water on both the map and the preview; a discovery establishing and then not re-animating on the following encounter; roughly 40 encounters, where the texture still reads as partly unknown and marks stay distinguishable; the accessibility tree on setup, observation and map; keyboard territory selection and the focus ring. Reduced motion was checked for the failure mode where a draw-on animation leaves its element stuck in its hidden initial state: both the route and the discovery ring render fully visible with animations disabled. Zero console messages throughout. Test data was cleared afterwards.
+
+Map tests went from 2 assertions to 11 tests; the suite is at 54.
+
 ## Outstanding verification and limitations
 
 - Complete signed-in **AI-enabled** return → observation → map journey against the hosted deployment. The local-path journey is verified; the model-backed setup step is verified only as far as the prediction.
@@ -63,6 +91,8 @@ Verified afterwards at a doubled root font size across name, clarify, setup, act
 - Verification with an actual screen reader (VoiceOver/NVDA). The accessibility tree and keyboard flow were checked programmatically, which catches missing names and broken semantics but not announcement quality or reading order in practice.
 - The text-resize pass was verified by raising the root font size, which reproduces what a browser text-size preference does to `rem`-based CSS. It does not reproduce the `em` media query, whose unit tracks the browser default directly. Confirm the scale's six/eleven-column switch against a real browser font-size setting.
 - Visual comparison against the saved Stitch references was done by eye for the seven states and matches on composition, type hierarchy, and palette. It is not a pixel diff.
+- The label and note ink extents in `lib/map.ts` were measured from the rendered SVG at the current font, sizes and territory names. They are constants, not computed at runtime, so changing the map type or renaming a territory requires remeasuring them; the collision tests are only as honest as those numbers.
+- Map density was verified at roughly 40 synthetic encounters. Behaviour at several hundred is untested.
 - Broad action quality, language/cultural coverage, and longitudinal usefulness. Six live examples verify a narrow integration boundary, not general reliability or efficacy.
 - The optional WebMCP situation-staging tool was advertised/registered in the browser but was not invoked end to end. It must not begin an encounter itself.
 - Discovery thresholds are provisional. Additional patterns, inhabitants, richer authored map changes, and secondary-territory geography are not completed features.

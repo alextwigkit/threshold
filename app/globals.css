@@ -391,18 +391,35 @@ fieldset.choices {
   font-size: 24px;
   fill: #40443b;
   letter-spacing: -1px;
+  /*
+   * The name carries its own halo instead of sitting on an opaque plate. A
+   * plate erased whatever route ran beneath it; a halo lets the route read
+   * through, and it cannot collide with anything by being in the wrong place.
+   */
+  paint-order: stroke fill;
+  stroke: #f4f1eb;
+  stroke-width: 5px;
+  stroke-linejoin: round;
 }
 .map-note {
   font-size: 11px;
   fill: #656b5e;
+  /* Placed clear of the names, but its own route still runs under it. */
+  paint-order: stroke fill;
+  stroke: #f4f1eb;
+  stroke-width: 3px;
+  stroke-linejoin: round;
 }
+/*
+ * The preview frames the one territory being entered, using its own viewBox
+ * window. A portrait map cannot fill a wide short slot without either letterbox
+ * bars or losing its bottom quarter, and it used to silently lose the quarter.
+ */
 .compact {
-  height: 140px;
   margin-bottom: 16px;
 }
 .compact svg {
-  height: 230px;
-  transform: translateY(-28px);
+  height: auto;
 }
 .territory-setup {
   text-align: center;
@@ -641,7 +658,10 @@ details p {
 }
 .territory-link:focus-visible rect {
   stroke: var(--accent);
-  stroke-width: 1.5;
+  /* User-space units, and the map draws at roughly 0.85, so 1.5 landed near a
+   * single hairline pixel. The group sets outline: none, so this is the only
+   * focus indicator there is. */
+  stroke-width: 3;
 }
 .draw-route {
   animation: draw-path 700ms ease-out both;

@@ -1,20 +1,23 @@
 # Edge
 
-An offline-capable, mobile-first PWA that turns real-world approach into a personal map.
+An offline-capable, mobile-first PWA that turns meaningful real-world approach into a personal map.
 
-Start with [SOURCE_OF_TRUTH.md](SOURCE_OF_TRUTH.md). The approved latest Stitch screens are preserved in [references/](references/). Product constraints live in PRODUCT.md, UX.md, DESIGN.md and BEHAVIOR_ENGINE.md; the next phases are in IMPLEMENTATION_PLAN.md.
+**Start with [HANDOFF.md](HANDOFF.md).** It preserves the original conversation, settled decisions, current release, known limitations, and next work. [SOURCE_OF_TRUTH.md](SOURCE_OF_TRUTH.md) consolidates product direction. The owning constraints are [PRODUCT.md](PRODUCT.md), [UX.md](UX.md), [DESIGN.md](DESIGN.md), and [BEHAVIOR_ENGINE.md](BEHAVIOR_ENGINE.md). The seven approved Stitch screens are in [references/](references/).
 
 ## Current implementation
-A complete device-local first-use loop: situation → optional clarification → editable expedition + prediction → real-world action → progressive reflection → observation → map. Atlas preserves encounter evidence and two provisional repeated-evidence discoveries. Me provides export, deletion and installation guidance.
 
-The engine uses reviewed templates and explicit correction. It is intentionally not a finished open-ended inference service. Unsupported situations require the user to supply a concrete action. Only actual reported attempts produce map traces. No production user data is seeded.
+Private version 3 is live at [Edge](https://edge-personal-atlas.thenewdeal.chatgpt.site/). The device-local loop is situation → optional clarification → editable expedition and prediction → real-world action → progressive reflection → observation → map. Atlas preserves encounter evidence and two provisional repeated-evidence discoveries. Me provides export, reviewed restore, deletion, installation guidance, and optional AI consent.
+
+AI suggestions are live and off by default. A server-only OpenAI integration selects reviewed action templates from the current situation and confirmed resistance. Credentials are configured; do not repeat key setup. Observations, discoveries, and Today's Edge remain deterministic and local. See [INFERENCE_INTEGRATION.md](INFERENCE_INTEGRATION.md) for the privacy, authentication, validation, and quota boundaries.
+
+Only actual reported attempts produce approach traces. No production user history is seeded. The engine and map remain subject to the verification and quality gaps in [VALIDATION.md](VALIDATION.md) and [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md).
 
 ## Development
-Requires Node 22.13 or newer. Run `npm install`, `npm run dev`. `npm test` runs behavioral rules. `npx tsc --noEmit` checks types. `npm run build` creates static output in dist/client and generates the offline service worker from the exact built asset list. The service worker registers only in production.
 
-Serve dist/client over HTTPS (or localhost) to test installation and offline behavior. Device data belongs to its origin: local preview and hosted preview have separate maps. Export is a portable JSON record; restore merges encounter history after review; sync is not implemented yet.
+Requires Node 22.13 or newer. Preserve the lockfile and use `npm ci`, then `npm run dev`. Run `npm test` for automated checks and `npx --no-install tsc --noEmit` for types.
 
-See VALIDATION.md for verified checks and outstanding release work.
+`npm run build` creates the static interface in `dist/client`, generates its offline service worker, and packages the separate API Worker. `npm run start` previews the packaged Worker and assets. See the handoff for runtime paths and local preview environment settings. The service worker registers only in production; installation requires HTTPS or localhost. Static asset serving alone does not test the API integration.
 
-## Prepared model integration
-The server-only structured inference adapter and guarded handler are implemented and tested with injected provider responses. They are not routed or imported into the published client. See [INFERENCE_INTEGRATION.md](INFERENCE_INTEGRATION.md) for key setup, consent, authenticated routing, durable quotas and live evaluation before activation.
+Device data belongs to its origin: local and hosted previews have separate maps. Export is portable JSON; restore merges encounter history after review. Cross-device sync is not implemented. D1 stores API quota counters, not the Atlas.
+
+The parent `edge-project.zip` is a portable source snapshot. Credentials, dependencies, and build output are excluded. Documentation changes after the published source commit do not represent a new live release.

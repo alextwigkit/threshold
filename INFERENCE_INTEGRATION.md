@@ -1,4 +1,4 @@
-# AI suggestions — implemented, awaiting hosted configuration
+# AI suggestions — live in private version 3
 
 Edge retains its static, installable interface and adds a small Cloudflare Worker for `/api/suggestion`. No RSC server or server actions are exposed. The default Worker fetch handler serves compiled assets through ASSETS and routes only the suggestion endpoint.
 
@@ -22,8 +22,8 @@ The API key must be a Sites secret named OPENAI_API_KEY. OPENAI_MODEL is gpt-5.4
 - Six synthetic live evaluations pass after refining template instructions and binding the schema to confirmed resistance: proposal, ordinary reply, formatting loop, ambiguous situation, safety-critical check and explicit correction. Each completed in roughly one second in the final run. This is a bounded smoke evaluation, not a claim of universal reliability.
 - Type checking and production build pass. Packaged Worker smoke checks return HTTP 200 for the interface and HTTP 401 for an unauthenticated suggestion request.
 - Runtime dependency advisories were resolved. Four remaining moderate advisories belong to the Drizzle migration tool's legacy development dependency; its development server is not used or deployed.
-- Physical-device installation, screen-reader and browser interaction QA remain unperformed.
-- Hosted secret configuration, private publication and authenticated hosted API smoke check remain pending. Automatic approval review rejected an attempted temporary private-key transfer method; no API secret was exposed or uploaded through that method.
+- Signed-in browser verification passed for opt-in, a synthetic situation, model suggestion and prediction selection (including zero). No encounter was recorded. Complete return-flow browser QA, physical-device installation and screen-reader validation remain outstanding.
+- Hosted secret configuration and private publication succeeded. The signed-in browser request worked. A gate-bypass token is identity-less and correctly received 401; do not treat that as a provider failure. See HANDOFF.md for exact release IDs.
 
 ## Privacy disclosure
 Requests use store:false. API data is not used for training by default; abuse-monitoring content can be retained up to 30 days, with exceptions. The opt-in links to [OpenAI data controls](https://developers.openai.com/api/docs/guides/your-data). Do not promise zero retention.

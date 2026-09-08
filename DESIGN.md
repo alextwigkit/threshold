@@ -1,5 +1,7 @@
 # Edge — design contract
 
+Current release: private version 3, including optional AI. Read [HANDOFF.md](HANDOFF.md) for current status, decision precedence and verification boundaries. Sections describing the initial build are historical where explicitly labeled.
+
 ## Foundation
 Use the recovered latest Stitch screens in references/ as the visual foundation. Contemporary Personal Atlas: warm neutral ground, editorial serif, humanist sans, fine charcoal linework, quiet terracotta. This is the locked direction, not a starting point for another redesign.
 

@@ -1,12 +1,14 @@
 # Edge — behavior engine
 
+Current release: private version 3, including optional AI. Read [HANDOFF.md](HANDOFF.md) for current status, decision precedence and verification boundaries. Sections describing the initial build are historical where explicitly labeled.
+
 ## Governing rule
 The model should reason; the product should speak. Keep interpretation, candidate selection, evidence evaluation and map projection separate from rendering. Never optimize for discomfort reduction, time in app or forced progression.
 
 Pipeline: situation → resistance → avoidance move → primary/secondary territory → smallest meaningful approach → calibration → expedition → prediction → encounter → observation → repeated evidence → discovery.
 
 ## Input and decision contract
-Input: situation text, optional confirmed resistance, user-edited action, recent encounters, current capacity and last recommendation. Output: version, confidence, needsClarification, resistance code, primary territory or null, secondary territories, template ID, action slots, duration, reason code and source encounter IDs. Enum validation, length limits and safe defaults precede rendering. A later model provider must return this schema and cannot create territory names, reward claims or arbitrary UI labels.
+Input: situation text, optional confirmed resistance, user-edited action, recent encounters, current capacity and last recommendation. Output: version, confidence, needsClarification, resistance code, primary territory or null, secondary territories, template ID, action slots, duration, reason code and source encounter IDs. Enum validation, length limits and safe defaults precede rendering. This is the conceptual engine contract. The shipping provider receives a deliberately narrower input and returns the schema in server/inference.ts; it cannot create territory names, reward claims or arbitrary UI labels. History remains local.
 
 User correction outranks an inference. Do not force an unknown case into the closest family. The first local implementation may use lexical hints only as tentative routing; ambiguous cases ask for a choice. It must disclose its local nature in Me, not inject technical language into the action flow.
 
@@ -17,7 +19,7 @@ User correction outranks an inference. Do not force an unknown case into the clo
 | spotlight | The Spotlight | Evaluation or visibility | Withholding a useful question or draft |
 | loop | The Open Loop | Incompleteness, checking, closure | Rechecking after adequate functional review |
 | water | Still Water | Staying with an unpleasant internal state | Distraction or immediate fixing |
-| null | Unclassified | Insufficient or different information | Ask user; no invented label |
+| unknown | Unclassified | Insufficient or different information | Ask user; no invented label |
 
 A situation can have multiple memberships. Reveal a secondary region only when the user confirms its relevance or a real encounter supplies evidence. “The Friction” is not included as a defined territory because the source did not finish that proposal. Inhabitants name repeated moves, never diagnoses or anxiety itself.
 
@@ -56,14 +58,14 @@ Each claim cites its encounter ID and scoped wording. No global claims from one 
 If a noticing code contradicts behavior, exclude that claim rather than silently rewriting the report. Numeric expected/actual difference is descriptive, never a score.
 
 ## Discovery policy — provisional, test before release
-Use the last six comparable attempted encounters in a territory. Require at least four encounters on at least three distinct local dates, at least three explicit supporting observations, and at least 75% support among eligible encounters. A single session or many repeats in one day cannot produce a discovery. Store all evaluated encounter IDs, supporting IDs, contrary IDs, rule version and creation date.
+Use windows of up to six comparable attempted or stopped encounters in a territory. Stopped outcomes do not support staying/continuing claims. Require at least four encounters on at least three distinct local dates, at least three explicit supporting observations, and at least 75% support among eligible encounters. A single session or many repeats in one day cannot produce a discovery. Retain evaluated encounter IDs, supporting IDs, contrary IDs, rule and establishment date in the derived discovery. Current code reconstructs this from saved encounters rather than persisting a separate discovery object.
 
 “The Doorway Is Worse Than the Room” requires explicit starting-versus-continuing noticing; prediction error alone cannot establish it. “You Can Act While Uncomfortable” requires actual discomfort and compatible reported approach. Use tentative wording (“Across these encounters…”), not diagnosis or permanence. With mixed evidence, keep observations and withhold the discovery. New contradictory evidence updates the evidence view and confidence; do not erase the original history. No rewards for selectively favorable reporting.
 
 ## Map projection
 Map state is derived from encounters, not clicks. Not-started adds nothing. Attempted/stopped adds one stable trace attached to the encounter ID. Familiarity grows with eligible evidence independent of discomfort delta. A discovery resolves a feature once per rule/territory, with evidence references. No invented history, completion percentages or rigid unlock chain.
 
-## Future inference service
+## Inference service contract
 Keep secrets server-side; validate structured responses and treat user text as data. Include timeout/error/offline paths to editable reviewed templates. Consent and retention must be specified before transmitting sensitive situations. Evaluate ambiguity, negation, multi-territory cases, unsafe requests, cultural context, contradictory evidence, overgeneralization and user correction. A keyword prototype cannot pass as this service.
 
 ## Required tests
