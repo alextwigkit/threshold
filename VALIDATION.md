@@ -41,12 +41,27 @@ Found by walking the flow with the accessibility tree rather than screenshots, a
 
 These are semantic and spacing corrections only. No screen was recomposed and no copy principle changed.
 
+## Text resize pass
+
+Font sizes were authored in `px`, so raising the browser's default font size did nothing at all: the app was immune to text-only resize (WCAG 1.4.4). All 35 `font-size` declarations are now `rem`, and everything the enlarged text then broke was fixed:
+
+- **The action textarea clipped its last lines.** A textarea scrolls instead of growing, so a fixed height hides the end of a long step, which is the single most important string on the setup screen. All textareas now fit themselves to their content after each render and on resize, and their `min-height` floors moved to `rem`. The manual resize handle was removed, since a self-sizing box that snaps back on the next keystroke is worse than no handle.
+- **The timer circle stayed 200px while its digits doubled**, so `05:00` burst out of the ring. The circle is now sized in `rem` and scales with the digits.
+- **Observation and discovery headings overflowed the viewport**, because a single long serif word ("Uncomfortable,") cannot fit 342px at 60px type. `overflow-wrap: break-word` now applies from `body` down. It only engages when a word genuinely cannot fit, so nothing moves at normal size, and it also protects against long words in whatever the person types.
+- **The fixed bottom nav grows with its labels, but the padding reserving space for it did not**, which would have hidden the end of Map, Atlas and Me behind it. That clearance is now `rem` too.
+- The `min-width: 500px` query deciding whether the 0–10 scale is six or eleven columns is now `31.25em`, because whether eleven numbers fit depends on the text size, not the viewport alone.
+- Radio and checkbox indicators are `rem`, so a control keeps pace with the label beside it.
+
+Two things stayed in `px` on purpose: **map text**, which sits inside a `viewBox` and must stay proportionate to the geometry it labels, and **44px touch targets**, which are a physical minimum rather than a text-relative one.
+
+Verified afterwards at a doubled root font size across name, clarify, setup, active, return, observation, map, Atlas and Me: no horizontal overflow, no clipped text, no content behind the nav. Also verified unchanged at normal size, at 320px, and at the 195px equivalent of 200% zoom. Zero console messages throughout.
+
 ## Outstanding verification and limitations
 
 - Complete signed-in **AI-enabled** return → observation → map journey against the hosted deployment. The local-path journey is verified; the model-backed setup step is verified only as far as the prediction.
 - Physical iOS/Android installation, offline relaunch, and real background/lock-screen timer behavior. Reload-resume is verified, which is a proxy, not the real thing.
 - Verification with an actual screen reader (VoiceOver/NVDA). The accessibility tree and keyboard flow were checked programmatically, which catches missing names and broken semantics but not announcement quality or reading order in practice.
-- Text-only resize: all font sizes are authored in `px`, so a reader who raises their browser's default font size gets no change. Page zoom does scale correctly, and reflow at 320px and 200% is clean. Converting the scale to `rem` would fix this but is a broad visual change that should be a deliberate, separately reviewed pass against the Stitch references.
+- The text-resize pass was verified by raising the root font size, which reproduces what a browser text-size preference does to `rem`-based CSS. It does not reproduce the `em` media query, whose unit tracks the browser default directly. Confirm the scale's six/eleven-column switch against a real browser font-size setting.
 - Visual comparison against the saved Stitch references was done by eye for the seven states and matches on composition, type hierarchy, and palette. It is not a pixel diff.
 - Broad action quality, language/cultural coverage, and longitudinal usefulness. Six live examples verify a narrow integration boundary, not general reliability or efficacy.
 - The optional WebMCP situation-staging tool was advertised/registered in the browser but was not invoked end to end. It must not begin an encounter itself.
