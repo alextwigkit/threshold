@@ -228,6 +228,11 @@ h1:focus {
   gap: 8px;
   margin: 20px 0 28px;
 }
+fieldset.choices {
+  border: 0;
+  padding: 0;
+  min-inline-size: 0;
+}
 .choice {
   display: flex;
   align-items: center;
@@ -287,7 +292,7 @@ h1:focus {
   border-top: 1px solid var(--border);
   margin: 24px 0;
 }
-.scale-field legend {
+.scale-legend {
   float: left;
   font-size: 17px;
   font-weight: 500;
@@ -327,9 +332,13 @@ h1:focus {
 .scale-ends {
   display: flex;
   justify-content: space-between;
+  gap: 12px;
   font-size: 12px;
   color: #73776e;
   margin-top: 9px;
+}
+.scale-ends span:last-child {
+  text-align: right;
 }
 .duration {
   display: flex;
@@ -338,6 +347,11 @@ h1:focus {
   gap: 12px;
   color: var(--muted-foreground);
   font-size: 14px;
+}
+.data-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
 }
 .duration .text-button {
   font-size: 14px;
@@ -427,7 +441,8 @@ h1:focus {
   margin: 42px 0 0;
 }
 .timer-note::before {
-  content: '●';
+  /* Empty alt text keeps the decorative dot out of the accessible name. */
+  content: '●' / '';
   color: var(--accent);
   margin-right: 8px;
 }

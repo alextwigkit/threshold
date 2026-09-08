@@ -49,38 +49,44 @@ const urgeChoices: [Urge, string][] = [
   ['stopped', 'Yes, and I stopped'],
 ];
 function Scale({
+  id,
   label,
   value,
   onChange,
 }: {
+  id: string;
   label: string;
   value: number | null;
   onChange: (n: number) => void;
 }) {
   return (
-    <fieldset className="scale-field">
-      <legend>{label}</legend>
+    <div className="scale-field">
+      <div className="scale-legend" id={`${id}-label`}>
+        {label}
+      </div>
       <RadioGroup
         className="scale"
         value={value === null ? '' : String(value)}
         onValueChange={(v) => onChange(Number(v))}
-        aria-label={label}
+        aria-labelledby={`${id}-label`}
+        aria-describedby={`${id}-ends`}
       >
         {Array.from({ length: 11 }, (_, n) => (
           <label
             className={`scale-choice ${value === n ? 'selected' : ''}`}
             key={n}
           >
-            <RadioGroupItem value={String(n)} aria-label={String(n)} />
+            <RadioGroupItem value={String(n)} />
             <span>{n}</span>
           </label>
         ))}
       </RadioGroup>
-      <div className="scale-ends">
-        <span>No discomfort</span>
-        <span>Very uncomfortable</span>
+      {/* The scale wraps to two rows on narrow screens, so each end names its own number. */}
+      <div className="scale-ends" id={`${id}-ends`}>
+        <span>0 · No discomfort</span>{' '}
+        <span>10 · Very uncomfortable</span>
       </div>
-    </fieldset>
+    </div>
   );
 }
 function Primary({
@@ -542,11 +548,14 @@ export default function Home() {
               ? 'Sounds like the hard part may be acting before you know exactly what you’re doing.'
               : 'What feels like the hard part?',
           )}
-          <p className="eyebrow quiet">What feels closest?</p>
+          <p className="eyebrow quiet" id="resistance-label">
+            What feels closest?
+          </p>
           <RadioGroup
             className="choices"
             value={s.resistance}
             onValueChange={(v) => patch({ resistance: v as Resistance })}
+            aria-labelledby="resistance-label"
           >
             {[
               ...resistanceChoices,
@@ -648,6 +657,7 @@ export default function Home() {
             </button>
           </div>
           <Scale
+            id="expected"
             label="How uncomfortable do you expect this to be?"
             value={s.prediction}
             onChange={(prediction) => patch({ prediction })}
@@ -676,6 +686,7 @@ export default function Home() {
           {title(active.title)}
           <div
             className="timer"
+            role="timer"
             aria-label={`${Math.floor(remaining(active, now) / 60)} minutes ${remaining(active, now) % 60} seconds remaining`}
           >
             {Math.floor(remaining(active, now) / 60)
@@ -702,17 +713,19 @@ export default function Home() {
         <section>
           {title('What happened?')}
           <Scale
+            id="actual"
             label="How uncomfortable was it actually?"
             value={active.actual}
             onChange={(actual) => updateSession({ actual })}
           />
           {active.actual !== null && (
             <section className="reveal">
-              <h2>Did an urge to avoid or leave show up?</h2>
+              <h2 id="urge-label">Did an urge to avoid or leave show up?</h2>
               <RadioGroup
                 className="choices"
                 value={active.urge}
                 onValueChange={(v) => updateSession({ urge: v as Urge })}
+                aria-labelledby="urge-label"
               >
                 {urgeChoices.map(([v, l]) => (
                   <label
@@ -728,9 +741,15 @@ export default function Home() {
           )}
           {active.actual !== null && active.urge && (
             <section className="reveal">
-              <h2>What did you notice?</h2>
-              <p className="optional">Choose any that fit.</p>
-              <div className="choices">
+              <h2 id="noticing-label">What did you notice?</h2>
+              <p className="optional" id="noticing-hint">
+                Choose any that fit.
+              </p>
+              <fieldset
+                className="choices"
+                aria-labelledby="noticing-label"
+                aria-describedby="noticing-hint"
+              >
                 {noticingChoices.map(([v, l]) => (
                   <label
                     key={v}
@@ -747,7 +766,7 @@ export default function Home() {
                     />
                   </label>
                 ))}
-              </div>
+              </fieldset>
               {active.notices.includes('other') && (
                 <label className="field-label">
                   What else did you notice?{' '}
@@ -971,25 +990,27 @@ export default function Home() {
             Clearing browser data will remove it. Save a copy whenever you want
             to keep a backup.
           </p>
-          <button className="text-button" onClick={exportData}>
-            Export my data
-          </button>
-          <input
-            ref={fileInput}
-            type="file"
-            accept=".json,application/json"
-            hidden
-            onChange={(e) => {
-              void stageBackup(e.target.files?.[0]);
-              e.target.value = '';
-            }}
-          />
-          <button
-            className="text-button"
-            onClick={() => fileInput.current?.click()}
-          >
-            Restore a backup
-          </button>
+          <div className="data-actions">
+            <button className="text-button" onClick={exportData}>
+              Export my data
+            </button>
+            <input
+              ref={fileInput}
+              type="file"
+              accept=".json,application/json"
+              hidden
+              onChange={(e) => {
+                void stageBackup(e.target.files?.[0]);
+                e.target.value = '';
+              }}
+            />
+            <button
+              className="text-button"
+              onClick={() => fileInput.current?.click()}
+            >
+              Restore a backup
+            </button>
+          </div>
           {restoreError && (
             <p className="error" role="alert">
               {restoreError}
