@@ -74,3 +74,8 @@ Prediction zero accepted; missing prediction rejected; correction changes routin
 - Reviewed actions cover drafting, replying, asking, beginning a conversation and stopping an extra checking pass. Retain user edits when offering a repeat. No automatic action for an ambiguous high-stakes decision.
 - Doorway and acting-while-uncomfortable evidence are evaluated independently from compatible noticing selections; the displayed primary observation cannot discard additional evidence.
 - Discovery thresholds apply separately to each family. A carried-discomfort discovery requires an attempted outcome, actual discomfort above zero, and an explicit compatible noticing response. Lower discomfort is never required.
+
+
+## September 7 integration update
+
+Optional AI suggestions preserve the approved screens and first-use flow. The current contract, privacy disclosure, bounded request limits and validation status are recorded in [INFERENCE_INTEGRATION.md](INFERENCE_INTEGRATION.md). AI remains off until the user opts in; observations, discoveries and map evidence remain local and deterministic.

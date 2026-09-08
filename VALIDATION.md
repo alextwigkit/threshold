@@ -30,3 +30,8 @@ Added coverage for independent multi-select evidence, duplicate suppression, con
 
 ## Prepared live-inference boundary
 Twelve additional mocked-provider tests cover consent/schema validation, grounded template slots, user correction precedence, minimal request data, refusal/truncation, timeouts, bounded payloads, authentication/origin checks, missing quotas and fail-closed fallback. Type checking passes. No live provider calls were made; the published app remains version 2 and device-local until activation prerequisites in INFERENCE_INTEGRATION.md are met.
+
+
+## September 7 integration update
+
+Optional AI suggestions preserve the approved screens and first-use flow. The current contract, privacy disclosure, bounded request limits and validation status are recorded in [INFERENCE_INTEGRATION.md](INFERENCE_INTEGRATION.md). AI remains off until the user opts in; observations, discoveries and map evidence remain local and deterministic.

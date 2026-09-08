@@ -42,3 +42,8 @@ Compare each implemented screen with its reference for hierarchy, spacing, palet
 
 ## Evidence projection continuation
 Keep route geometry stable by encounter ID, including when older history is restored. Clear texture only around real attempted routes. Draw settled paths once during the observation reveal, with reduced-motion fallback. Mark qualified discoveries with a restrained evidence-linked map mark, not a fictional named landmark. Known territory labels are accessible links to that territory's Atlas evidence.
+
+
+## September 7 integration update
+
+Optional AI suggestions preserve the approved screens and first-use flow. The current contract, privacy disclosure, bounded request limits and validation status are recorded in [INFERENCE_INTEGRATION.md](INFERENCE_INTEGRATION.md). AI remains off until the user opts in; observations, discoveries and map evidence remain local and deterministic.

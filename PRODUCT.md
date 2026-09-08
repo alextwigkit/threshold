@@ -38,3 +38,8 @@ No diagnostic claims, treatment promises, social feed, chat assistant, productiv
 
 ## Deferred release work
 Secure cross-device identity and sync, validated structured model inference, broader expedition library, longitudinal discovery evaluation, richer evidence-linked map geography and inhabitants, user research and physical-device install/offline accessibility testing. These are release work, not grounds to improvise additional onboarding.
+
+
+## September 7 integration update
+
+Optional AI suggestions preserve the approved screens and first-use flow. The current contract, privacy disclosure, bounded request limits and validation status are recorded in [INFERENCE_INTEGRATION.md](INFERENCE_INTEGRATION.md). AI remains off until the user opts in; observations, discoveries and map evidence remain local and deterministic.

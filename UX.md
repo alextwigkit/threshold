@@ -44,3 +44,8 @@ Storage failure must be visible; never imply a saved record if writing failed. P
 Me offers Restore a backup next to Export. Parse and validate locally before staging a review. A confirmation summarizes encounters to add and duplicate IDs to skip. Merge without deleting local records or replacing current drafts/active sessions. Local copies win ID conflicts. Unsupported, corrupt or oversized files leave existing data untouched. A restore is not counted as a new real-world encounter.
 
 Known territory labels on the map open the corresponding Atlas history. Keyboard and touch both work. The Atlas filter can be cleared to show all history. New discoveries may use the existing observation reveal screen with evidence drawn from the eligible encounters; no additional first-use screen is added.
+
+
+## September 7 integration update
+
+Optional AI suggestions preserve the approved screens and first-use flow. The current contract, privacy disclosure, bounded request limits and validation status are recorded in [INFERENCE_INTEGRATION.md](INFERENCE_INTEGRATION.md). AI remains off until the user opts in; observations, discoveries and map evidence remain local and deterministic.

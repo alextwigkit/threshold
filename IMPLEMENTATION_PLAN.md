@@ -37,3 +37,8 @@ Next: secure structured inference and evaluated action coverage; cross-device id
 
 ## Prepared server boundary
 Added validated structured inference, controlled template rendering and a guarded HTTP handler with injected verified identity and quota enforcement. It is not publicly routed or active. See INFERENCE_INTEGRATION.md for the concrete provider, consent, authentication and rollout prerequisites. Live activation is blocked by missing secure provider setup; no user input is transmitted by this work.
+
+
+## September 7 integration update
+
+Optional AI suggestions preserve the approved screens and first-use flow. The current contract, privacy disclosure, bounded request limits and validation status are recorded in [INFERENCE_INTEGRATION.md](INFERENCE_INTEGRATION.md). AI remains off until the user opts in; observations, discoveries and map evidence remain local and deterministic.

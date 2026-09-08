@@ -32,6 +32,7 @@ import {
   type Urge,
 } from '@/lib/engine';
 import MapFragment from './map-fragment';
+import { CONSENT_KEY, CONSENT_VERSION, SuggestionRequest } from '@/lib/suggestions';
 import {
   KEY,
   initial,
@@ -102,6 +103,11 @@ function Primary({
 }
 export default function Home() {
   const [s, setS] = useState<Saved>(initial);
+  const [aiEnabled, setAiEnabled] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [suggestionMessage, setSuggestionMessage] = useState('');
+  const suggestionRequest = useRef(new SuggestionRequest());
+  const requestEpoch = useRef(0);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
   const [now, setNow] = useState(0);
@@ -118,6 +124,7 @@ export default function Home() {
   const patch = (p: Partial<Saved>) => setS((v) => ({ ...v, ...p }));
   useEffect(() => {
     try {
+      setAiEnabled(localStorage.getItem(CONSENT_KEY) === CONSENT_VERSION);
       const raw = localStorage.getItem(KEY);
       if (raw) {
         rawUnreadable.current = raw;
@@ -139,7 +146,12 @@ export default function Home() {
     };
     window.addEventListener('beforeinstallprompt', prompt);
     const changedElsewhere = (event: StorageEvent) => {
+      if (event.key === CONSENT_KEY) {
+        suggestionRequest.current.cancel(); setBusy(false);
+        setAiEnabled(event.newValue === CONSENT_VERSION); return;
+      }
       if (event.key !== KEY) return;
+      suggestionRequest.current.cancel(); setBusy(false);
       saveBlocked.current = true;
       setError(
         'Your map changed in another tab. Export any unfinished work here, then reload to use the latest map.',
@@ -224,13 +236,54 @@ export default function Home() {
     } catch {}
     return () => lifecycle.abort();
   }, [s.session]);
-  const go = (screen: Screen) => patch({ screen });
+  useEffect(() => {
+    suggestionRequest.current.cancel(); setBusy(false);
+  }, [s.situation, s.resistance, s.custom, s.screen]);
+  useEffect(() => () => suggestionRequest.current.cancel(), []);
+  const go = (screen: Screen) => { suggestionRequest.current.cancel(); setBusy(false); setSuggestionMessage(''); patch({ screen }); };
+  function changeAi(enabled: boolean) {
+    suggestionRequest.current.cancel(); setBusy(false);
+    try {
+      if (enabled) localStorage.setItem(CONSENT_KEY, CONSENT_VERSION);
+      else localStorage.removeItem(CONSENT_KEY);
+      setAiEnabled(enabled);
+    } catch { setError('This preference could not be saved. AI suggestions remain off.'); setAiEnabled(false); }
+  }
+  async function requestStep(confirmed: Resistance | null) {
+    if (!aiEnabled || !navigator.onLine) return false;
+    const epoch = ++requestEpoch.current;
+    setBusy(true); setSuggestionMessage('');
+    const situation = s.situation.trim();
+    try {
+      const result = await suggestionRequest.current.run(situation, confirmed);
+      if (!result) return true;
+      let draft = result.candidate;
+      const local = candidate(situation, draft.resistance, s.encounters);
+      // Previous edits and smaller-dose rules remain local and outrank a new suggestion.
+      if (local.userAction) draft = local;
+      else if (local.minutes < draft.minutes) draft = { ...draft, minutes: local.minutes,
+        action: draft.action.replace(/\b3 minutes\b/g, `${local.minutes} minute${local.minutes === 1 ? '' : 's'}`) };
+      patch({ draft: { ...draft, resistanceNote: s.custom }, resistance: draft.resistance,
+        prediction: null, predictionNote: '', screen: confirmed ? 'setup' : result.needsClarification ? 'clarify' : 'setup' });
+      if (result.source === 'local') setSuggestionMessage('Suggestions are unavailable right now. You can choose your own step.');
+      return true;
+    } catch (e) {
+      setSuggestionMessage(e instanceof Error && e.message === 'limit'
+        ? 'You’ve reached the suggestion limit. You can still choose your own step.'
+        : 'Suggestions are unavailable right now. You can still choose your own step.');
+      const draft = { ...candidate(situation, confirmed ?? 'other'), title: 'Choose Your Own Step', action: '' };
+      patch({ draft, resistance: confirmed ?? 'other', prediction: null, predictionNote: '', screen: 'setup' });
+      return true;
+    } finally { if (epoch === requestEpoch.current) setBusy(false); }
+  }
+
   const title = (text: string) => (
     <h1 ref={heading} tabIndex={-1}>
       {text}
     </h1>
   );
-  function resolve() {
+  async function resolve() {
+    if (await requestStep(null)) return;
     const guess = infer(s.situation);
     const draft = candidate(s.situation.trim(), guess.resistance, s.encounters);
     patch({
@@ -241,7 +294,8 @@ export default function Home() {
       screen: guess.confident ? 'setup' : 'clarify',
     });
   }
-  function setup() {
+  async function setup() {
+    if (await requestStep(s.resistance)) return;
     patch({
       draft: {
         ...candidate(s.situation.trim(), s.resistance, s.encounters),
@@ -434,6 +488,7 @@ export default function Home() {
           s.screen !== 'name' &&
           s.screen !== 'observation' &&
           s.screen !== 'active' && <span className="brand">EDGE</span>}
+        {s.screen === 'name' && s.encounters.length === 0 && (<button className="text-button" onClick={() => go('me')}>Preferences</button>)}
         {s.screen === 'name' && s.encounters.length > 0 && (
           <button className="text-button" onClick={() => go('map')}>
             My map
@@ -448,6 +503,12 @@ export default function Home() {
           </button>
         </div>
       )}
+      {suggestionMessage && <p role="status">{suggestionMessage}</p>}
+      {busy && <div role="status"><p>Finding a small step…</p><button className="text-button" onClick={() => {
+        suggestionRequest.current.cancel(); setBusy(false);
+        const draft = candidate(s.situation.trim(), s.resistance, s.encounters);
+        patch({ draft, prediction: null, predictionNote: '', screen: 'setup' });
+      }}>Continue with a built-in step</button></div>}
       {s.screen === 'name' && (
         <section className="opening">
           {title('What do you keep turning away from?')}
@@ -469,7 +530,7 @@ export default function Home() {
               decision.
             </p>
           </div>
-          <Primary disabled={!s.situation.trim()} onClick={resolve}>
+          <Primary disabled={!s.situation.trim() || busy} onClick={resolve}>
             Continue
           </Primary>
         </section>
@@ -521,7 +582,7 @@ export default function Home() {
           <button className="text-button serif" onClick={() => go('name')}>
             Not quite right? Adjust this
           </button>
-          <Primary onClick={setup}>Continue</Primary>
+          <Primary disabled={busy} onClick={setup}>Continue</Primary>
         </section>
       )}
       {s.screen === 'setup' && s.draft && (
@@ -880,13 +941,23 @@ export default function Home() {
             </Primary>
           )}
           <p>
-            Your situations and encounters stay in this browser, on this device.
-            They aren't sent to a model or synced to an account.
+            Your map and encounters are saved in this browser, on this device.
+            They aren’t synced to an account. AI suggestions are optional.
           </p>
           <p>
             Edge currently offers a small set of editable suggestions. You
             decide what fits and what step to take.
           </p>
+          <h2>AI suggestions</h2>
+          <p>When enabled, continuing from a situation or resistance choice sends that situation and choice to OpenAI to suggest a small step. Your map, reflections and encounter history stay here.</p>
+          <p>API data isn’t used for training by default. OpenAI may retain content in abuse-monitoring logs for up to 30 days, with exceptions. <a href="https://developers.openai.com/api/docs/guides/your-data" target="_blank" rel="noreferrer">Read the data policy</a>.</p>
+          <p>Uses your configured API credits. Limited to 10 requests per day and 150 per month, resetting at midnight UTC. Failed requests can count toward the limit.</p>
+          <label className="choice">
+            <span>Allow my situation to be sent for AI suggestions</span>
+            <Checkbox checked={aiEnabled} onCheckedChange={(v) => changeAi(v === true)} />
+          </label>
+          <p className="optional">Turning this off stops future requests. It doesn’t recall anything already sent. The server keeps only a site-specific user ID and request counts to enforce these limits.</p>
+          {!s.encounters.length && <button className="text-button" onClick={() => go('name')}>Back to my situation</button>}
           {saveBlocked.current && (
             <button
               className="text-button"
@@ -990,6 +1061,8 @@ export default function Home() {
                   onClick={() => {
                     try {
                       localStorage.removeItem(KEY);
+                      localStorage.removeItem(CONSENT_KEY);
+                      suggestionRequest.current.cancel(); setAiEnabled(false); setBusy(false);
                       saveBlocked.current = false;
                       setS(initial);
                       rawUnreadable.current = null;
