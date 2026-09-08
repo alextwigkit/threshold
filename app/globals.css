@@ -34,8 +34,13 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: 'Avenir Next', Avenir, 'Segoe UI', sans-serif;
-  font-size: 16px;
+  font-size: 1rem;
   line-height: 1.55;
+  /*
+   * Only bites when a single word cannot fit its line, which happens to large
+   * serif headings at enlarged text and to anything the person types.
+   */
+  overflow-wrap: break-word;
 }
 button,
 input,
@@ -67,15 +72,15 @@ h3,
   line-height: 1.2;
 }
 h1 {
-  font-size: clamp(30px, 6vw, 38px);
+  font-size: clamp(1.875rem, 6vw, 2.375rem);
   margin: 0 0 20px;
 }
 h2 {
-  font-size: 28px;
+  font-size: 1.75rem;
   margin: 0 0 16px;
 }
 h3 {
-  font-size: 24px;
+  font-size: 1.5rem;
 }
 p {
   margin: 0 0 20px;
@@ -88,7 +93,7 @@ p {
   padding: 26px 24px 32px;
 }
 .brand {
-  font-size: 14px;
+  font-size: 0.875rem;
   letter-spacing: 0.22em;
   font-weight: 600;
   color: var(--foreground);
@@ -109,7 +114,7 @@ header {
   margin-top: 8px;
 }
 .premise {
-  font-size: 18px;
+  font-size: 1.125rem;
   max-width: 420px;
   margin-bottom: 42px;
 }
@@ -126,13 +131,14 @@ header {
 }
 .entry textarea {
   width: 100%;
-  min-height: 170px;
-  resize: vertical;
+  min-height: 10.625rem;
+  resize: none;
+  overflow: hidden;
   background: none;
   border: 0;
   padding: 0;
   font-family: Newsreader, Georgia, serif;
-  font-size: 22px;
+  font-size: 1.375rem;
   line-height: 1.55;
   color: var(--foreground);
 }
@@ -141,7 +147,7 @@ header {
 }
 .hint {
   font-family: Newsreader, Georgia, serif;
-  font-size: 16px;
+  font-size: 1rem;
   line-height: 1.5;
   color: #73776e;
   margin: 18px 0 0;
@@ -162,7 +168,7 @@ header {
   margin-top: 24px;
 }
 .primary .arrow {
-  font-size: 24px;
+  font-size: 1.5rem;
   line-height: 1;
 }
 .opening > .primary {
@@ -181,14 +187,14 @@ header {
 .back {
   border: 0;
   background: none;
-  font-size: 24px;
+  font-size: 1.5rem;
   padding: 0 8px 0 0;
   min-width: 44px;
   min-height: 44px;
   text-align: left;
 }
 .eyebrow {
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -250,9 +256,10 @@ fieldset.choices {
 }
 .choice [data-slot='radio-group-item'],
 .choice [data-slot='checkbox'] {
-  width: 20px;
-  height: 20px;
-  min-width: 20px;
+  /* In rem so the control keeps pace with the label beside it. */
+  width: 1.25rem;
+  height: 1.25rem;
+  min-width: 1.25rem;
 }
 .choice [data-checked] {
   background: var(--accent) !important;
@@ -264,26 +271,32 @@ fieldset.choices {
 }
 .text-input {
   display: block;
-  resize: vertical;
+  /* No handle: these size themselves to their content. */
+  resize: none;
+  overflow: hidden;
   width: 100%;
-  min-height: 90px;
+  /*
+   * rem, not px: a textarea clips instead of growing, so a fixed height loses
+   * the last line of the action once text is enlarged.
+   */
+  min-height: 5.625rem;
   border: 1px solid var(--border);
   border-radius: 6px;
   background: #f5f2ed;
   color: var(--foreground);
   padding: 14px;
   margin: 8px 0 20px;
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 400;
   line-height: 1.5;
 }
 .action-input {
-  min-height: 126px;
-  font-size: 18px;
+  min-height: 7.875rem;
+  font-size: 1.125rem;
 }
 .optional {
   color: #73776e;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 400;
 }
 .scale-field {
@@ -294,7 +307,7 @@ fieldset.choices {
 }
 .scale-legend {
   float: left;
-  font-size: 17px;
+  font-size: 1.0625rem;
   font-weight: 500;
   margin-bottom: 16px;
   width: 100%;
@@ -333,7 +346,7 @@ fieldset.choices {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  font-size: 12px;
+  font-size: 0.75rem;
   color: #73776e;
   margin-top: 9px;
 }
@@ -346,7 +359,7 @@ fieldset.choices {
   justify-content: space-between;
   gap: 12px;
   color: var(--muted-foreground);
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 .data-actions {
   display: flex;
@@ -354,7 +367,7 @@ fieldset.choices {
   gap: 8px 28px;
 }
 .duration .text-button {
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 .map-fragment {
   overflow: hidden;
@@ -367,6 +380,11 @@ fieldset.choices {
   width: 100%;
   max-height: 470px;
 }
+/*
+ * Map text stays in px: it lives inside a `viewBox`, so these are user-space
+ * units that must stay proportionate to the geometry they label. The SVG
+ * already scales with its container.
+ */
 .map-label {
   font-family: Newsreader, Georgia, serif;
   font-style: italic;
@@ -391,27 +409,28 @@ fieldset.choices {
   margin-top: -20px;
 }
 .territory-setup p {
-  font-size: 15px;
+  font-size: 0.9375rem;
   max-width: 370px;
   margin: 0 auto 28px;
 }
 .situation-context {
-  font-size: 14px;
+  font-size: 0.875rem;
   border-left: 2px solid var(--border);
   padding-left: 12px;
   margin: 0 0 22px;
 }
 .timer {
-  height: 200px;
-  width: 200px;
+  /* Sized in rem so the circle grows with its digits when text is enlarged. */
+  height: 12.5rem;
+  width: 12.5rem;
   display: grid;
   place-items: center;
   border: 1.5px solid #e5e2db;
   border-radius: 50%;
   margin: 52px auto;
   font-family: Newsreader, Georgia, serif;
-  font-size: 54px;
-  letter-spacing: -3px;
+  font-size: 3.375rem;
+  letter-spacing: -0.055em;
   font-variant-numeric: tabular-nums;
   color: var(--foreground);
 }
@@ -419,10 +438,10 @@ fieldset.choices {
   text-align: center;
 }
 .active h1 {
-  font-size: 30px;
+  font-size: 1.875rem;
 }
 .active-action {
-  font-size: 25px;
+  font-size: 1.5625rem;
   line-height: 1.5;
   color: var(--foreground);
 }
@@ -432,12 +451,12 @@ fieldset.choices {
   margin: 24px auto;
 }
 .invitation {
-  font-size: 19px;
+  font-size: 1.1875rem;
   line-height: 1.5;
   font-style: italic;
 }
 .timer-note {
-  font-size: 14px;
+  font-size: 0.875rem;
   margin: 42px 0 0;
 }
 .timer-note::before {
@@ -456,7 +475,7 @@ fieldset.choices {
   animation: appear 0.35s ease-out;
 }
 .reveal h2 {
-  font-size: 27px;
+  font-size: 1.6875rem;
 }
 .evidence {
   display: inline-block;
@@ -465,16 +484,17 @@ fieldset.choices {
   padding: 12px 16px;
   border-radius: 7px;
   background: #efede7;
-  font-size: 16px;
+  font-size: 1rem;
   margin: 10px 0 24px;
 }
 .observation-copy {
-  font-size: 24px;
+  font-size: 1.5rem;
   line-height: 1.5;
   margin-bottom: 36px;
 }
 .with-nav {
-  padding-bottom: 115px;
+  /* Clears the fixed nav, which grows with its labels, so this must too. */
+  padding-bottom: 7.1875rem;
 }
 .with-nav header {
   margin-bottom: 20px;
@@ -516,11 +536,11 @@ fieldset.choices {
   border: 0;
   min-width: 74px;
   min-height: 50px;
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: #575c51;
 }
 .bottom-nav button span {
-  font-size: 25px;
+  font-size: 1.5625rem;
   line-height: 1;
 }
 .bottom-nav [aria-current] {
@@ -531,10 +551,10 @@ fieldset.choices {
   border-bottom: 1px solid var(--border);
 }
 .atlas-entry h2 {
-  font-size: 25px;
+  font-size: 1.5625rem;
 }
 .atlas-entry details {
-  font-size: 14px;
+  font-size: 0.875rem;
   color: var(--muted-foreground);
 }
 summary {
@@ -568,7 +588,11 @@ details p {
     opacity: 1;
   }
 }
-@media (min-width: 500px) {
+/*
+ * In `em` because whether eleven numbers fit on one row depends on the text
+ * size, not the viewport alone. Enlarged text keeps the six-column layout.
+ */
+@media (min-width: 31.25em) {
   .scale {
     grid-template-columns: repeat(11, minmax(0, 1fr));
   }
@@ -582,8 +606,8 @@ details p {
     flex-wrap: wrap;
   }
   .timer {
-    width: 170px;
-    height: 170px;
+    width: 10.625rem;
+    height: 10.625rem;
   }
   .map-label {
     font-size: 22px;

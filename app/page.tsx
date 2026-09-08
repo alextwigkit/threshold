@@ -193,6 +193,23 @@ export default function Home() {
       heading.current?.focus();
     }
   }, [s.screen, ready]);
+  // A textarea scrolls rather than grows, so a long action loses its last
+  // lines once text is enlarged or the screen is narrow. Fit each one to its
+  // content after every render; the CSS min-height still sets the floor.
+  useEffect(() => {
+    const fit = () => {
+      for (const area of document.querySelectorAll('textarea')) {
+        area.style.height = 'auto';
+        // scrollHeight excludes the border, which border-box sizing counts.
+        const border = area.offsetHeight - area.clientHeight;
+        area.style.height = `${area.scrollHeight + border}px`;
+      }
+    };
+    fit();
+    // Rotating the device rewraps the text, so the fit has to be redone.
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
+  });
   useEffect(() => {
     const context = (document as any).modelContext;
     if (!context?.registerTool) return;
