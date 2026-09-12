@@ -502,7 +502,14 @@ export default function Home() {
   return (
     <main className={`shell ${nav ? 'with-nav' : ''}`}>
       <header>
-        {!nav &&
+        {s.screen === 'me' ? (
+          <button
+            className="preferences-back"
+            onClick={() => go(s.session ? 'active' : s.encounters.length ? 'map' : 'name')}
+          >
+            <span aria-hidden="true">←</span> Back
+          </button>
+        ) : !nav &&
         s.screen !== 'name' &&
         s.screen !== 'observation' &&
         s.screen !== 'active' ? (
@@ -526,6 +533,7 @@ export default function Home() {
         ) : (
           <span className="brand">EDGE</span>
         )}
+        {s.screen === 'me' && <span className="brand">EDGE</span>}
         {!nav &&
           s.screen !== 'name' &&
           s.screen !== 'observation' &&
@@ -1033,11 +1041,6 @@ export default function Home() {
             Edge currently offers a small set of editable suggestions. You
             decide what fits and what step to take.
           </p>
-          {!s.encounters.length && (
-            <button className="text-button" onClick={() => go('name')}>
-              Back to my situation
-            </button>
-          )}
           {saveBlocked.current && (
             <button
               className="text-button"
