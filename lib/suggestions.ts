@@ -1,6 +1,7 @@
 import { isCandidate, type Candidate, type Resistance } from './engine.ts';
+// Owner authorized always-on suggestions on September 12, 2026. Retain the
+// existing versioned request contract; this no longer represents a browser toggle.
 export const CONSENT_VERSION = 'edge-inference-2026-09-v1';
-export const CONSENT_KEY = 'edge-ai-consent-v1';
 export type SuggestionResult = { candidate: Candidate; needsClarification: boolean; source: 'model' | 'local' };
 export function parseSuggestion(value: unknown, situation: string, confirmed: Resistance | null): SuggestionResult {
  const v = value as SuggestionResult;

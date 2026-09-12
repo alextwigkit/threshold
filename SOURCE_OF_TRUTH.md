@@ -1,5 +1,7 @@
 # Edge — source of truth
 
+> September 12 decision: the owner explicitly requested removing the AI suggestions section and making suggestions always on. Situation/resistance continuation now requests the existing model automatically when online, including on fresh browsers and after local data deletion. The old consent preference is no longer read. Existing minimal payload, API limits, validation and offline fallback remain. Earlier default-off/toggle instructions below are historical and superseded. This authorization applies to the current private personal app.
+
 Status: version 3 privately published and signed-in AI flow verified, 8 September 2026 UTC. Start with [HANDOFF.md](HANDOFF.md) for current state and decision nuance. Source: “Write Claude Code Prompt”, conversation 6a9de2a4-7ee8-83e8-8d23-20ec9c1944ba; latest seven Stitch screenshots recovered and inspected. The current handoff request governs conflicts.
 
 ## Decision precedence

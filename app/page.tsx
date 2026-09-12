@@ -32,11 +32,7 @@ import {
   type Urge,
 } from '@/lib/engine';
 import MapFragment from './map-fragment';
-import {
-  CONSENT_KEY,
-  CONSENT_VERSION,
-  SuggestionRequest,
-} from '@/lib/suggestions';
+import { SuggestionRequest } from '@/lib/suggestions';
 import {
   KEY,
   initial,
@@ -112,7 +108,6 @@ function Primary({
 }
 export default function Home() {
   const [s, setS] = useState<Saved>(initial);
-  const [aiEnabled, setAiEnabled] = useState(false);
   const [busy, setBusy] = useState(false);
   const [suggestionMessage, setSuggestionMessage] = useState('');
   const suggestionRequest = useRef(new SuggestionRequest());
@@ -133,7 +128,6 @@ export default function Home() {
   const patch = (p: Partial<Saved>) => setS((v) => ({ ...v, ...p }));
   useEffect(() => {
     try {
-      setAiEnabled(localStorage.getItem(CONSENT_KEY) === CONSENT_VERSION);
       const raw = localStorage.getItem(KEY);
       if (raw) {
         rawUnreadable.current = raw;
@@ -155,12 +149,6 @@ export default function Home() {
     };
     window.addEventListener('beforeinstallprompt', prompt);
     const changedElsewhere = (event: StorageEvent) => {
-      if (event.key === CONSENT_KEY) {
-        suggestionRequest.current.cancel();
-        setBusy(false);
-        setAiEnabled(event.newValue === CONSENT_VERSION);
-        return;
-      }
       if (event.key !== KEY) return;
       suggestionRequest.current.cancel();
       setBusy(false);
@@ -276,22 +264,8 @@ export default function Home() {
     setSuggestionMessage('');
     patch({ screen });
   };
-  function changeAi(enabled: boolean) {
-    suggestionRequest.current.cancel();
-    setBusy(false);
-    try {
-      if (enabled) localStorage.setItem(CONSENT_KEY, CONSENT_VERSION);
-      else localStorage.removeItem(CONSENT_KEY);
-      setAiEnabled(enabled);
-    } catch {
-      setError(
-        'This preference could not be saved. AI suggestions remain off.',
-      );
-      setAiEnabled(false);
-    }
-  }
   async function requestStep(confirmed: Resistance | null) {
-    if (!aiEnabled || !navigator.onLine) return false;
+    if (!navigator.onLine) return false;
     const epoch = ++requestEpoch.current;
     setBusy(true);
     setSuggestionMessage('');
@@ -1060,46 +1034,11 @@ export default function Home() {
           )}
           <p>
             Your map and encounters are saved in this browser, on this device.
-            They aren’t synced to an account. AI suggestions are optional.
+            They aren’t synced to an account.
           </p>
           <p>
             Edge currently offers a small set of editable suggestions. You
             decide what fits and what step to take.
-          </p>
-          <h2>AI suggestions</h2>
-          <p>
-            When enabled, continuing from a situation or resistance choice sends
-            that situation and choice to OpenAI to suggest a small step. Your
-            map, reflections and encounter history stay here.
-          </p>
-          <p>
-            API data isn’t used for training by default. OpenAI may retain
-            content in abuse-monitoring logs for up to 30 days, with exceptions.{' '}
-            <a
-              href="https://developers.openai.com/api/docs/guides/your-data"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Read the data policy
-            </a>
-            .
-          </p>
-          <p>
-            Uses your configured API credits. Limited to 10 requests per day and
-            150 per month, resetting at midnight UTC. Failed requests can count
-            toward the limit.
-          </p>
-          <label className="choice">
-            <span>Allow my situation to be sent for AI suggestions</span>
-            <Checkbox
-              checked={aiEnabled}
-              onCheckedChange={(v) => changeAi(v === true)}
-            />
-          </label>
-          <p className="optional">
-            Turning this off stops future requests. It doesn’t recall anything
-            already sent. The server keeps only a site-specific user ID and
-            request counts to enforce these limits.
           </p>
           {!s.encounters.length && (
             <button className="text-button" onClick={() => go('name')}>
@@ -1211,9 +1150,7 @@ export default function Home() {
                   onClick={() => {
                     try {
                       localStorage.removeItem(KEY);
-                      localStorage.removeItem(CONSENT_KEY);
                       suggestionRequest.current.cancel();
-                      setAiEnabled(false);
                       setBusy(false);
                       saveBlocked.current = false;
                       setS(initial);

@@ -1,5 +1,7 @@
 # Edge — cold-start handoff
 
+> September 12 decision: the owner explicitly requested removing the AI suggestions section and making suggestions always on. Situation/resistance continuation now requests the existing model automatically when online, including on fresh browsers and after local data deletion. The old consent preference is no longer read. Existing minimal payload, API limits, validation and offline fallback remain. Earlier default-off/toggle instructions below are historical and superseded. This authorization applies to the current private personal app.
+
 Updated after version 3 publication and signed-in browser verification, September 8, 2026 UTC (September 7 in Los Angeles), then again after the local-path browser and accessibility pass later the same day. The accessibility fixes from that pass are **not yet published**; version 3 remains the live release. This document is the entry point for a new task. It preserves decisions; it does not authorize a redesign, public launch, or new spending.
 
 ## 1. Read this first

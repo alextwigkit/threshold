@@ -1,5 +1,7 @@
 # Validation and implementation status
 
+> September 12 decision: the owner explicitly requested removing the AI suggestions section and making suggestions always on. Situation/resistance continuation now requests the existing model automatically when online, including on fresh browsers and after local data deletion. The old consent preference is no longer read. Existing minimal payload, API limits, validation and offline fallback remain. Earlier default-off/toggle instructions below are historical and superseded. This authorization applies to the current private personal app.
+
 Status after private version 3 publication and signed-in browser verification, September 8, 2026 UTC. [HANDOFF.md](HANDOFF.md) is the cold-start entry point and records provenance, release identifiers, and decision precedence. This file separates completed checks from outstanding verification; it supersedes the initial-build status.
 
 ## Implemented

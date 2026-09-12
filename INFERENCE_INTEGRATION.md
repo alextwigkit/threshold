@@ -1,5 +1,7 @@
 # AI suggestions — live in private version 3
 
+> September 12 decision: the owner explicitly requested removing the AI suggestions section and making suggestions always on. Situation/resistance continuation now requests the existing model automatically when online, including on fresh browsers and after local data deletion. The old consent preference is no longer read. Existing minimal payload, API limits, validation and offline fallback remain. Earlier default-off/toggle instructions below are historical and superseded. This authorization applies to the current private personal app.
+
 Edge retains its static, installable interface and adds a small Cloudflare Worker for `/api/suggestion`. No RSC server or server actions are exposed. The default Worker fetch handler serves compiled assets through ASSETS and routes only the suggestion endpoint.
 
 ## Product contract

@@ -1,5 +1,7 @@
 # Edge
 
+> September 12 decision: the owner explicitly requested removing the AI suggestions section and making suggestions always on. Situation/resistance continuation now requests the existing model automatically when online, including on fresh browsers and after local data deletion. The old consent preference is no longer read. Existing minimal payload, API limits, validation and offline fallback remain. Earlier default-off/toggle instructions below are historical and superseded. This authorization applies to the current private personal app.
+
 An offline-capable, mobile-first PWA that turns meaningful real-world approach into a personal map.
 
 **Start with [HANDOFF.md](HANDOFF.md).** It preserves the original conversation, settled decisions, current release, known limitations, and next work. [SOURCE_OF_TRUTH.md](SOURCE_OF_TRUTH.md) consolidates product direction. The owning constraints are [PRODUCT.md](PRODUCT.md), [UX.md](UX.md), [DESIGN.md](DESIGN.md), and [BEHAVIOR_ENGINE.md](BEHAVIOR_ENGINE.md). The seven approved Stitch screens are in [references/](references/).
