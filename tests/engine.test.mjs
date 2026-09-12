@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   candidate,
+  infer,
   validScale,
   remaining,
   observation,
@@ -116,6 +117,81 @@ test('serialized records remain valid; corrupt records rejected', () => {
   assert.equal(isEncounter({ id: 'bad' }), false);
   assert.equal(isEncounter(encounter('1', { actual: 99 })), false);
 });
+// infer() had zero coverage: BEHAVIOR_ENGINE.md asks to evaluate ambiguity, negation,
+// unfamiliar phrasing and user correction, and the only branch that can ever skip
+// clarification (confident: true) is 'judged'. Every other branch always asks the person
+// to confirm, which is the actual safety property worth pinning here.
+test('infer only ever skips clarification for a clean, unnegated judged read', () => {
+  assert.deepEqual(infer('polishing the deck one more time before sending'), {
+    resistance: 'checking',
+    confident: false,
+  });
+  assert.deepEqual(infer("I'm worried what my boss will think if I ask"), {
+    resistance: 'judged',
+    confident: true,
+  });
+  assert.deepEqual(infer('I am unsure how to structure this proposal'), {
+    resistance: 'understand',
+    confident: false,
+  });
+  assert.deepEqual(infer('xyzzy plugh frobnicate'), {
+    resistance: 'start',
+    confident: false,
+  });
+  assert.deepEqual(infer(''), { resistance: 'start', confident: false });
+});
+
+test('negation and overlapping uncertainty suppress confidence, not just resistance', () => {
+  // Negated judged language must not be treated as a clean judged read.
+  assert.equal(
+    infer("I'm not afraid to ask, I just don't know where to start").confident,
+    false,
+  );
+  // Judged language mixed with uncertainty is not clean either.
+  assert.equal(
+    infer('worried about asking because I am unsure how to structure it')
+      .confident,
+    false,
+  );
+});
+
+// candidate() deliberately leaves action blank for situations none of its templates
+// cover, per BEHAVIOR_ENGINE.md: "require the user to supply the exact action instead
+// of inserting the whole situation into an awkward template." This is the boundary that
+// makes the app safe for unfamiliar, awkward or high-stakes phrasing it cannot template,
+// so it needs a regression guard as much as any template that does fire.
+test('an unfamiliar or awkwardly phrased situation leaves the action for the person to write, not a guess', () => {
+  const unfamiliar = [
+    ['clean my apartment before my parents visit', 'start'],
+    ['apply for a new job', 'start'],
+    ['confront my abuser about what happened', 'judged'],
+  ];
+  for (const [situation, resistance] of unfamiliar)
+    assert.equal(
+      candidate(situation, resistance).action,
+      '',
+      `"${situation}" should not receive a fabricated action`,
+    );
+});
+
+/*
+ * Known gap, not a regression: the local (non-AI) path has no equivalent of the
+ * inference prompt's explicit instruction to route "coercion, danger, medical/legal/
+ * financial decisions, safety-critical checking, harmful situations" to own_step. It
+ * falls through to the generic conversation template purely because the situation
+ * contains "talk"/"call"/"speak"/"conversation", with no awareness of what the
+ * conversation is about. This test pins today's actual behavior so the gap is visible
+ * and testable, not a decision to leave it this way — see HANDOFF.md priority 3.
+ */
+test('local path has no safety-aware routing: a high-stakes situation can still match an ordinary template', () => {
+  const result = candidate(
+    'talk to my doctor about stopping my medication without telling anyone',
+    'judged',
+  );
+  assert.equal(result.template.startsWith('conversation'), true);
+  assert.notEqual(result.action, '');
+});
+
 test('a discovery retains its history when later evidence is mixed', () => {
   const initial = [1, 2, 3, 4].map((i) => encounter(String(i)));
   const later = [5, 6, 7, 8].map((i) =>
