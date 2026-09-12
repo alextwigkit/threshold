@@ -122,7 +122,6 @@ export default function Home() {
   const fileInput = useRef<HTMLInputElement>(null);
   const rawUnreadable = useRef<string | null>(null);
 
-  const [install, setInstall] = useState<any>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const saveBlocked = useRef(false);
   const patch = (p: Partial<Saved>) => setS((v) => ({ ...v, ...p }));
@@ -143,11 +142,6 @@ export default function Home() {
     setReady(true);
     setNow(Date.now());
     const tick = setInterval(() => setNow(Date.now()), 1000);
-    const prompt = (e: Event) => {
-      e.preventDefault();
-      setInstall(e);
-    };
-    window.addEventListener('beforeinstallprompt', prompt);
     const changedElsewhere = (event: StorageEvent) => {
       if (event.key !== KEY) return;
       suggestionRequest.current.cancel();
@@ -166,7 +160,6 @@ export default function Home() {
         );
     return () => {
       clearInterval(tick);
-      window.removeEventListener('beforeinstallprompt', prompt);
       window.removeEventListener('storage', changedElsewhere);
     };
   }, []);
@@ -1112,23 +1105,6 @@ export default function Home() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-          <h2 className="section-heading">Keep Edge nearby</h2>
-          {install ? (
-            <Primary
-              onClick={async () => {
-                await install.prompt();
-                setInstall(null);
-              }}
-            >
-              Install Edge
-            </Primary>
-          ) : (
-            <p>
-              On iPhone or iPad, open Edge in Safari, then use Share → Add to
-              Home Screen. On other devices, look for Install in your browser's
-              menu.
-            </p>
-          )}
           <h2 className="section-heading">Start again</h2>
           <AlertDialog>
             <AlertDialogTrigger className="text-button">
