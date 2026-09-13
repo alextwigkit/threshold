@@ -100,7 +100,7 @@ Verified against a real local `wrangler dev` run, not just the unit tests: appli
 
 Sessions are stateless (signed tokens, no revocation list) — `/logout` clears the browser's cookie but not the token itself before its 30-day expiry elsewhere. A conscious tradeoff for a single/few-owner private app, recorded in HANDOFF.md, not an oversight.
 
-Not yet done, and cannot be done from this session: the owner's own `wrangler login`, `wrangler d1 create`, `wrangler secret put` for `SESSION_SECRET`/`OPENAI_API_KEY`, and the first `npm run deploy`. See HANDOFF.md section 9 for the exact steps. Until then this deployment exists only as verified code, not a reachable URL.
+**Deployed and verified live September 13, 2026**, with the owner's own Cloudflare credentials: https://threshold.threshold0.workers.dev. Confirmed over real HTTP requests against the live Worker, not just locally: unauthenticated visits redirect to `/login`, a wrong password 401s, the right password sets a working session and reaches the app, all matching the local `wrangler dev` pass exactly. See HANDOFF.md section 9 for the account/database facts. No data migration from the Sites-hosted app was needed — the owner confirmed there was nothing real there yet.
 
 ## Outstanding verification and limitations
 
@@ -115,6 +115,6 @@ Not yet done, and cannot be done from this session: the owner's own `wrangler lo
 - The optional WebMCP situation-staging tool was advertised/registered in the browser but was not invoked end to end. It must not begin an encounter itself.
 - Discovery thresholds are provisional. Additional patterns, inhabitants, richer authored map changes, and secondary-territory geography are not completed features.
 - AI does not receive history, reflections, predictions, or the freeform resistance note. Today's Threshold is selected locally. Cross-device sync is not implemented.
-- The Cloudflare/Threshold deployment (see above) is verified against local `wrangler dev` only. It has not been deployed to or verified against a real Cloudflare account, since that needs the owner's own credentials.
+- The Cloudflare/Threshold deployment is live and verified over HTTP (see above), but only with curl, not a real browser. No screen-reader, keyboard, reduced-motion, or visual pass has been done against this specific deployment yet — the local-path browser/accessibility pass earlier in this document predates the rename and the login screen.
 
 Automated coverage and successful publication do not replace these checks. Preserve the approved flow and use synthetic or isolated test data without inventing approach evidence in the user's map.

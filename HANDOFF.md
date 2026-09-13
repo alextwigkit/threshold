@@ -172,16 +172,15 @@ A second, parallel deployment alongside the Sites one above, on the owner's exis
 | D1 database | `threshold-quota` (binding `DB`) — separate from Sites' `edge-quota`/`site-creator-d1` |
 | Auth | Server-side session, not Sites dispatch. See `server/auth.ts`. |
 | Session cookie | `threshold_session`, HttpOnly/Secure/SameSite=Lax, 30-day expiry, HMAC-signed with the `SESSION_SECRET` Worker secret |
-| URL | Not yet deployed. Will be `*.workers.dev` under the owner's account unless a custom domain is added. |
+| URL | **Live:** https://threshold.threshold0.workers.dev |
+| Cloudflare account | `Alexmolaei@gmail.com's Account`, id `c952b97aaa50d212f34ab1db0255e38f` |
+| D1 database id | `aa8c1cfd-4c8f-4f01-be82-d2abce99cd5d` |
+| Deployed | September 13, 2026, from commit `da9d344` |
+| Account | One seeded user, `amolaei`. No signup route by design — add more the same way (`scripts/seed-user.mjs`). |
 
-Manual, owner-only steps (none of these can be done from a session without the owner's own Cloudflare credentials):
-1. `wrangler login` (or an API token) against the existing account.
-2. `wrangler d1 create threshold-quota`, then set `THRESHOLD_DB_ID` (and `CLOUDFLARE_ACCOUNT_ID`) as environment variables before `npm run build`, so `scripts/worker.mjs` writes the real ids into `dist/server/wrangler.json` instead of the local-dev placeholder.
-3. `npm run db:migrate` to apply `drizzle/*.sql` (including the new `users`/`login_attempts` tables) to the real database.
-4. Seed at least one account: `node --experimental-strip-types scripts/seed-user.mjs <username> <password> > seed.sql`, then `wrangler d1 execute threshold-quota --remote --file=seed.sql`. There is no signup route by design.
-5. `wrangler secret put SESSION_SECRET`, `wrangler secret put OPENAI_API_KEY`, and set `OPENAI_MODEL` (non-secret) — same OpenAI relationship as today, just provisioned directly on this Worker instead of through Sites' hosted-secret mechanism.
-6. `npm run deploy`.
-7. Verify signed-in and signed-out behavior in a real browser exactly like the local `wrangler dev` pass (unauthenticated → redirected to `/login`; wrong password rejected; correct password reaches the app; `/logout` clears the cookie), then **export from the Sites-hosted app and restore into Threshold** before relying on it — `localStorage` does not follow across origins.
+Deployed September 13, 2026: `wrangler login`, `wrangler d1 create threshold-quota`, both migrations applied with `wrangler d1 execute --remote`, one account seeded, `SESSION_SECRET`/`OPENAI_API_KEY`/`OPENAI_MODEL` set via `wrangler secret put`, then `npm run deploy`. Verified live over HTTP: unauthenticated → redirected to `/login`; wrong password → 401; correct password → session cookie set and the app shell loads; a fresh `*.workers.dev` subdomain took about 45 seconds for Cloudflare to finish issuing its TLS certificate before it responded (a one-time propagation delay, not a bug — a 502/TLS-handshake-failure right after first deploy is expected and resolves on its own). The owner confirmed there was no real map data on the Sites-hosted app worth exporting, so migration was skipped.
+
+To seed additional accounts later: `node --experimental-strip-types scripts/seed-user.mjs <username> <password> > seed.sql`, then `wrangler d1 execute threshold-quota --remote --config dist/server/wrangler.json --file=seed.sql`.
 
 Sessions are stateless (signed tokens, no server-side revocation list): `/logout` clears the browser's cookie but does not invalidate that token elsewhere before its 30-day expiry. Acceptable for a single/few-owner private app; would need a revocation table if that threat model ever changes.
 
