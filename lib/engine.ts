@@ -36,11 +36,12 @@ export const territories: Record<
   },
 };
 export const resistanceChoices: [Resistance, string][] = [
-  ['understand', 'I want to understand it first'],
-  ['start', 'I don’t know where to start'],
-  ['judged', 'I’m worried I’ll do it badly'],
-  ['unpleasant', 'It just feels unpleasant to begin'],
-  ['other', 'Something else'],
+  ['start', 'I don’t know where to start.'],
+  ['understand', 'I want to feel more certain before I act.'],
+  ['judged', 'I’m worried about how someone will react.'],
+  ['checking', 'I keep checking or preparing instead of moving ahead.'],
+  ['unpleasant', 'I’m trying to avoid the feeling it brings up.'],
+  ['other', 'Something else—or I’m not sure yet.'],
 ];
 export const noticingChoices = [
   ['doorway', 'Starting was harder than continuing'],

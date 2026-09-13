@@ -613,31 +613,18 @@ export default function Home() {
       )}
       {s.screen === 'clarify' && (
         <section>
-          {title(
-            s.resistance === 'understand'
-              ? 'Sounds like the hard part may be acting before you know exactly what you’re doing.'
-              : 'What feels like the hard part?',
-          )}
-          <p className="eyebrow quiet" id="resistance-label">
-            What feels closest?
+          {title('What makes it hard to take a step?')}
+          <p id="resistance-hint">
+            Pick the main thing for now. It doesn’t have to explain everything.
           </p>
           <RadioGroup
             className="choices"
             value={s.resistance}
             onValueChange={(v) => patch({ resistance: v as Resistance })}
-            aria-labelledby="resistance-label"
+            aria-label="What makes it hard to take a step?"
+            aria-describedby="resistance-hint"
           >
-            {[
-              ...resistanceChoices,
-              ...(s.resistance === 'checking'
-                ? [
-                    ['checking', 'I keep checking or polishing it'] as [
-                      Resistance,
-                      string,
-                    ],
-                  ]
-                : []),
-            ].map(([v, l]) => (
+            {resistanceChoices.map(([v, l]) => (
               <label
                 className={`choice ${s.resistance === v ? 'selected' : ''}`}
                 key={v}
@@ -659,7 +646,7 @@ export default function Home() {
             </label>
           )}
           <button className="text-button serif" onClick={() => go('name')}>
-            Not quite right? Adjust this
+            Edit what I’m avoiding
           </button>
           <Primary disabled={busy} onClick={setup}>
             Continue

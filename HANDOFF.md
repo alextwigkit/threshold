@@ -1,5 +1,7 @@
 # Threshold — cold-start handoff
 
+> September 13 clarification update: use “What makes it hard to take a step?” with six plain-language choices (starting, certainty, reactions, checking/preparing, avoiding feelings, other/unsure). Checking is always available. Keep single-select and the hint “Pick the main thing for now. It doesn’t have to explain everything.” The secondary action is “Edit what I’m avoiding” and returns to the situation field. Existing resistance codes are preserved.
+
 > September 12 follow-up: the owner removed the entire “Keep Threshold nearby” section and its custom install prompt from Me. Browser-native installation and the PWA/offline shell remain available; do not restore installation guidance without a new request.
 
 > September 12 decision: the owner explicitly requested removing the AI suggestions section and making suggestions always on. Situation/resistance continuation now requests the existing model automatically when online, including on fresh browsers and after local data deletion. The old consent preference is no longer read. Existing minimal payload, API limits, validation and offline fallback remain. Earlier default-off/toggle instructions below are historical and superseded. This authorization applies to the current private personal app.
