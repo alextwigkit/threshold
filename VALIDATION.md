@@ -88,6 +88,20 @@ Verified against the packaged Worker preview with synthetic data: all five terri
 
 Map tests went from 2 assertions to 15 tests; the suite is at 58, all passing on Node v24.19.0. `tests/suggestions.test.mjs` has a `ERR_SQLITE_ERROR` reported on Node v22.17.0 during this review; it reproduces at the parent commit too, so it is a pre-existing, Node-version-dependent flake unrelated to the map, not a regression from this pass.
 
+## Cloudflare-direct deployment and rename (Threshold)
+
+Added a second deployment path so publishing no longer depends on the ChatGPT/Codex session that owns Sites, and renamed the app Edge → Threshold at the same time (both explicit owner decisions; see HANDOFF.md). The Sites deployment is untouched.
+
+Replaced the Sites dispatcher's `oai-authenticated-user-id` trust with a server-side session: D1-stored accounts (`users` table, seeded by hand via `scripts/seed-user.mjs`, no signup route), PBKDF2-SHA256 password hashing with a per-user random salt (Workers-native Web Crypto, no WASM dependency), and an HMAC-signed HttpOnly/Secure/SameSite=Lax session cookie checked by `server/worker.ts` in front of every route — static assets included, not just `/api/*`, since there is no dispatcher upstream to rely on anymore. Login attempts are rate-limited (10/day per identity) using the same atomic D1 increment-with-cap pattern already proven in `server/quota.ts`.
+
+12 new tests in `tests/suggestions.test.mjs` cover: password hash/verify round-trip and salt uniqueness; session creation, expiry, wrong-key rejection, and payload tampering; cookie header round-trip; login-attempt rate limiting (independent per identity, resets the next day); the worker redirecting unauthenticated page requests to `/login` and 401ing unauthenticated API requests; a forged-signature cookie rejected the same as no cookie; a full wrong-password → right-password → authenticated-request → logout cycle through `worker.fetch` directly, no live server needed. One existing test in `tests/inference.test.mjs` was updated: the origin-based CSRF check it exercised moved from `handler.ts` into the worker's session gate (a valid session now implies same-site, and `SameSite=Lax` covers the rest), so `handleSuggestion` itself no longer takes a `trustedOrigin`.
+
+Verified against a real local `wrangler dev` run, not just the unit tests: applied the new migration to a local D1, seeded a real account with `scripts/seed-user.mjs`, then over HTTP confirmed unauthenticated `/` redirects to `/login`, unauthenticated `/api/suggestion` 401s, a wrong password 401s, the right password sets a working session cookie and reaches the app shell, and `/logout` clears it. This caught a real bug the unit tests couldn't: `wrangler dev` only auto-loads `.dev.vars` from next to the config file it's given (`dist/server/`), not the project root, so `SESSION_SECRET` was silently empty and login 500'd. Fixed by having `scripts/worker.mjs` copy the root `.dev.vars` into `dist/server/` on every build, and reverified clean.
+
+Sessions are stateless (signed tokens, no revocation list) — `/logout` clears the browser's cookie but not the token itself before its 30-day expiry elsewhere. A conscious tradeoff for a single/few-owner private app, recorded in HANDOFF.md, not an oversight.
+
+Not yet done, and cannot be done from this session: the owner's own `wrangler login`, `wrangler d1 create`, `wrangler secret put` for `SESSION_SECRET`/`OPENAI_API_KEY`, and the first `npm run deploy`. See HANDOFF.md section 9 for the exact steps. Until then this deployment exists only as verified code, not a reachable URL.
+
 ## Outstanding verification and limitations
 
 - Complete signed-in **AI-enabled** return → observation → map journey against the hosted deployment. The local-path journey is verified; the model-backed setup step is verified only as far as the prediction.
@@ -100,6 +114,7 @@ Map tests went from 2 assertions to 15 tests; the suite is at 58, all passing on
 - Broad action quality, language/cultural coverage, and longitudinal usefulness. Six live examples verify a narrow integration boundary, not general reliability or efficacy.
 - The optional WebMCP situation-staging tool was advertised/registered in the browser but was not invoked end to end. It must not begin an encounter itself.
 - Discovery thresholds are provisional. Additional patterns, inhabitants, richer authored map changes, and secondary-territory geography are not completed features.
-- AI does not receive history, reflections, predictions, or the freeform resistance note. Today's Edge is selected locally. Cross-device sync is not implemented.
+- AI does not receive history, reflections, predictions, or the freeform resistance note. Today's Threshold is selected locally. Cross-device sync is not implemented.
+- The Cloudflare/Threshold deployment (see above) is verified against local `wrangler dev` only. It has not been deployed to or verified against a real Cloudflare account, since that needs the owner's own credentials.
 
 Automated coverage and successful publication do not replace these checks. Preserve the approved flow and use synthetic or isolated test data without inventing approach evidence in the user's map.

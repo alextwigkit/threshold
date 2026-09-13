@@ -1,4 +1,4 @@
-# Edge
+# Threshold
 
 > September 12 decision: the owner explicitly requested removing the AI suggestions section and making suggestions always on. Situation/resistance continuation now requests the existing model automatically when online, including on fresh browsers and after local data deletion. The old consent preference is no longer read. Existing minimal payload, API limits, validation and offline fallback remain. Earlier default-off/toggle instructions below are historical and superseded. This authorization applies to the current private personal app.
 
@@ -8,9 +8,9 @@ An offline-capable, mobile-first PWA that turns meaningful real-world approach i
 
 ## Current implementation
 
-Private version 3 is live at [Edge](https://edge-personal-atlas.thenewdeal.chatgpt.site/). The device-local loop is situation → optional clarification → editable expedition and prediction → real-world action → progressive reflection → observation → map. Atlas preserves encounter evidence and two provisional repeated-evidence discoveries. Me provides export, reviewed restore, deletion, installation guidance, and optional AI consent.
+Threshold is live at [Threshold](https://edge-personal-atlas.thenewdeal.chatgpt.site/); see HANDOFF.md's release facts for the exact published version. The device-local loop is situation → optional clarification → editable expedition and prediction → real-world action → progressive reflection → observation → map. Atlas preserves encounter evidence and two provisional repeated-evidence discoveries. Me provides export, reviewed restore, and deletion. Browser-native install and the offline shell remain available; Threshold no longer shows its own install guidance there.
 
-AI suggestions are live and off by default. A server-only OpenAI integration selects reviewed action templates from the current situation and confirmed resistance. Credentials are configured; do not repeat key setup. Observations, discoveries, and Today's Edge remain deterministic and local. See [INFERENCE_INTEGRATION.md](INFERENCE_INTEGRATION.md) for the privacy, authentication, validation, and quota boundaries.
+AI suggestions are live and always on when online, per the owner's September 12 decision above. A server-only OpenAI integration selects reviewed action templates from the current situation and confirmed resistance. Credentials are configured; do not repeat key setup. Observations, discoveries, and Today's Threshold remain deterministic and local. See [INFERENCE_INTEGRATION.md](INFERENCE_INTEGRATION.md) for the privacy, authentication, validation, and quota boundaries.
 
 Only actual reported attempts produce approach traces. No production user history is seeded. The engine and map remain subject to the verification and quality gaps in [VALIDATION.md](VALIDATION.md) and [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md).
 

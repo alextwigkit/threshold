@@ -1,4 +1,4 @@
-# Edge — implementation plan
+# Threshold — implementation plan
 
 Current release: private version 3, including optional AI. Read [HANDOFF.md](HANDOFF.md) for current status, decision precedence and verification boundaries. Sections describing the initial build are historical where explicitly labeled.
 

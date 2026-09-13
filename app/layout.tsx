@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import './globals.css';
 export const metadata: Metadata = {
-  title: 'Edge — Your personal map',
+  title: 'Threshold — Your personal map',
   description:
     'Turn toward something you have been avoiding. See what you discover.',
   manifest: '/manifest.webmanifest',
-  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'Edge' },
+  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'Threshold' },
   icons: { icon: '/icon.svg', apple: '/icon-192.png' },
 };
 export default function RootLayout({

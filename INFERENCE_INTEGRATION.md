@@ -2,7 +2,7 @@
 
 > September 12 decision: the owner explicitly requested removing the AI suggestions section and making suggestions always on. Situation/resistance continuation now requests the existing model automatically when online, including on fresh browsers and after local data deletion. The old consent preference is no longer read. Existing minimal payload, API limits, validation and offline fallback remain. Earlier default-off/toggle instructions below are historical and superseded. This authorization applies to the current private personal app.
 
-Edge retains its static, installable interface and adds a small Cloudflare Worker for `/api/suggestion`. No RSC server or server actions are exposed. The default Worker fetch handler serves compiled assets through ASSETS and routes only the suggestion endpoint.
+Threshold retains its static, installable interface and adds a small Cloudflare Worker for `/api/suggestion`. No RSC server or server actions are exposed. The default Worker fetch handler serves compiled assets through ASSETS and routes only the suggestion endpoint.
 
 ## Product contract
 - AI is off by default. In Me, explicit versioned consent enables transmission of only the current situation and confirmed resistance choice. Preferences is also accessible from first use.
@@ -13,7 +13,7 @@ Edge retains its static, installable interface and adds a small Cloudflare Worke
 - Timeouts, refusals, malformed results and exhausted quota allow a user-authored step; provider exceptions never reach the browser.
 
 ## Runtime and limits
-Sites dispatch supplies authenticated identity. Unauthenticated requests, wrong origins and invalid consent fail before a provider call. The canonical origin is pinned to the existing private Edge site; the Worker must remain behind Sites dispatch without a public workers.dev route.
+Sites dispatch supplies authenticated identity. Unauthenticated requests, wrong origins and invalid consent fail before a provider call. The canonical origin is pinned to the existing private Threshold site; the Worker must remain behind Sites dispatch without a public workers.dev route.
 
 D1 stores only one quota row per site-specific user: UTC day/month and request counts. A single conditional UPSERT atomically enforces 10 requests per day and 150 per month across concurrent requests. Failed provider calls count. Limits are app request limits, not a billing-account spending cap. Data clearing on the device does not reset server quota.
 

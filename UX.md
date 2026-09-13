@@ -1,11 +1,11 @@
-# Edge — UX contract
+# Threshold — UX contract
 
 > September 12 decision: the owner explicitly requested removing the AI suggestions section and making suggestions always on. Situation/resistance continuation now requests the existing model automatically when online, including on fresh browsers and after local data deletion. The old consent preference is no longer read. Existing minimal payload, API limits, validation and offline fallback remain. Earlier default-off/toggle instructions below are historical and superseded. This authorization applies to the current private personal app.
 
 Current release: private version 3, including optional AI. Read [HANDOFF.md](HANDOFF.md) for current status, decision precedence and verification boundaries. Sections describing the initial build are historical where explicitly labeled.
 
 ## Global
-Mobile-first at 390px, resilient at 320px and on desktop. Readable central column on large screens. One primary action per step; semantic headings, visible focus, named controls, back navigation preserving drafts. No bottom navigation during the first expedition. Save the active session and reflection draft so closing Edge does not erase the experience.
+Mobile-first at 390px, resilient at 320px and on desktop. Readable central column on large screens. One primary action per step; semantic headings, visible focus, named controls, back navigation preserving drafts. No bottom navigation during the first expedition. Save the active session and reflection draft so closing Threshold does not erase the experience.
 
 ## State transitions
 Name → optional Clarify → Setup → Active → Return → Observation → Map.
@@ -13,7 +13,7 @@ Map → Explore → Setup; Map → I'm avoiding something → Name.
 Map ↔ Atlas ↔ Me. Existing active sessions resume rather than creating overlapping attempts.
 
 ### 1. Name
-EDGE. “What do you keep turning away from?” Then the approved premise and a substantial textarea labeled “What's something you've been avoiding lately?” Examples stay hints. Trim input, reject empty text, cap at 2,000 characters with a clear limit. Continue resolves a candidate or asks for clarification. No signup or onboarding tour.
+THRESHOLD. “What do you keep turning away from?” Then the approved premise and a substantial textarea labeled “What's something you've been avoiding lately?” Examples stay hints. Trim input, reject empty text, cap at 2,000 characters with a clear limit. Continue resolves a candidate or asks for clarification. No signup or onboarding tour.
 
 ### 2. Clarify — conditional
 One tentative interpretation, “What feels closest?”, and the five approved choices: understand it first; don't know where to start; worried I'll do it badly; unpleasant to begin; something else. A correction can change territory and action; it is not a cosmetic edit. Something else accepts text and permits an unclassified action. High-confidence, concrete input can skip this step; correction remains available on Setup.
@@ -33,7 +33,7 @@ Changing an earlier response preserves unrelated draft answers, but contradictio
 Show a small visible map change only when an attempt occurred. Title and text reflect actual report. First Observation is singular and cautious. Example only when the user reports it: “The Doorway Felt Worse” and “This time, starting felt harder than continuing. Let's see if it happens again.” Show actual Expected → Experienced values with no bars. Nothing stood out gets a neutral encounter record, not an invented insight. Not started gets no new route. See my map is the single primary action.
 
 ### 7. Map
-Dominant continuous map, actual route history, known territory names, current candidate direction and unresolved surrounding space. Today's Edge includes engine-selected title, instruction and duration. Explore opens setup; I'm avoiding something starts from current life. Never display a catalog of locked territories or fake history. A recommendation may remain in one territory or change with a new situation; never force novelty.
+Dominant continuous map, actual route history, known territory names, current candidate direction and unresolved surrounding space. Today's Threshold includes engine-selected title, instruction and duration. Explore opens setup; I'm avoiding something starts from current life. Never display a catalog of locked territories or fake history. A recommendation may remain in one territory or change with a new situation; never force novelty.
 
 ### Atlas
 Observations and discoveries with source situation, date, expected/actual values and behavior. Inspect supporting and contrary encounters. No KPI dashboard. Empty copy: “Your observations will appear here after you try an expedition.”

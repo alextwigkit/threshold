@@ -441,7 +441,7 @@ export default function Home() {
     setRestoreMessage('');
     if (!file) return;
     if (file.size > 10_000_000) {
-      setRestoreError('Choose an Edge backup smaller than 10 MB.');
+      setRestoreError('Choose a Threshold backup smaller than 10 MB.');
       return;
     }
     try {
@@ -486,7 +486,7 @@ export default function Home() {
     );
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'edge-map.json';
+    a.download = 'threshold-map.json';
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
@@ -494,7 +494,7 @@ export default function Home() {
     return (
       <main className="shell">
         <header>
-          <span className="brand">EDGE</span>
+          <span className="brand">THRESHOLD</span>
         </header>
         <p>Opening your map…</p>
       </main>
@@ -505,14 +505,16 @@ export default function Home() {
         {s.screen === 'me' ? (
           <button
             className="preferences-back"
-            onClick={() => go(s.session ? 'active' : s.encounters.length ? 'map' : 'name')}
+            onClick={() =>
+              go(s.session ? 'active' : s.encounters.length ? 'map' : 'name')
+            }
           >
             <span aria-hidden="true">←</span> Back
           </button>
         ) : !nav &&
-        s.screen !== 'name' &&
-        s.screen !== 'observation' &&
-        s.screen !== 'active' ? (
+          s.screen !== 'name' &&
+          s.screen !== 'observation' &&
+          s.screen !== 'active' ? (
           <button
             className="back"
             aria-label="Go back"
@@ -531,13 +533,13 @@ export default function Home() {
             ←
           </button>
         ) : (
-          <span className="brand">EDGE</span>
+          <span className="brand">THRESHOLD</span>
         )}
-        {s.screen === 'me' && <span className="brand">EDGE</span>}
+        {s.screen === 'me' && <span className="brand">THRESHOLD</span>}
         {!nav &&
           s.screen !== 'name' &&
           s.screen !== 'observation' &&
-          s.screen !== 'active' && <span className="brand">EDGE</span>}
+          s.screen !== 'active' && <span className="brand">THRESHOLD</span>}
         {s.screen === 'name' && s.encounters.length === 0 && (
           <button className="text-button" onClick={() => go('me')}>
             Preferences
@@ -587,7 +589,7 @@ export default function Home() {
         <section className="opening">
           {title('What do you keep turning away from?')}
           <p className="premise">
-            Edge turns the things you avoid into territory you can explore.
+            Threshold turns the things you avoid into territory you can explore.
           </p>
           <label className="field-label" htmlFor="situation">
             What's something you've been avoiding lately?
@@ -915,7 +917,7 @@ export default function Home() {
           )}
           {next && (
             <>
-              <p className="eyebrow">Today's Edge · {next.minutes} min</p>
+              <p className="eyebrow">Today's Threshold · {next.minutes} min</p>
               <h2>{next.title}</h2>
               <p>
                 {next.action ||
@@ -1038,7 +1040,7 @@ export default function Home() {
             They aren’t synced to an account.
           </p>
           <p>
-            Edge currently offers a small set of editable suggestions. You
+            Threshold currently offers a small set of editable suggestions. You
             decide what fits and what step to take.
           </p>
           {saveBlocked.current && (

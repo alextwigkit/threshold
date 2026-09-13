@@ -1,4 +1,4 @@
-# Edge — source of truth
+# Threshold — source of truth
 
 > September 12 decision: the owner explicitly requested removing the AI suggestions section and making suggestions always on. Situation/resistance continuation now requests the existing model automatically when online, including on fresh browsers and after local data deletion. The old consent preference is no longer read. Existing minimal payload, API limits, validation and offline fallback remain. Earlier default-off/toggle instructions below are historical and superseded. This authorization applies to the current private personal app.
 
@@ -16,13 +16,13 @@ The source conversation explored alternatives. Those alternatives are not parall
 - Gamify meaningful approach behavior in real life, never app engagement, suffering, or discomfort reduction.
 - Personal geography grows from resistance the user actually encounters; no rigid territory curriculum or completion ladder.
 - Evocative world, plain interface, precise insight. The model reasons; the product speaks through controlled language.
-- Name → clarify only if needed → territory and expedition with prediction → leave Edge and act → progressive return → observation → changed map.
+- Name → clarify only if needed → territory and expedition with prediction → leave Threshold and act → progressive return → observation → changed map.
 - First action should be reachable in roughly two minutes. No account, tutorial carousel, baseline questionnaire, or catalog before it.
 - Prediction and experience each use integer 0–10 scales with no preselected answer.
 - Return reveals discomfort, then avoidance response, then multi-select noticing.
 - One encounter can support a small observation. Repeated, relevant evidence is needed for a discovery. Neither is guaranteed to be positive or surprising.
 - Map / Atlas / Me navigation on established-user surfaces. Home is a world, not a dashboard.
-- Today's Edge is selected by the behavior engine, with actual action copy and duration.
+- Today's Threshold is selected by the behavior engine, with actual action copy and duration.
 
 ## Visual reference manifest
 | File | Screen | Implementation correction |

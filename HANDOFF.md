@@ -1,16 +1,18 @@
-# Edge — cold-start handoff
+# Threshold — cold-start handoff
 
-> September 12 follow-up: the owner removed the entire “Keep Edge nearby” section and its custom install prompt from Me. Browser-native installation and the PWA/offline shell remain available; do not restore installation guidance without a new request.
+> September 12 follow-up: the owner removed the entire “Keep Threshold nearby” section and its custom install prompt from Me. Browser-native installation and the PWA/offline shell remain available; do not restore installation guidance without a new request.
 
 > September 12 decision: the owner explicitly requested removing the AI suggestions section and making suggestions always on. Situation/resistance continuation now requests the existing model automatically when online, including on fresh browsers and after local data deletion. The old consent preference is no longer read. Existing minimal payload, API limits, validation and offline fallback remain. Earlier default-off/toggle instructions below are historical and superseded. This authorization applies to the current private personal app.
+
+> September 12 decision: the owner explicitly requested deploying directly to Cloudflare instead of depending on the ChatGPT/Codex session that owns the Sites publish flow, and renaming the app from Edge to **Threshold** at the same time. This supersedes section 9's prior instruction that "a session without [Sites credentials] cannot publish, and must not substitute a direct Wrangler deploy" — that constraint protected the Sites dispatcher's trusted-identity header, which a direct deploy has no equivalent of by default. The replacement is a server-side username/password session (see section 9's Cloudflare deployment block): D1-stored accounts, salted+iterated password hashing, and a signed HttpOnly session cookie gating every route, not just `/api/*`. The Sites deployment is untouched and still live; Threshold on Cloudflare is a second, parallel deployment to a new `*.workers.dev` origin. Because browser `localStorage` is origin-scoped, existing map/encounter history does not carry over automatically — export from the Sites-hosted app and restore into Threshold before treating it as the source of truth.
 
 Updated after version 3 publication and signed-in browser verification, September 8, 2026 UTC (September 7 in Los Angeles), then again after the local-path browser and accessibility pass later the same day. The accessibility fixes from that pass are **not yet published**; version 3 remains the live release. This document is the entry point for a new task. It preserves decisions; it does not authorize a redesign, public launch, or new spending.
 
 ## 1. Read this first
 
-**Edge helps someone approach a meaningful thing they avoid. Real encounters gradually reveal a personal map; repeated evidence can become discoveries. The app should get the person into life, then receive a brief report of what happened.**
+**Threshold helps someone approach a meaningful thing they avoid. Real encounters gradually reveal a personal map; repeated evidence can become discoveries. The app should get the person into life, then receive a brief report of what happened.**
 
-The working app is privately published at [Edge](https://edge-personal-atlas.thenewdeal.chatgpt.site/). The core loop, local map/history, and optional OpenAI suggestions exist. Credentials and credits are configured. Do not restart setup, tell the user AI is still blocked, or ask them to create another key.
+The working app is privately published at [Threshold](https://edge-personal-atlas.thenewdeal.chatgpt.site/). The core loop, local map/history, and optional OpenAI suggestions exist. Credentials and credits are configured. Do not restart setup, tell the user AI is still blocked, or ask them to create another key.
 
 The next valuable work is verification and improving the relevance of small actions within the existing experience. It is not another broad Stitch pass, a chat interface, or more onboarding.
 
@@ -40,7 +42,7 @@ Precedence: latest explicit user decisions → latest approved seven screens plu
 
 Reward an actual attempt toward something the person values, including an uncomfortable or unfinished attempt. Do not reward app visits, waiting out a timer, reporting favorable numbers, maintaining streaks, or completing a territory. Stopping is a valid report, not a failure badge. Not starting must remain possible and adds no approach trace.
 
-Expected 8 → experienced 8 can still produce useful learning if the person acted with discomfort present. Expected 7 → experienced 4 does not by itself prove that starting was harder than continuing. That distinction requires the person's report. Never silently turn Edge into a discomfort-reduction game.
+Expected 8 → experienced 8 can still produce useful learning if the person acted with discomfort present. Expected 7 → experienced 4 does not by itself prove that starting was harder than continuing. That distinction requires the person's report. Never silently turn Threshold into a discomfort-reduction game.
 
 ### Personal geography, not a curriculum
 
@@ -62,7 +64,7 @@ The active screen should make putting the phone down natural. A timestamp-based 
 
 ## 4. The approved first-session contract
 
-**Name → clarify only if needed → combined territory/action setup → act outside Edge → progressive return → observation → changed map.**
+**Name → clarify only if needed → combined territory/action setup → act outside Threshold → progressive return → observation → changed map.**
 
 - **Name:** real avoided situation; examples are hints, never prefilled history. The current opening adds an understated Preferences link so optional AI is reachable before any encounter.
 - **Clarify:** one tentative interpretation and a correctable resistance choice. A correction must affect the action and territory. Something else is allowed; uncertainty is not a reason to force a category.
@@ -70,7 +72,7 @@ The active screen should make putting the phone down natural. A timestamp-based 
 - **Active:** exact step, timer, I'm back, Stop. Real action happens elsewhere.
 - **Return:** actual discomfort first; then avoidance response; then noticing. The screenshot shows the expanded end state, not three questions to display immediately. Noticing is multi-select. “Nothing stood out” is exclusive. Do not require surprise or a positive outcome.
 - **Observation:** one encounter supports a modest “this time” claim. Neutral and stopped outcomes have honest copy. Not started adds no route. Never announce a stable pattern after one trial.
-- **Map:** actual history dominates. Today's Edge comes from the behavior engine and describes the next action and duration. Never hard-code “Another Step into The Fog” or “Follow the initial clarity before the doubt returns.” The latter wrongly assumes clarity occurred and teaches acting only while doubt is absent.
+- **Map:** actual history dominates. Today's Threshold comes from the behavior engine and describes the next action and duration. Never hard-code “Another Step into The Fog” or “Follow the initial clarity before the doubt returns.” The latter wrongly assumes clarity occurred and teaches acting only while doubt is absent.
 
 Map / Atlas / Me navigation belongs on established-user surfaces; keep it out of the action flow. Atlas holds observations, discoveries and inspectable evidence. Me owns local data controls, installation guidance and optional AI disclosure.
 
@@ -118,7 +120,7 @@ The implementation reconstructs the earliest qualifying discovery from encounter
 - Installable PWA shell, bundled assets and offline local behavior. Full physical-device offline verification remains outstanding.
 - Optional OpenAI suggestions behind private Sites authentication and a small API Worker.
 
-**Today's Edge is currently chosen by the local deterministic behavior engine.** It is dynamic from the latest confirmed situation and history; it does not make an LLM call every time Home opens. AI is used when continuing from situation entry or a resistance choice while opted in. Do not describe it as a fully longitudinal AI coach.
+**Today's Threshold is currently chosen by the local deterministic behavior engine.** It is dynamic from the latest confirmed situation and history; it does not make an LLM call every time Home opens. AI is used when continuing from situation entry or a resistance choice while opted in. Do not describe it as a fully longitudinal AI coach.
 
 The AI receives only the current situation and confirmed resistance enum. It does not receive map history, predictions, reflection text, or the freeform Something else/resistance note. Thus it cannot interpret that note today. These are deliberate data-minimization boundaries and current capability limits, not proof that deeper reasoning is complete.
 
@@ -156,7 +158,30 @@ Parent projectless working directory is not the app repository. Work in the app 
 
 Documentation commits after the published source commit do not imply a new live app release. Reuse `.openai/hosting.json`; never create a replacement Site or widen its audience to make a test work.
 
-**Version 4 is staged but not published.** The accessibility and text-resize fixes are committed at `df72c8c`, and a release candidate built from that commit is at `../../work/edge-v4-release.tar.gz`. It was verified to contain no value from `.env.local` (boolean-only comparison, no value printed) and to leave the published migration byte-identical. Publishing needs the Sites building/hosting skills and Sites-issued transient git credentials, which exist in the owning Codex environment and not in every session; a session without them cannot publish, and must not substitute a direct Wrangler deploy, which would put the Worker outside the trusted dispatcher.
+**Version 4 is staged but not published on Sites.** The accessibility and text-resize fixes are committed at `df72c8c`, and a release candidate built from that commit is at `../../work/edge-v4-release.tar.gz`. It was verified to contain no value from `.env.local` (boolean-only comparison, no value printed) and to leave the published migration byte-identical. Publishing to Sites needs the Sites building/hosting skills and Sites-issued transient git credentials, which exist in the owning Codex environment and not in every session; ~~a session without them cannot publish, and must not substitute a direct Wrangler deploy, which would put the Worker outside the trusted dispatcher~~ → **superseded by the September 12 decision above**: a direct Wrangler deploy is now the intended path for Threshold, with its own session-cookie identity replacing the trusted dispatcher. See the Cloudflare deployment block below. This paragraph's Sites-specific facts remain accurate for the Sites deployment, which is untouched and still live.
+
+### Cloudflare deployment (Threshold, direct — not Sites)
+
+A second, parallel deployment alongside the Sites one above, on the owner's existing Cloudflare account (already used for other personal apps; free tier).
+
+| Item | Value |
+|---|---|
+| Worker name | `threshold` |
+| D1 database | `threshold-quota` (binding `DB`) — separate from Sites' `edge-quota`/`site-creator-d1` |
+| Auth | Server-side session, not Sites dispatch. See `server/auth.ts`. |
+| Session cookie | `threshold_session`, HttpOnly/Secure/SameSite=Lax, 30-day expiry, HMAC-signed with the `SESSION_SECRET` Worker secret |
+| URL | Not yet deployed. Will be `*.workers.dev` under the owner's account unless a custom domain is added. |
+
+Manual, owner-only steps (none of these can be done from a session without the owner's own Cloudflare credentials):
+1. `wrangler login` (or an API token) against the existing account.
+2. `wrangler d1 create threshold-quota`, then set `THRESHOLD_DB_ID` (and `CLOUDFLARE_ACCOUNT_ID`) as environment variables before `npm run build`, so `scripts/worker.mjs` writes the real ids into `dist/server/wrangler.json` instead of the local-dev placeholder.
+3. `npm run db:migrate` to apply `drizzle/*.sql` (including the new `users`/`login_attempts` tables) to the real database.
+4. Seed at least one account: `node --experimental-strip-types scripts/seed-user.mjs <username> <password> > seed.sql`, then `wrangler d1 execute threshold-quota --remote --file=seed.sql`. There is no signup route by design.
+5. `wrangler secret put SESSION_SECRET`, `wrangler secret put OPENAI_API_KEY`, and set `OPENAI_MODEL` (non-secret) — same OpenAI relationship as today, just provisioned directly on this Worker instead of through Sites' hosted-secret mechanism.
+6. `npm run deploy`.
+7. Verify signed-in and signed-out behavior in a real browser exactly like the local `wrangler dev` pass (unauthenticated → redirected to `/login`; wrong password rejected; correct password reaches the app; `/logout` clears the cookie), then **export from the Sites-hosted app and restore into Threshold** before relying on it — `localStorage` does not follow across origins.
+
+Sessions are stateless (signed tokens, no server-side revocation list): `/logout` clears the browser's cookie but does not invalidate that token elsewhere before its 30-day expiry. Acceptable for a single/few-owner private app; would need a revocation table if that threat model ever changes.
 
 Note when packaging: `npm run start` writes local Miniflare state under `dist/server/.wrangler/`, including a local D1 database. The version 3 package shipped that scratch directory. Exclude `.wrangler` when packaging; `dist/server/wrangler.json` is the only Wrangler file that belongs in a release.
 
@@ -169,13 +194,13 @@ File map:
 - `lib/storage.ts`, `lib/map.ts`: local state/backup validation and evidence projection.
 - `lib/suggestions.ts`: consent constants, client response validation, abort/stale-response protection.
 - `server/inference.ts`, `server/handler.ts`, `server/transport.ts`: provider schema, reviewed templates, bounded request/response handling and guarded endpoint.
-- `server/worker.ts`, `server/quota.ts`: dispatch identity/origin checks and atomic D1 counters.
-- `db/schema.ts`, `drizzle/`: quota schema and generated migration. The published migration is applied history; never rewrite it.
+- `server/worker.ts`: request routing, login/logout, and the session gate in front of every route. `server/auth.ts`: password hashing, session signing, login-rate-limiting — the identity layer that replaced Sites dispatch for the Cloudflare deployment. `server/quota.ts`: atomic D1 counters, unchanged.
+- `db/schema.ts`, `drizzle/`: quota, `users` and `login_attempts` schema and generated migrations. The Sites-published migration (`0000_*.sql`) is applied history there; never rewrite it. `scripts/seed-user.mjs` creates account rows for the Cloudflare deployment — there is no signup route.
 - `scripts/offline.mjs`, `scripts/worker.mjs`: offline asset cache and Worker packaging. Never cache `/api/*`.
 - `scripts/evaluate.mjs`: synthetic live evaluation; consumes API credits when run.
 - `tests/`: behavioral, persistence, inference, cancellation, quota and Worker boundary checks.
 
-Sites dispatch supplies `oai-authenticated-user-id`. The Worker must remain behind that trusted dispatcher; do not expose a public workers.dev route or accept browser-provided identity as authoritative. A Sites gate-bypass token is identity-less: 401 from the AI endpoint with that token is expected. It is not evidence that the saved API key is broken.
+**Sites deployment only:** Sites dispatch supplies `oai-authenticated-user-id`. That Worker must remain behind the trusted dispatcher; do not expose a public workers.dev route for it or accept browser-provided identity as authoritative there. A Sites gate-bypass token is identity-less: 401 from the AI endpoint with that token is expected, and is not evidence the saved API key is broken. **This does not apply to the Cloudflare/Threshold deployment**, which has no Sites dispatcher in front of it by design — its public workers.dev route is intentional, gated instead by the session-cookie login described above.
 
 ## 10. What was verified, and what was not
 
@@ -206,16 +231,16 @@ Last audit: zero production dependency vulnerabilities; four moderate advisories
 The previous top two priorities (visual review, and browser/accessibility validation) are **done for the local path**, including the `rem` conversion. What remains of them is listed first because it is still the nearest gap.
 
 1. Finish the validation started on September 7: the signed-in AI-enabled journey past the prediction step, a pass with real screen-reader software, a real browser font-size setting to confirm the `em` breakpoint, and physical-device installation, offline relaunch and background-timer behavior. Use synthetic data or an isolated test state; never fabricate meaningful approach in the user's actual map. Preserve user drafts and preferences. Browser testing was explicitly authorized in that task; do not infer blanket authority to alter unrelated user data.
-2. Publish the accumulated accessibility, text-resize and map-correction work once the user approves. It is committed but not live; version 3 is still what the private URL serves. Publication needs explicit approval, as always. Note that publishing carries the one-time route relocation to the live map, so the person's existing traces will sit in new places the first time they open it.
-3. Broaden the behavioral evaluation set and action library: ambiguity, negation, unfamiliar tasks, user corrections, high-stakes boundaries and awkward copied noun phrases. Check usefulness, not merely valid JSON. Evaluate local and AI paths separately. Keep all action copy editable.
+2. Sites publish: the owner has published from the Sites session since this was last updated; confirm the exact live version/commit there rather than trusting this document's older facts table before relying on it. Separately, complete the Cloudflare/Threshold deployment described in section 9 — code and tests are done, but the account-side steps (D1 create, secrets, seeding an account, `npm run deploy`) are still outstanding and can only be done by the owner.
+3. Broaden the behavioral evaluation set and action library: ambiguity, negation, unfamiliar tasks, user corrections, high-stakes boundaries and awkward copied noun phrases. Check usefulness, not merely valid JSON. Evaluate local and AI paths separately. Keep all action copy editable. One gap already found and pinned as a test, not fixed: the local (non-AI) path has no equivalent of the AI prompt's explicit routing of coercion/danger/medical-legal-financial/safety-critical situations to a blank "you write it" step — it can still match an ordinary template purely by incidental keyword overlap. Needs a product decision before touching it.
 4. Observe real use: does the next action fit, does the user leave the app, does return feel quick, and does the map make the encounter worth remembering? Tune provisional thresholds from evidence rather than presenting them as science.
-5. Consider richer authored map changes, inhabitants, and sync only as explicit subsequent scope. Sync needs a product/data/consent design and conflict handling. D1 quota storage is not already a cloud Atlas. Do not add a login wizard just because a database exists.
+5. Consider richer authored map changes, inhabitants, and sync only as explicit subsequent scope. Sync needs a product/data/consent design and conflict handling. D1 quota storage is not already a cloud Atlas. ~~Do not add a login wizard just because a database exists.~~ → **superseded**: a login now exists, added deliberately for the September 12 Cloudflare-deployment decision (section 9), not speculatively. The caution still applies to inventing further account features (signup, password reset, multi-user roles) without an explicit reason.
 
 Do not fill the backlog with reminders, streaks, feeds, badges, territory levels, wellness metrics, generic AI chat, or premium screens. The current personal test is private; a public release requires separate audience approval and the outstanding release checks.
 
 ## 12. Practical resume notes
 
-Use the installed Sites building/hosting skills for this repository. Their current instructions govern hosting. Only the owning agent edits/publishes; no new task, subagent, Site, worktree or provider setup is needed merely to resume.
+For the Sites deployment: use the installed Sites building/hosting skills for this repository; their current instructions govern that hosting, and only the owning agent edits/publishes there. For the Cloudflare/Threshold deployment: use `wrangler` directly (`npm run deploy`, `npm run db:migrate`) with the owner's own Cloudflare credentials — see section 9. Neither needs a new task, subagent, Site, worktree or provider setup merely to resume.
 
 Use Node >=22.13; the bundled working runtime is `/Users/alex/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node`. The default system Node was too old. Prefix its directory on PATH. Commands: `npm test`, `npx --no-install tsc --noEmit`, `npm run build`. Do not repeatedly rerun paid evaluations or broad checks without a change or unresolved concern.
 
@@ -229,4 +254,4 @@ User preference: act autonomously within approved scope, communicate plainly, an
 
 ## Suggested cold-start instruction
 
-> Continue Edge from HANDOFF.md in the existing repository. Preserve the locked product vision and latest Stitch foundation. First report the current live state and the highest-priority remaining verification or behavior-quality gap, then complete a coherent batch within that scope. Do not restart setup, reopen settled design/provider decisions, add new game mechanics, or treat unverified capabilities as complete. Keep the app private and protect existing user data and credentials.
+> Continue Threshold from HANDOFF.md in the existing repository. Preserve the locked product vision and latest Stitch foundation. First report the current live state and the highest-priority remaining verification or behavior-quality gap, then complete a coherent batch within that scope. Do not restart setup, reopen settled design/provider decisions, add new game mechanics, or treat unverified capabilities as complete. Keep the app private and protect existing user data and credentials.

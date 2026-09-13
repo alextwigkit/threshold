@@ -8,7 +8,6 @@ import {
 import { readBounded } from './transport.ts';
 export type ServerContext = {
   userId: string | null;
-  trustedOrigin: string;
   provider: ProviderConfig | null;
   consumeQuota: (userId: string) => Promise<boolean>;
 };
@@ -28,9 +27,10 @@ export async function handleSuggestion(
 ): Promise<Response> {
   if (request.method !== 'POST')
     return json({ error: 'method_not_allowed' }, 405);
+  // userId is only ever non-null here because the caller already verified a signed,
+  // SameSite=Lax session cookie (see server/worker.ts) — that replaces the old fixed-origin
+  // check, and covers CSRF too, without hardcoding a domain into this handler.
   if (!context.userId) return json({ error: 'sign_in_required' }, 401);
-  if (request.headers.get('origin') !== context.trustedOrigin)
-    return json({ error: 'origin_not_allowed' }, 403);
   if (!request.headers.get('content-type')?.startsWith('application/json'))
     return json({ error: 'json_required' }, 415);
   let raw: string;

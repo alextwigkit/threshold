@@ -1,4 +1,4 @@
-# Edge — behavior engine
+# Threshold — behavior engine
 
 Current release: private version 3, including optional AI. Read [HANDOFF.md](HANDOFF.md) for current status, decision precedence and verification boundaries. Sections describing the initial build are historical where explicitly labeled.
 
@@ -31,14 +31,14 @@ A valid candidate includes an observable action, a bounded dose (initially 1–5
 
 Reviewed examples:
 - Fog, proposal: Open the proposal and spend 3 minutes writing three possible sections, even if unsure.
-- Spotlight: Ask one relevant question before you feel completely certain how it will sound. User chooses person/channel; Edge does not send it.
+- Spotlight: Ask one relevant question before you feel completely certain how it will sound. User chooses person/channel; Threshold does not send it.
 - Open Loop: Complete the necessary functional check, then end one extra polishing pass.
 - Still Water: Spend one minute noticing the feeling without immediately opening a distraction. Stop if needed.
 - Unknown: User names a small concrete action toward their situation; engine does not manufacture context.
 
 For unsupported situation details, require the user to supply the exact action instead of inserting the whole situation into an awkward template. Show the final action before Begin. User edits are retained with the record.
 
-## Calibration and Today's Edge
+## Calibration and Today's Threshold
 Start small. A recent stop or high reported difficulty suggests a smaller dose, never a shame message. Repeated attempted approach may offer a modest duration increase, but discomfort need not decrease. User can always make it smaller or change the action. No automatic escalation based only on low discomfort.
 
 Priority: resume active session; otherwise explicit new situation; otherwise a relevant variant grounded in the latest confirmed situation and history. Do not randomly rotate territories or exhaust one before revealing another. If context is stale or unclear, ask for current resistance. Candidate selection is deterministic for unchanged evidence. Home renders the returned title, action and duration; it must not own recommendation strings.

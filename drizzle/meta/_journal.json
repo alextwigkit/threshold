@@ -8,6 +8,13 @@
       "when": 1788820985446,
       "tag": "0000_long_dexter_bennett",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1789265681339,
+      "tag": "0001_regular_venus",
+      "breakpoints": true
     }
   ]
 }

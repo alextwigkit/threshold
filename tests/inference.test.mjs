@@ -44,7 +44,6 @@ const provider = (extra = {}) => ({
 });
 const ctx = (extra = {}) => ({
   userId: 'verified-test-user',
-  trustedOrigin: 'https://edge.test',
   provider: provider(),
   consumeQuota: async () => true,
   ...extra,
@@ -184,7 +183,9 @@ test('provider rejects missing configuration, HTTP failure, timeout and oversize
     /too_large/,
   );
 });
-test('handler rejects unauthenticated, cross-origin, missing consent and quota failures before calling model', async () => {
+// Cross-origin/CSRF rejection now happens one layer up, in server/worker.ts's session-cookie
+// gate (see tests/suggestions.test.mjs) — handleSuggestion trusts context.userId once it's set.
+test('handler rejects unauthenticated, missing consent and quota failures before calling model', async () => {
   let calls = 0;
   const p = provider({
     fetchImpl: async () => {
@@ -194,7 +195,6 @@ test('handler rejects unauthenticated, cross-origin, missing consent and quota f
   });
   for (const [request, context, status] of [
     [req(), ctx({ provider: p, userId: null }), 401],
-    [req(input, { origin: 'https://other.test' }), ctx({ provider: p }), 403],
     [req({ ...input, consentVersion: '' }), ctx({ provider: p }), 400],
     [req(), ctx({ provider: p, consumeQuota: async () => false }), 429],
   ])
