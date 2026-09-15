@@ -214,6 +214,14 @@ header {
   margin-bottom: 20px;
   color: var(--accent);
 }
+/* A transient system notice, not permanent copy: bordered like .error so it
+ * doesn't camouflage as body text, but muted since nothing has gone wrong. */
+.notice {
+  padding: 12px;
+  border-left: 2px solid var(--border);
+  margin-bottom: 20px;
+  color: var(--muted-foreground);
+}
 /*
  * Fills the same vertical space the screen it's replacing would (matches
  * .opening's height calc): the loading state must not be a tiny stub sitting
@@ -348,14 +356,11 @@ fieldset.choices {
   margin: 24px 0;
 }
 .scale-legend {
-  float: left;
   font-size: 1.0625rem;
   font-weight: 500;
   margin-bottom: 16px;
-  width: 100%;
 }
 .scale {
-  clear: both;
   display: grid !important;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 4px !important;
@@ -410,6 +415,11 @@ fieldset.choices {
 }
 .duration .text-button {
   font-size: 0.875rem;
+}
+/* Not underlined like the two buttons beside it: this one is informational, not tappable. */
+.duration-label {
+  font-weight: 500;
+  color: var(--foreground);
 }
 .map-fragment {
   overflow: hidden;

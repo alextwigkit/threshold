@@ -377,6 +377,7 @@ export default function Home() {
       return;
     }
     if (!s.draft?.action.trim() || !validScale(s.prediction)) return;
+    setSuggestionMessage('');
     patch({
       session: {
         ...s.draft,
@@ -397,11 +398,13 @@ export default function Home() {
     if (s.session) patch({ session: { ...s.session, ...p } });
   }
   function returnFrom(stopped = false) {
-    if (s.session)
+    if (s.session) {
+      setSuggestionMessage('');
       patch({
         session: { ...s.session, returnedAt: Date.now(), stopped },
         screen: 'return',
       });
+    }
   }
   function finish(notStarted = false) {
     if (!s.session) return;
@@ -420,6 +423,7 @@ export default function Home() {
       createdAt: Date.now(),
       localDate: `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`,
     };
+    setSuggestionMessage('');
     patch({
       encounters: appendEncounter(s.encounters, e),
       session: null,
@@ -583,7 +587,11 @@ export default function Home() {
           </button>
         </div>
       )}
-      {suggestionMessage && <p role="status">{suggestionMessage}</p>}
+      {suggestionMessage && (
+        <p className="notice" role="status">
+          {suggestionMessage}
+        </p>
+      )}
       {busy && (
         <div role="status" className="loading">
           <p>
@@ -719,7 +727,7 @@ export default function Home() {
             }
           />
           <div className="duration">
-            <span>{s.draft!.minutes} min</span>
+            <span className="duration-label">{s.draft!.minutes} min</span>
             <button
               className="text-button"
               onClick={() =>
@@ -1064,6 +1072,14 @@ export default function Home() {
               </details>
             </article>
           ))}
+          {!atlasTerritory &&
+            s.encounters.length > 0 &&
+            s.encounters.length < 4 && (
+              <p className="optional">
+                Patterns show up here once there are a few more encounters to
+                compare.
+              </p>
+            )}
         </section>
       )}
       {s.screen === 'me' && (
