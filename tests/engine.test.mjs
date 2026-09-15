@@ -75,6 +75,44 @@ test('an AI-suggested water action stays consistent with its own title and minut
   assert.equal(next.minutes, 1);
   assert.equal(next.title, 'Stay With It for a Moment');
 });
+// The general form of the bug above, not tied to the water/"feel" regex specifically:
+// candidate() re-derives territory from a crude resistance-only table on every call,
+// discarding whatever the actually-recorded encounter's territory was. Any situation the
+// table's regexes can't reproduce — here, resistance "start" always maps to fog, but this
+// encounter was filed under "unknown" — silently flips on the very next recompute, live
+// on the Map screen's "Today's Threshold" card, while the map thumbnail beside it (built
+// straight from history, not recomputed) still correctly shows the original territory.
+test('a recorded territory the resistance table would not reproduce stays fixed on the next preview', () => {
+  const situation =
+    'calling the dentist to reschedule an appointment I keep putting off';
+  const prior = [
+    encounter('1', {
+      situation,
+      resistance: 'start',
+      territory: 'unknown',
+      template: 'model-own_step-v1',
+      action: 'Call and reschedule for next week',
+      title: 'Take One Small Step',
+      minutes: 3,
+    }),
+  ];
+  assert.equal(candidate(situation, 'start', prior).territory, 'unknown');
+  // A genuinely new situation+resistance pair, with no recorded territory to preserve,
+  // still falls back to the table normally.
+  assert.equal(candidate('a brand new proposal', 'start').territory, 'fog');
+  // The safety-critical guard still overrides even a stored non-safety territory: it is
+  // read from the current situation text every time, not cached from history.
+  assert.equal(
+    candidate('ask my doctor about the surgery next week', 'unpleasant', [
+      encounter('2', {
+        situation: 'ask my doctor about the surgery next week',
+        resistance: 'unpleasant',
+        territory: 'water',
+      }),
+    ]).territory,
+    'unknown',
+  );
+});
 test('history changes the relevant recommendation and a stop reduces dose', () => {
   const e = encounter('1');
   assert.equal(

@@ -2,13 +2,24 @@ import { readdir, writeFile, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 const root = 'dist/client';
-async function walk(dir) {
+// Cloudflare's own build/deploy config, not public content: it 404s when actually
+// fetched, which silently broke offline support entirely — cache.addAll() is all-or-
+// nothing, so one 404 among the listed files fails the whole install, and a failed
+// install makes the browser discard the registration outright (confirmed live: it
+// briefly registers, then vanishes within ~400ms, with no console error at all).
+const CLOUDFLARE_ROOT_FILES = new Set(['_headers', '_redirects']);
+async function walk(dir, isRoot = true) {
   const items = await readdir(dir, { withFileTypes: true });
   return (
     await Promise.all(
-      items.map((x) =>
-        x.isDirectory() ? walk(join(dir, x.name)) : [join(dir, x.name)],
-      ),
+      items
+        .filter((x) => !x.name.startsWith('.'))
+        .filter((x) => !(isRoot && CLOUDFLARE_ROOT_FILES.has(x.name)))
+        .map((x) =>
+          x.isDirectory()
+            ? walk(join(dir, x.name), false)
+            : [join(dir, x.name)],
+        ),
     )
   ).flat();
 }

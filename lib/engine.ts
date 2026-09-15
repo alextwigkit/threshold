@@ -130,17 +130,25 @@ export function candidate(
     /\b(suicid\w*|self[- ]?harm|end(?:ing)? (my|his|her|their) life|end it all|not want to (live|be here)|better off dead|kill(?:ing)? (myself|him|her|them)|hurt(?:ing)? (myself|someone)|abus\w*|assault\w*|domestic violence|overdose|medication|prescription|diagnos\w*|surgery|lawsuit|attorney|custody battle|eviction|foreclosure|bankrupt\w*|restraining order)\b/i.test(
       situation,
     );
+  // A recurring situation+resistance pair keeps whatever territory it was actually
+  // classified as (frequently by the AI, which reasons about the situation directly)
+  // instead of re-deriving one from this crude resistance-only table every time. Without
+  // this, any AI classification the table's own regexes can't reproduce — not just the
+  // water/"feel" case already fixed once — silently flips on the very next recompute,
+  // while the stored action/title text for that same encounter does not: this is what
+  // produced a "Keep Going Before Checking" (fog) title sitting under a map thumbnail
+  // that still correctly showed the encounter filed under "Somewhere new" (unknown).
   const territory: Territory = safetyCritical
     ? 'unknown'
-    : (
+    : (last?.territory ??
+      (
         {
           understand: 'fog',
           start: 'fog',
           judged: 'spotlight',
           // Word stems, not exact words: "feel" alone (no "-ing") previously missed water
-          // entirely, silently reclassifying it as unknown on the very next recomputation —
-          // e.g. after an AI-suggested water action, re-deriving the local default for the
-          // same situation landed on a different territory than the action text still shown.
+          // entirely for a genuinely new situation+resistance pair with no prior territory
+          // to fall back on.
           unpleasant:
             /\b(feel|emotion|restless|bored|sad|distract|scroll)/i.test(
               situation,
@@ -150,7 +158,7 @@ export function candidate(
           other: 'unknown',
           checking: 'loop',
         } as const
-      )[resistance];
+      )[resistance]);
   let title = 'Take One Small Step',
     action = '',
     template = 'user-action';
