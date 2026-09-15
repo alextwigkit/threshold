@@ -620,7 +620,7 @@ export default function Home() {
         </div>
       )}
       {s.screen === 'name' && !busy && (
-        <section className="opening">
+        <section className="opening screen-fade-in">
           {title('What do you keep turning away from?')}
           <p className="premise">
             Threshold turns the things you avoid into territory you can explore.
@@ -646,7 +646,7 @@ export default function Home() {
         </section>
       )}
       {s.screen === 'clarify' && !busy && (
-        <section>
+        <section className="screen-fade-in">
           {title('What makes it hard to take a step?')}
           <p id="resistance-hint">
             Pick the main thing for now. It doesn’t have to explain everything.
@@ -892,34 +892,36 @@ export default function Home() {
             revealId={last.id}
             newDiscoveryId={newDiscovery?.id}
           />
-          <p className="eyebrow">
-            {newDiscovery
-              ? 'Discovery'
-              : last.outcome === 'not_started'
-                ? 'This time'
-                : s.encounters.filter((e) => e.outcome !== 'not_started')
-                      .length === 1
-                  ? 'First observation'
-                  : 'Observation'}
-          </p>
-          {title(newDiscovery?.title ?? observation(last).title)}
-          {last.actual !== null && (
-            <p className="evidence">
-              Expected{' '}
-              {newDiscovery ? expectedMean.toFixed(1) : last.prediction}{' '}
-              <span aria-hidden="true">→</span> Experienced{' '}
-              {newDiscovery ? experiencedMean.toFixed(1) : last.actual}
+          <div className={newDiscovery ? 'discovery-reveal' : undefined}>
+            <p className="eyebrow">
+              {newDiscovery
+                ? 'Discovery'
+                : last.outcome === 'not_started'
+                  ? 'This time'
+                  : s.encounters.filter((e) => e.outcome !== 'not_started')
+                        .length === 1
+                    ? 'First observation'
+                    : 'Observation'}
             </p>
-          )}
-          <p className="serif observation-copy">
-            {newDiscovery?.body ?? observation(last).body}
-          </p>
-          {newDiscovery && (
-            <p className="optional">
-              Across {discoveryEvidence.length} encounters with{' '}
-              {territories[newDiscovery.territory].name}.
+            {title(newDiscovery?.title ?? observation(last).title)}
+            {last.actual !== null && (
+              <p className="evidence">
+                Expected{' '}
+                {newDiscovery ? expectedMean.toFixed(1) : last.prediction}{' '}
+                <span aria-hidden="true">→</span> Experienced{' '}
+                {newDiscovery ? experiencedMean.toFixed(1) : last.actual}
+              </p>
+            )}
+            <p className="serif observation-copy">
+              {newDiscovery?.body ?? observation(last).body}
             </p>
-          )}
+            {newDiscovery && (
+              <p className="optional">
+                Across {discoveryEvidence.length} encounters with{' '}
+                {territories[newDiscovery.territory].name}.
+              </p>
+            )}
+          </div>
           <Primary onClick={() => go('map')}>See my map</Primary>
         </section>
       )}

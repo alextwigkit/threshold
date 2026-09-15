@@ -87,10 +87,10 @@ textarea:focus-visible,
   outline-offset: 4px;
 }
 /* Tap-highlight is gone (see html, above), so every primary tap target needs
- * its own immediate, finger-down press feedback in its place. */
+ * its own immediate, finger-down press feedback in its place. .choice and
+ * .scale-choice declare this transform transition themselves, combined with
+ * their own background-color transition, rather than here. */
 .primary,
-.choice,
-.scale-choice,
 .text-button,
 .back,
 .avoid-row,
@@ -255,18 +255,31 @@ header {
   color: var(--accent);
   margin-bottom: 10px;
 }
-.error {
+.error,
+.notice {
   padding: 12px;
   border-left: 2px solid var(--accent);
   margin-bottom: 20px;
   color: var(--accent);
+  /* Both insert themselves above the screen and push it down; without this
+   * they land with no bridge, same problem the loading crossfade solves below. */
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 200ms ease-out,
+    transform 200ms ease-out;
+}
+@starting-style {
+  .error,
+  .notice {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
 }
 /* A transient system notice, not permanent copy: bordered like .error so it
  * doesn't camouflage as body text, but muted since nothing has gone wrong. */
 .notice {
-  padding: 12px;
-  border-left: 2px solid var(--border);
-  margin-bottom: 20px;
+  border-left-color: var(--border);
   color: var(--muted-foreground);
 }
 /*
@@ -284,6 +297,21 @@ header {
   gap: 16px;
   min-height: calc(100svh - 135px);
   text-align: center;
+}
+/* The spinner and the screen it resolves into replace each other outright
+ * (React unmounts one, mounts the other), so only the entrance half of the
+ * swap can be softened without JS — this fades each one in as it mounts,
+ * rather than the previous hard cut straight to full opacity. */
+.loading,
+.screen-fade-in {
+  opacity: 1;
+  transition: opacity 180ms ease-out;
+}
+@starting-style {
+  .loading,
+  .screen-fade-in {
+    opacity: 0;
+  }
 }
 .loading p {
   display: flex;
@@ -345,6 +373,11 @@ fieldset.choices {
   border-radius: 5px;
   color: #33362f;
   cursor: pointer;
+  /* Also carries the shared transform-on-tap feedback from above — combined
+   * here, not appended separately, so this declaration doesn't clobber it. */
+  transition:
+    transform 100ms ease-out,
+    background-color 120ms ease-out;
 }
 .choice.selected {
   background: #ebe7e0;
@@ -355,6 +388,9 @@ fieldset.choices {
   width: 1.25rem;
   height: 1.25rem;
   min-width: 1.25rem;
+  transition:
+    background-color 120ms ease-out,
+    border-color 120ms ease-out;
 }
 /* Color the control, not Base UI's square inner indicator. */
 .choice [data-slot='radio-group-item'][data-checked],
@@ -420,6 +456,12 @@ fieldset.choices {
   background: #efede7;
   border-radius: 4px;
   cursor: pointer;
+  /* Combined with the shared transform-on-tap feedback above, not appended
+   * separately, so this declaration doesn't clobber it. */
+  transition:
+    transform 100ms ease-out,
+    background-color 120ms ease-out,
+    color 120ms ease-out;
 }
 .scale-choice.selected {
   background: var(--accent);
@@ -787,5 +829,26 @@ details p {
   to {
     opacity: 1;
     transform: scale(1);
+  }
+}
+/*
+ * A discovery is the rarest, most significant moment in the app (requires
+ * 4+ matching encounters, see discoveries() in lib/engine.ts) — the only
+ * place this restrained interface spends its delight budget. Delayed to
+ * land just after .discovery-mark's 650ms reveal above, so the mark on the
+ * map reads as arriving first and this explains it, not the other way round.
+ * Ordinary observations get no such treatment; the common case stays instant.
+ */
+.discovery-reveal {
+  animation: discovery-copy-in 450ms ease-out 100ms both;
+}
+@keyframes discovery-copy-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
