@@ -84,6 +84,30 @@ test('product renders controlled title and grounded slots; secondary remains unc
     renderSuggestion(input, { ...judgment, object: 'your medical treatment' }),
   );
 });
+// The notice template's object names a feeling ("the discomfort"), not a thing quoted from
+// the situation, so it must be exempt from the grounding check every other template needs —
+// a real regression: adding a prompt instruction to paraphrase the feeling here once made
+// every water-territory suggestion fail closed to the blank local fallback, silently.
+test('the notice template accepts a paraphrased feeling name ungrounded in the situation text', () => {
+  const waterInput = {
+    situation:
+      'sitting to meditate when i feel activated and energized and slightly uncomfortable',
+    confirmedResistance: null,
+    consentVersion: input.consentVersion,
+  };
+  const s = renderSuggestion(waterInput, {
+    ...judgment,
+    resistance: 'unpleasant',
+    primary: 'water',
+    template: 'notice',
+    object: 'the discomfort',
+    minutes: 1,
+  });
+  assert.equal(
+    s.candidate.action,
+    'For 1 minute, notice the discomfort before opening a distraction. You can stop whenever you need to.',
+  );
+});
 test('confirmed corrections outrank a model classification', () => {
   assert.throws(
     () =>

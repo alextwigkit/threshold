@@ -121,21 +121,36 @@ export function candidate(
     !!last && (last.outcome !== 'attempted' || (last.actual ?? 0) >= 8);
   const minutes = smaller ? 1 : 3;
   const span = `${minutes} minute${minutes === 1 ? '' : 's'}`;
-  const territory: Territory = (
-    {
-      understand: 'fog',
-      start: 'fog',
-      judged: 'spotlight',
-      unpleasant:
-        /\b(feeling|emotion|restless|boredom|sadness|distraction|scrolling)\b/i.test(
-          situation,
-        )
-          ? 'water'
-          : 'unknown',
-      other: 'unknown',
-      checking: 'loop',
-    } as const
-  )[resistance];
+  // Mirrors the AI path's own instruction to route coercion/danger/medical-legal-financial/
+  // safety-critical situations to a blank, user-written step instead of an auto-generated
+  // one. Conservative on purpose: high-signal phrases only, biased toward under-catching
+  // (an ordinary situation blocked from templating loses nothing but a canned sentence) over
+  // over-catching (falsely refusing to template a large fraction of ordinary situations).
+  const safetyCritical =
+    /\b(suicid\w*|self[- ]?harm|end(?:ing)? (my|his|her|their) life|end it all|not want to (live|be here)|better off dead|kill(?:ing)? (myself|him|her|them)|hurt(?:ing)? (myself|someone)|abus\w*|assault\w*|domestic violence|overdose|medication|prescription|diagnos\w*|surgery|lawsuit|attorney|custody battle|eviction|foreclosure|bankrupt\w*|restraining order)\b/i.test(
+      situation,
+    );
+  const territory: Territory = safetyCritical
+    ? 'unknown'
+    : (
+        {
+          understand: 'fog',
+          start: 'fog',
+          judged: 'spotlight',
+          // Word stems, not exact words: "feel" alone (no "-ing") previously missed water
+          // entirely, silently reclassifying it as unknown on the very next recomputation —
+          // e.g. after an AI-suggested water action, re-deriving the local default for the
+          // same situation landed on a different territory than the action text still shown.
+          unpleasant:
+            /\b(feel|emotion|restless|bored|sad|distract|scroll)/i.test(
+              situation,
+            )
+              ? 'water'
+              : 'unknown',
+          other: 'unknown',
+          checking: 'loop',
+        } as const
+      )[resistance];
   let title = 'Take One Small Step',
     action = '',
     template = 'user-action';

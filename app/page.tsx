@@ -106,6 +106,29 @@ function Primary({
     </button>
   );
 }
+// An open, hand-drawn ring rather than a mechanical loader, echoing the map's own loop motif.
+function Spinner() {
+  return (
+    <svg
+      className="spinner"
+      viewBox="0 0 24 24"
+      width="28"
+      height="28"
+      aria-hidden="true"
+    >
+      <circle
+        cx="12"
+        cy="12"
+        r="9"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeDasharray="34 22"
+      />
+    </svg>
+  );
+}
 export default function Home() {
   const [s, setS] = useState<Saved>(initial);
   const [busy, setBusy] = useState(false);
@@ -504,12 +527,13 @@ export default function Home() {
       <header>
         {s.screen === 'me' ? (
           <button
-            className="preferences-back"
+            className="back"
+            aria-label="Go back"
             onClick={() =>
               go(s.session ? 'active' : s.encounters.length ? 'map' : 'name')
             }
           >
-            <span aria-hidden="true">←</span> Back
+            ←
           </button>
         ) : !nav &&
           s.screen !== 'name' &&
@@ -561,8 +585,10 @@ export default function Home() {
       )}
       {suggestionMessage && <p role="status">{suggestionMessage}</p>}
       {busy && (
-        <div role="status">
-          <p>Finding a small step…</p>
+        <div role="status" className="loading">
+          <p>
+            <Spinner /> Finding a small step…
+          </p>
           <button
             className="text-button"
             onClick={() => {
@@ -585,7 +611,7 @@ export default function Home() {
           </button>
         </div>
       )}
-      {s.screen === 'name' && (
+      {s.screen === 'name' && !busy && (
         <section className="opening">
           {title('What do you keep turning away from?')}
           <p className="premise">
@@ -611,7 +637,7 @@ export default function Home() {
           </Primary>
         </section>
       )}
-      {s.screen === 'clarify' && (
+      {s.screen === 'clarify' && !busy && (
         <section>
           {title('What makes it hard to take a step?')}
           <p id="resistance-hint">
@@ -655,14 +681,14 @@ export default function Home() {
       )}
       {s.screen === 'setup' && s.draft && (
         <section>
-          <div className="territory-setup">
-            <MapFragment
-              encounters={s.encounters}
-              territory={s.draft.territory}
-              compact
-            />
-            <p>{territories[s.draft.territory].description}</p>
-          </div>
+          {/*
+           * No map preview here: on a first situation there is no history yet
+           * for it to show, so it read as an unexplained, empty rectangle.
+           * The real map (with real routes) still lives on the Map screen.
+           */}
+          <p className="territory-description">
+            {territories[s.draft.territory].description}
+          </p>
           {title(s.draft.title)}
           <p className="situation-context">{s.situation}</p>
           <label className="field-label" htmlFor="action">
@@ -715,6 +741,11 @@ export default function Home() {
               Adjust the fit
             </button>
           </div>
+          <p className="mechanic-note">
+            You'll leave the app to try this for real. When you're back, you'll
+            say what actually happened — that's what the prediction below is
+            for.
+          </p>
           <Scale
             id="expected"
             label="How uncomfortable do you expect this to be?"
@@ -905,6 +936,10 @@ export default function Home() {
           {next && (
             <>
               <p className="eyebrow">Today's Threshold · {next.minutes} min</p>
+              {/* Which situation this reflects, not just the resulting step — this is
+               * always the most recent one, and without it there is no way to tell
+               * whether it's still the thing worth continuing before committing to it. */}
+              <p className="situation-context">{next.situation}</p>
               <h2>{next.title}</h2>
               <p>
                 {next.action ||
@@ -950,9 +985,26 @@ export default function Home() {
             </button>
           )}
           {!s.encounters.length && (
-            <p>
-              Your observations will appear here after you try an expedition.
-            </p>
+            <>
+              <p>
+                Every real attempt lands here — what you expected, what actually
+                happened, and the patterns that show up once there are a few to
+                compare.
+              </p>
+              <button
+                className="avoid-row"
+                onClick={() =>
+                  patch({
+                    situation: '',
+                    custom: '',
+                    draft: null,
+                    screen: 'name',
+                  })
+                }
+              >
+                I'm avoiding something <span aria-hidden="true">→</span>
+              </button>
+            </>
           )}
           {filteredDiscoveries.map((d) => (
             <article className="atlas-entry" key={d.id}>

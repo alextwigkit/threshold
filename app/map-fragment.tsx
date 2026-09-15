@@ -32,7 +32,7 @@ export default function MapFragment({
   const latest = map.routes.at(-1);
   const describe = () => {
     if (compact && territory)
-      return `A closer view of ${territories[territory].name}, and the way there.`;
+      return `A closer view of ${territories[territory].name}.`;
     if (!map.routes.length)
       return 'An unresolved map. Your first route is still ahead.';
     const where = map.known.map((t) => territories[t].name).join(', ');
@@ -221,7 +221,12 @@ export default function MapFragment({
             </circle>
           ) : null;
         })}
-        {territory && (
+        {/*
+         * Not in the compact preview: the origin (200, 437) sits below every
+         * compactCrops window, so the visible remnant was a dashed line with
+         * no visible start — read as a stray mark, not "the way there".
+         */}
+        {territory && !compact && (
           <path
             d={`M 200 437 Q ${gates[territory][0]} ${gates[territory][1]} ${fields[territory].c[0]} ${fields[territory].c[1]}`}
             fill="none"

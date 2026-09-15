@@ -42,6 +42,39 @@ test('routing correction changes the territory and never forces Fog', () => {
   assert.equal(candidate('check a proposal', 'checking').territory, 'loop');
   assert.equal(candidate('unknown', 'other').territory, 'unknown');
 });
+// A real bug: "feel" (not "feeling") missed water entirely. That silently reclassified
+// the Map screen's "Today's Threshold" preview to a different territory than the AI
+// action text still shown for it, producing a title/minutes that contradicted the action
+// underneath ("3 min" next to "For 1 minute, notice...").
+test('the word stem "feel" routes to water, not just the exact word "feeling"', () => {
+  assert.equal(
+    candidate(
+      'sitting to meditate when i feel activated and energized and slightly uncomfortable',
+      'unpleasant',
+    ).territory,
+    'water',
+  );
+});
+test('an AI-suggested water action stays consistent with its own title and minutes on the next preview', () => {
+  const situation =
+    'sitting to meditate when i feel activated and energized and slightly uncomfortable';
+  const prior = [
+    encounter('1', {
+      situation,
+      resistance: 'unpleasant',
+      territory: 'water',
+      template: 'model-notice-v1',
+      action:
+        'For 1 minute, notice the activation before opening a distraction. You can stop whenever you need to.',
+      title: 'Stay With It for a Moment',
+      minutes: 1,
+    }),
+  ];
+  const next = candidate(situation, 'unpleasant', prior);
+  assert.equal(next.territory, 'water');
+  assert.equal(next.minutes, 1);
+  assert.equal(next.title, 'Stay With It for a Moment');
+});
 test('history changes the relevant recommendation and a stop reduces dose', () => {
   const e = encounter('1');
   assert.equal(
@@ -174,22 +207,31 @@ test('an unfamiliar or awkwardly phrased situation leaves the action for the per
     );
 });
 
-/*
- * Known gap, not a regression: the local (non-AI) path has no equivalent of the
- * inference prompt's explicit instruction to route "coercion, danger, medical/legal/
- * financial decisions, safety-critical checking, harmful situations" to own_step. It
- * falls through to the generic conversation template purely because the situation
- * contains "talk"/"call"/"speak"/"conversation", with no awareness of what the
- * conversation is about. This test pins today's actual behavior so the gap is visible
- * and testable, not a decision to leave it this way — see HANDOFF.md priority 3.
- */
-test('local path has no safety-aware routing: a high-stakes situation can still match an ordinary template', () => {
-  const result = candidate(
-    'talk to my doctor about stopping my medication without telling anyone',
-    'judged',
+// Mirrors the AI path's own instruction to route coercion/danger/medical-legal-financial/
+// safety-critical situations to a blank, user-written step. Previously the local path had
+// no equivalent: this exact situation matched the generic "conversation" template purely
+// because it contains "talk", with no awareness of what the conversation was about.
+test('a safety-critical situation is never auto-templated, regardless of which keyword it also happens to match', () => {
+  const cases = [
+    [
+      'talk to my doctor about stopping my medication without telling anyone',
+      'judged',
+    ],
+    ['tell my friend I want to end my life', 'judged'],
+    ['call my lawyer about the eviction notice', 'judged'],
+    ['ask my doctor about the surgery next week', 'understand'],
+  ];
+  for (const [situation, resistance] of cases) {
+    const result = candidate(situation, resistance);
+    assert.equal(result.territory, 'unknown', situation);
+    assert.equal(result.action, '', situation);
+  }
+  // An ordinary conversation without any safety-critical language is unaffected.
+  assert.notEqual(
+    candidate('ask my boss for a raise', 'judged').action,
+    '',
+    'ordinary situations must still template normally',
   );
-  assert.equal(result.template.startsWith('conversation'), true);
-  assert.notEqual(result.action, '');
 });
 
 test('a discovery retains its history when later evidence is mixed', () => {

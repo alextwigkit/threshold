@@ -160,27 +160,46 @@ export async function recordLoginAttempt(
   return !!(await db.prepare(loginAttemptSQL).bind(key, day).first());
 }
 
+// Same design tokens and type scale as app/globals.css. This can't import that file
+// (it's server-rendered raw HTML, before any client bundle loads), so the values are
+// duplicated here on purpose — if the palette or the Newsreader files move, update both.
 export function loginPage(
   error?: string,
   status = error ? 401 : 200,
 ): Response {
   return new Response(
-    `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1">
+    `<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#fcf9f4">
 <title>Threshold</title>
 <style>
-body{font-family:Georgia,serif;background:#FCF9F4;color:#40443b;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}
-form{max-width:320px;width:100%;padding:24px}
-h1{font-size:22px;text-align:center;font-weight:normal;font-style:italic}
-input{width:100%;padding:10px;margin-bottom:12px;font-size:16px;box-sizing:border-box;border:1px solid #ccc;border-radius:4px;font-family:inherit}
-button{width:100%;padding:10px;font-size:16px;background:#40443b;color:#FCF9F4;border:none;border-radius:4px;cursor:pointer}
-.error{color:#ac3d24;font-size:14px;margin:0 0 12px}
+@font-face{font-family:Newsreader;font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/newsreader-latin-400-normal.woff2) format('woff2')}
+*{box-sizing:border-box}
+body{margin:0;min-height:100svh;display:flex;align-items:center;justify-content:center;padding:24px;background:#fcf9f4;color:#20211e;font-family:'Avenir Next',Avenir,'Segoe UI',sans-serif;font-size:16px;line-height:1.55}
+form{max-width:320px;width:100%}
+h1{font-family:Newsreader,Georgia,'Times New Roman',serif;font-weight:400;letter-spacing:-0.035em;line-height:1.2;font-size:1.875rem;text-align:center;margin:0 0 32px;color:#20211e}
+.field{margin-bottom:16px}
+.field-label{display:block;font-weight:500;margin-bottom:8px}
+input{width:100%;min-height:48px;padding:12px 14px;font:inherit;font-size:1rem;background:#f5f2ed;border:1px solid #dfddd6;border-radius:6px;color:#20211e}
+input::placeholder{color:#8a8c83}
+input:focus-visible{outline:2px solid #ac3d24;outline-offset:2px}
+.error{padding:12px;border-left:2px solid #ac3d24;margin:0 0 20px;color:#ac3d24;font-size:0.9375rem}
+button{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;background:#20211e;color:#fcf9f4;border:0;border-radius:5px;padding:16px 24px;min-height:54px;font:inherit;font-weight:500;margin-top:8px;cursor:pointer}
+button:focus-visible{outline:2px solid #ac3d24;outline-offset:4px}
+.arrow{font-size:1.5rem;line-height:1}
 </style></head><body>
 <form method="POST" action="/login">
 <h1>Threshold</h1>
-${error ? `<p class="error">${error}</p>` : ''}
-<input name="username" placeholder="Username" autocomplete="username" required autofocus>
-<input name="password" type="password" placeholder="Password" autocomplete="current-password" required>
-<button type="submit">Sign in</button>
+${error ? `<p class="error" role="alert">${error}</p>` : ''}
+<div class="field">
+<label class="field-label" for="username">Username</label>
+<input id="username" name="username" autocomplete="username" required autofocus>
+</div>
+<div class="field">
+<label class="field-label" for="password">Password</label>
+<input id="password" name="password" type="password" autocomplete="current-password" required>
+</div>
+<button type="submit">Sign in <span class="arrow" aria-hidden="true">→</span></button>
 </form></body></html>`,
     { status, headers: { 'Content-Type': 'text/html; charset=utf-8' } },
   );
