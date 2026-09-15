@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 export const metadata: Metadata = {
   title: 'Threshold — Your personal map',
@@ -8,6 +8,15 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, statusBarStyle: 'default', title: 'Threshold' },
   icons: { icon: '/icon.svg', apple: '/icon-192.png' },
 };
+// Light-only app (`:root { color-scheme: light }` in globals.css, no dark
+// styles exist), so one themeColor is correct here, not a per-scheme pair.
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  interactiveWidget: 'resizes-content',
+  themeColor: '#FCF9F4',
+};
 export default function RootLayout({
   children,
 }: {
@@ -15,9 +24,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <head>
-        <meta name="theme-color" content="#FCF9F4" />
-      </head>
       <body>{children}</body>
     </html>
   );

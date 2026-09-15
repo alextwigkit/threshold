@@ -169,13 +169,14 @@ export function loginPage(
 ): Response {
   return new Response(
     `<!doctype html><html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#fcf9f4">
 <title>Threshold</title>
 <style>
 @font-face{font-family:Newsreader;font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/newsreader-latin-400-normal.woff2) format('woff2')}
 *{box-sizing:border-box}
-body{margin:0;min-height:100svh;display:flex;align-items:center;justify-content:center;padding:24px;background:#fcf9f4;color:#20211e;font-family:'Avenir Next',Avenir,'Segoe UI',sans-serif;font-size:16px;line-height:1.55}
+html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100svh;display:flex;align-items:center;justify-content:center;padding:24px calc(24px + env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) calc(24px + env(safe-area-inset-left));background:#fcf9f4;color:#20211e;font-family:'Avenir Next',Avenir,'Segoe UI',sans-serif;font-size:16px;line-height:1.55}
 form{max-width:320px;width:100%}
 h1{font-family:Newsreader,Georgia,'Times New Roman',serif;font-weight:400;letter-spacing:-0.035em;line-height:1.2;font-size:1.875rem;text-align:center;margin:0 0 32px;color:#20211e}
 .field{margin-bottom:16px}
@@ -184,8 +185,9 @@ input{width:100%;min-height:48px;padding:12px 14px;font:inherit;font-size:1rem;b
 input::placeholder{color:#8a8c83}
 input:focus-visible{outline:2px solid #ac3d24;outline-offset:2px}
 .error{padding:12px;border-left:2px solid #ac3d24;margin:0 0 20px;color:#ac3d24;font-size:0.9375rem}
-button{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;background:#20211e;color:#fcf9f4;border:0;border-radius:5px;padding:16px 24px;min-height:54px;font:inherit;font-weight:500;margin-top:8px;cursor:pointer}
+button{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;background:#20211e;color:#fcf9f4;border:0;border-radius:5px;padding:16px 24px;min-height:54px;font:inherit;font-weight:500;margin-top:8px;cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none;transition:transform 100ms ease-out}
 button:focus-visible{outline:2px solid #ac3d24;outline-offset:4px}
+button:active{transform:scale(0.98)}
 .arrow{font-size:1.5rem;line-height:1}
 </style></head><body>
 <form method="POST" action="/login">
@@ -193,11 +195,11 @@ button:focus-visible{outline:2px solid #ac3d24;outline-offset:4px}
 ${error ? `<p class="error" role="alert">${error}</p>` : ''}
 <div class="field">
 <label class="field-label" for="username">Username</label>
-<input id="username" name="username" autocomplete="username" required autofocus>
+<input id="username" name="username" autocomplete="username" autocapitalize="none" autocorrect="off" enterkeyhint="next" required autofocus>
 </div>
 <div class="field">
 <label class="field-label" for="password">Password</label>
-<input id="password" name="password" type="password" autocomplete="current-password" required>
+<input id="password" name="password" type="password" autocomplete="current-password" enterkeyhint="go" required>
 </div>
 <button type="submit">Sign in <span class="arrow" aria-hidden="true">→</span></button>
 </form></body></html>`,

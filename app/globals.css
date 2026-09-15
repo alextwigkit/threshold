@@ -29,6 +29,19 @@
 * {
   box-sizing: border-box;
 }
+html {
+  /* Removes the gray tap flash on iOS/Android; every tappable element below
+   * gets its own :active feedback so tapping still reads as responsive. */
+  -webkit-tap-highlight-color: transparent;
+  /* Stops landscape rotation from inflating text past its set size. */
+  -webkit-text-size-adjust: 100%;
+}
+html,
+body {
+  /* This app owns its own scroll surface; without this, overscroll at the
+   * top/bottom triggers pull-to-refresh or the whole-page rubber band. */
+  overscroll-behavior: none;
+}
 body {
   margin: 0;
   background: var(--background);
@@ -47,6 +60,17 @@ input,
 textarea {
   font: inherit;
 }
+button,
+summary,
+.avoid-row,
+.choice,
+.scale-choice {
+  /* Skips the ~300ms double-tap-zoom wait so taps register immediately, and
+   * keeps long-press from selecting a control's label instead of activating it. */
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
 button {
   cursor: pointer;
 }
@@ -61,6 +85,26 @@ textarea:focus-visible,
 [role='radio']:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 4px;
+}
+/* Tap-highlight is gone (see html, above), so every primary tap target needs
+ * its own immediate, finger-down press feedback in its place. */
+.primary,
+.choice,
+.scale-choice,
+.text-button,
+.back,
+.avoid-row,
+.bottom-nav button {
+  transition: transform 100ms ease-out;
+}
+.primary:active,
+.choice:active,
+.scale-choice:active,
+.text-button:active,
+.back:active,
+.avoid-row:active,
+.bottom-nav button:active {
+  transform: scale(0.98);
 }
 h1,
 h2,
@@ -90,7 +134,10 @@ p {
   max-width: 560px;
   min-height: 100svh;
   margin: auto;
-  padding: 24px 24px 32px;
+  padding: calc(24px + env(safe-area-inset-top, 0px))
+    calc(24px + env(safe-area-inset-right, 0px))
+    calc(32px + env(safe-area-inset-bottom, 0px))
+    calc(24px + env(safe-area-inset-left, 0px));
 }
 .brand {
   font-size: 0.875rem;
@@ -702,8 +749,12 @@ details p {
   cursor: pointer;
   outline: none;
 }
-.territory-link:hover .map-label {
-  fill: var(--accent);
+/* Gated: without this, tapping a territory on a touch device leaves its
+ * label stuck in the hover color until something else is tapped. */
+@media (hover: hover) and (pointer: fine) {
+  .territory-link:hover .map-label {
+    fill: var(--accent);
+  }
 }
 .territory-link:focus-visible rect {
   stroke: var(--accent);
