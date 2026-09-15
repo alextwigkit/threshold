@@ -145,7 +145,9 @@ The key is already saved in ignored `.env.local` and configured as the hosted se
 ## 9. Repository and deployment facts
 
 Canonical repository:
-`/Users/alex/Documents/Codex/2026-09-06/referenced-chatgpt-conversation-this-is-an-2/outputs/edge/app`
+`/Users/alex/git-projects/threshold/app`
+
+Moved here from `/Users/alex/Documents/Codex/2026-09-06/referenced-chatgpt-conversation-this-is-an-2/outputs/edge/app` on September 15, 2026, once deployment was fully decoupled from the ChatGPT/Codex session (see the Cloudflare-direct deployment work above) — the app no longer has any reason to live under a Codex-session-managed path.
 
 Parent projectless working directory is not the app repository. Work in the app root. Portable source archive: `../edge-project.zip`. Current release receipt: `../RELEASE_STATUS.md`.
 
