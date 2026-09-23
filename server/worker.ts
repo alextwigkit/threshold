@@ -63,6 +63,17 @@ export default {
     // The login page needs the app's own typeface to look like the app, not a
     // generic fallback font — fonts carry no user data, so they're public.
     if (url.pathname.startsWith('/fonts/')) return env.ASSETS.fetch(request);
+    // The login page now declares itself PWA-capable (manifest link, icons) so
+    // an installed home-screen launch that lands here while signed out stays
+    // in standalone mode instead of iOS dropping to an in-app Safari view.
+    // None of these carry user data, so — like fonts — they're public.
+    const publicShellAssets = new Set([
+      '/manifest.webmanifest',
+      '/icon.svg',
+      '/icon-192.png',
+      '/icon-512.png',
+    ]);
+    if (publicShellAssets.has(url.pathname)) return env.ASSETS.fetch(request);
     // Every other route — static assets and /api/* alike — requires a valid session. This is
     // the direct replacement for the old oai-authenticated-user-id trust: there is no dispatcher
     // in front of this Worker anymore, so the Worker itself must gate everything.
