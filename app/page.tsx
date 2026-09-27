@@ -53,14 +53,18 @@ function Scale({
   label,
   value,
   onChange,
+  onPick,
+  onLeave,
 }: {
   id: string;
   label: string;
   value: number | null;
   onChange: (n: number) => void;
+  onPick?: () => void;
+  onLeave?: (e: React.FocusEvent<HTMLDivElement>) => void;
 }) {
   return (
-    <div className="scale-field">
+    <div className="scale-field" onBlur={onLeave}>
       <div className="scale-legend" id={`${id}-label`} tabIndex={-1}>
         {label}
       </div>
@@ -75,6 +79,7 @@ function Scale({
           <label
             className={`scale-choice ${value === n ? 'selected' : ''}`}
             key={n}
+            onClick={onPick}
           >
             <RadioGroupItem value={String(n)} />
             <span>{n}</span>
@@ -124,7 +129,7 @@ function Echo({
   onEdit: () => void;
 }) {
   return (
-    <div className="echo">
+    <div className="echo panel">
       <div className="echo-body">
         <span className="meta">You’re avoiding</span>
         <span className="echo-text">{text}</span>
@@ -192,6 +197,9 @@ export default function Home() {
   const [restoreMessage, setRestoreMessage] = useState('');
   // Return: an answered question collapses to a summary until the person reopens it.
   const [reopened, setReopened] = useState<'actual' | 'urge' | null>(null);
+  // Arrow keys select as they move, so a keyed answer stays open until focus leaves it.
+  const keyed = useRef(false);
+  const pendingFocus = useRef<string | null>(null);
   // Clarify: "Something else" may be preselected; its text field waits for an explicit pick.
   const [pickedOther, setPickedOther] = useState(false);
   const [showPredictionNote, setShowPredictionNote] = useState(false);
@@ -256,10 +264,16 @@ export default function Home() {
       heading.current?.focus();
     }
   }, [s.screen, ready]);
-  // "Change" unmounts itself, so focus follows it to the question it reopened.
+  // Collapsing a question unmounts the focused control, so focus moves to the
+  // heading named here once it has rendered.
   useEffect(() => {
-    if (reopened) document.getElementById(`${reopened}-label`)?.focus();
-  }, [reopened]);
+    const target =
+      pendingFocus.current && document.getElementById(pendingFocus.current);
+    if (target) {
+      pendingFocus.current = null;
+      target.focus();
+    }
+  });
   // A textarea scrolls rather than grows, so a long action loses its last
   // lines once text is enlarged or the screen is narrow. Fit each one to its
   // content after every render; the CSS min-height still sets the floor.
@@ -405,10 +419,11 @@ export default function Home() {
     </h1>
   );
   async function resolve() {
+    setPickedOther(false);
+    setShowPredictionNote(false);
     if (await requestStep(null)) return;
     const guess = infer(s.situation);
     const draft = candidate(s.situation.trim(), guess.resistance, s.encounters);
-    setPickedOther(false);
     patch({
       resistance: guess.resistance,
       draft,
@@ -418,6 +433,7 @@ export default function Home() {
     });
   }
   async function setup() {
+    setShowPredictionNote(false);
     if (await requestStep(s.resistance)) return;
     patch({
       draft: {
@@ -460,6 +476,7 @@ export default function Home() {
   function returnFrom(stopped = false) {
     if (s.session) {
       setSuggestionMessage('');
+      setReopened(null);
       patch({
         session: { ...s.session, returnedAt: Date.now(), stopped },
         screen: 'return',
@@ -564,6 +581,34 @@ export default function Home() {
   const active = s.session;
   const actualOpen = active?.actual === null || reopened === 'actual';
   const urgeOpen = !active?.urge || reopened === 'urge';
+  // Base UI commits a change before the click reaches the label, so a keyed
+  // answer is held open here rather than in picked().
+  function answer(question: 'actual' | 'urge', p: Partial<Session>) {
+    updateSession(p);
+    if (keyed.current) {
+      setReopened(question);
+    }
+  }
+  // A pointer pick closes the question, even when it repeats the same value.
+  function picked(question: 'actual' | 'urge') {
+    if (keyed.current) {
+      return;
+    }
+    setReopened(null);
+    pendingFocus.current =
+      question === 'actual' && !active?.urge ? 'urge-label' : 'noticing-label';
+  }
+  function left(question: 'actual' | 'urge', e: React.FocusEvent) {
+    const outside =
+      e.relatedTarget && !e.currentTarget.contains(e.relatedTarget as Node);
+    if (keyed.current && outside && reopened === question) {
+      setReopened(null);
+    }
+  }
+  function change(question: 'actual' | 'urge') {
+    pendingFocus.current = `${question}-label`;
+    setReopened(question);
+  }
   function exportData() {
     const raw = saveBlocked.current
       ? rawUnreadable.current
@@ -687,7 +732,7 @@ export default function Home() {
           <p className="premise">
             Threshold turns the things you avoid into territory you can explore.
           </p>
-          <div className="entry">
+          <div className="entry panel">
             <textarea
               id="situation"
               aria-labelledby="screen-title"
@@ -715,7 +760,7 @@ export default function Home() {
           />
           {title('What makes it hard to take a step?')}
           <p className="meta" id="resistance-hint">
-            Pick the closest. It doesn’t have to explain everything.
+            Pick the main thing for now. It doesn’t have to explain everything.
           </p>
           <RadioGroup
             className="choices"
@@ -731,6 +776,8 @@ export default function Home() {
               <label
                 className={`choice ${s.resistance === v ? 'selected' : ''}`}
                 key={v}
+                // A preselected "Something else" fires no change when clicked.
+                onClick={v === 'other' ? () => setPickedOther(true) : undefined}
               >
                 <span>{l}</span>
                 <RadioGroupItem value={v} />
@@ -744,6 +791,8 @@ export default function Home() {
                 className="text-input"
                 value={s.custom}
                 maxLength={1000}
+                // Once used, the field stays even if its text is cleared.
+                onFocus={() => setPickedOther(true)}
                 onChange={(e) => patch({ custom: e.target.value })}
               />
             </label>
@@ -771,7 +820,7 @@ export default function Home() {
             onEdit={() => go('clarify')}
           />
           {title(s.draft.title)}
-          <div className="step-card">
+          <div className="panel">
             <label className="meta field-label" htmlFor="action">
               Your step
             </label>
@@ -845,6 +894,7 @@ export default function Home() {
                 value={s.predictionNote}
                 maxLength={1000}
                 autoFocus={showPredictionNote && !s.predictionNote}
+                onFocus={() => setShowPredictionNote(true)}
                 onChange={(e) => patch({ predictionNote: e.target.value })}
               />
             </>
@@ -877,7 +927,7 @@ export default function Home() {
               .padStart(2, '0')}
             :{(remaining(active, now) % 60).toString().padStart(2, '0')}
           </div>
-          <div className="step-card">
+          <div className="panel">
             <p className="meta">Your step</p>
             <p className="lead">{active.action}</p>
           </div>
@@ -897,29 +947,33 @@ export default function Home() {
         </section>
       )}
       {s.screen === 'return' && active && (
-        <section>
-          <h1 className="sr-only" ref={heading} tabIndex={-1}>
-            What happened?
-          </h1>
+        <section
+          onKeyDownCapture={() => {
+            keyed.current = true;
+          }}
+          onPointerDownCapture={() => {
+            keyed.current = false;
+          }}
+        >
+          {title('What happened?', 'sr-only')}
           {actualOpen && (
             <Scale
               id="actual"
               label="How uncomfortable was it actually?"
               value={active.actual}
-              onChange={(actual) => {
-                setReopened(null);
-                updateSession({ actual });
-              }}
+              onChange={(actual) => answer('actual', { actual })}
+              onPick={() => picked('actual')}
+              onLeave={(e) => left('actual', e)}
             />
           )}
           {/* Answers already given share one surface, apart from the open question. */}
           {(!actualOpen || !urgeOpen) && (
-            <div className="summary-panel">
+            <div className="summary-panel panel">
               {!actualOpen && (
                 <AnsweredRow
                   label="Discomfort"
                   value={`${active.actual} of 10`}
-                  onChange={() => setReopened('actual')}
+                  onChange={() => change('actual')}
                 />
               )}
               {!urgeOpen && (
@@ -928,29 +982,27 @@ export default function Home() {
                   value={
                     urgeChoices.find(([v]) => v === active.urge)?.[1] ?? ''
                   }
-                  onChange={() => setReopened('urge')}
+                  onChange={() => change('urge')}
                 />
               )}
             </div>
           )}
           {active.actual !== null && urgeOpen && (
-            <section className="reveal">
+            <section className="reveal" onBlur={(e) => left('urge', e)}>
               <h2 id="urge-label" tabIndex={-1}>
                 Did an urge to avoid or leave show up?
               </h2>
               <RadioGroup
                 className="choices"
                 value={active.urge}
-                onValueChange={(v) => {
-                  setReopened(null);
-                  updateSession({ urge: v as Urge });
-                }}
+                onValueChange={(v) => answer('urge', { urge: v as Urge })}
                 aria-labelledby="urge-label"
               >
                 {urgeChoices.map(([v, l]) => (
                   <label
                     className={`choice ${active.urge === v ? 'selected' : ''}`}
                     key={v}
+                    onClick={() => picked('urge')}
                   >
                     <span>{l}</span>
                     <RadioGroupItem value={v} />
@@ -961,8 +1013,10 @@ export default function Home() {
           )}
           {active.actual !== null && active.urge && (
             <section className="reveal">
-              <h2 id="noticing-label">What did you notice?</h2>
-              <p className="optional" id="noticing-hint">
+              <h2 id="noticing-label" tabIndex={-1}>
+                What did you notice?
+              </h2>
+              <p className="meta" id="noticing-hint">
                 Choose any that fit.
               </p>
               <fieldset
@@ -1027,7 +1081,7 @@ export default function Home() {
             </p>
             {title(newDiscovery?.title ?? observation(last).title)}
             {last.actual !== null && (
-              <p className="evidence">
+              <p className="evidence panel">
                 Expected{' '}
                 {newDiscovery ? expectedMean.toFixed(1) : last.prediction}{' '}
                 <span aria-hidden="true">→</span> Experienced{' '}
@@ -1139,7 +1193,7 @@ export default function Home() {
             </>
           )}
           {filteredDiscoveries.map((d) => (
-            <article className="atlas-entry discovery-entry" key={d.id}>
+            <article className="atlas-entry discovery-entry panel" key={d.id}>
               <p className="eyebrow">
                 Discovery · {territories[d.territory].name}
               </p>
@@ -1175,20 +1229,20 @@ export default function Home() {
               <p>{observation(e).body}</p>
               <details>
                 <summary>The encounter</summary>
-                <dl className="facts">
-                  <dt>Avoiding</dt>
+                <dl className="facts panel">
+                  <dt className="meta">Avoiding</dt>
                   <dd>{e.situation}</dd>
-                  <dt>Step</dt>
+                  <dt className="meta">Step</dt>
                   <dd>{e.action}</dd>
                   {e.resistanceNote && (
                     <>
-                      <dt>What made it hard</dt>
+                      <dt className="meta">What made it hard</dt>
                       <dd>{e.resistanceNote}</dd>
                     </>
                   )}
                   {e.actual !== null && (
                     <>
-                      <dt>Discomfort</dt>
+                      <dt className="meta">Discomfort</dt>
                       <dd>
                         Expected {e.prediction} → Experienced {e.actual}
                       </dd>
@@ -1196,11 +1250,11 @@ export default function Home() {
                   )}
                   {e.predictionNote && (
                     <>
-                      <dt>Expected</dt>
+                      <dt className="meta">Expected</dt>
                       <dd>{e.predictionNote}</dd>
                     </>
                   )}
-                  <dt>Urge to leave</dt>
+                  <dt className="meta">Urge to leave</dt>
                   <dd>
                     {e.outcome === 'not_started'
                       ? 'Not started'
@@ -1208,7 +1262,7 @@ export default function Home() {
                   </dd>
                   {e.notices.length > 0 && (
                     <>
-                      <dt>Noticed</dt>
+                      <dt className="meta">Noticed</dt>
                       <dd>
                         {e.notices
                           .map(
@@ -1220,7 +1274,7 @@ export default function Home() {
                   )}
                   {e.note && (
                     <>
-                      <dt>Note</dt>
+                      <dt className="meta">Note</dt>
                       <dd>{e.note}</dd>
                     </>
                   )}

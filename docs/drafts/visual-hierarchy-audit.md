@@ -174,7 +174,7 @@ Done in `app/globals.css` and `app/page.tsx`. After-captures are `../.playwright
 
 - The global notice banner still sits above the setup content.
 - On the offline path, the setup h1 still reads "Choose Your Own Step". It's now hidden on Active, but the heading itself is still an instruction.
-- "Something else" is still preselected on Clarify. That comes from `infer()` returning `other` when it isn't confident, and changing it touches validation.
+- "Something else" can be preselected on Clarify. `infer()` never returns `other`; the preselection comes from the offline or failed-suggestion fallback in `requestStep()`, which sets `resistance: 'other'` when no confirmed resistance exists. Clicking the preselected row opens its text field.
 - Begin is still just below the fold on setup at 390x844 when the offline notice shows.
 - The wordmark position still varies by screen.
 - The Explore label is unchanged (UX.md names it).

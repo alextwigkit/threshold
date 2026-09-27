@@ -29,7 +29,7 @@
    * words, answers already given, things kept together. Strong: selected.
    * One level of nesting at most; hairlines divide inside a surface.
    */
-  --surface: #f3f0eb;
+  --surface: var(--muted);
   --surface-strong: #ebe7e0;
   /*
    * Three gaps only, each at least double the one before, so grouping is
@@ -126,8 +126,7 @@ textarea:focus-visible,
 }
 h1,
 h2,
-h3,
-.serif {
+h3 {
   font-family: Newsreader, Georgia, 'Times New Roman', serif;
   font-weight: 400;
   letter-spacing: -0.035em;
@@ -202,9 +201,20 @@ header {
   font-weight: 500;
   margin-bottom: var(--space-in);
 }
-.entry {
+/* The one surface primitive: tone and radius. Uses override the padding. */
+.panel {
   background: var(--surface);
-  border-radius: 14px;
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.panel > p,
+.panel > .meta {
+  margin: 0 0 var(--space-in);
+}
+.panel > :last-child {
+  margin-bottom: 0;
+}
+.entry {
   padding: 20px;
   margin-bottom: var(--space-group);
 }
@@ -419,7 +429,7 @@ h1:focus {
   gap: 0;
   margin: var(--space-pair) 0 0;
   background: var(--surface);
-  border-radius: 8px;
+  border-radius: var(--radius);
 }
 fieldset.choices {
   border: 0;
@@ -445,10 +455,10 @@ fieldset.choices {
   border-top: 1px solid var(--border);
 }
 .choice:first-child {
-  border-radius: 8px 8px 0 0;
+  border-radius: var(--radius) var(--radius) 0 0;
 }
 .choice:last-child {
-  border-radius: 0 0 8px 8px;
+  border-radius: 0 0 var(--radius) var(--radius);
 }
 /* Tone, weight and the accent control together, so selection never rests on tone alone. */
 .choice.selected {
@@ -466,7 +476,7 @@ fieldset.choices {
   padding: 12px 16px 16px;
   background: var(--surface);
   border-top: 1px solid var(--border);
-  border-radius: 0 0 8px 8px;
+  border-radius: 0 0 var(--radius) var(--radius);
 }
 .choice [data-slot='radio-group-item'],
 .choice [data-slot='checkbox'] {
@@ -483,10 +493,6 @@ fieldset.choices {
 .choice [data-slot='checkbox'][data-checked] {
   background: var(--accent) !important;
   border-color: var(--accent) !important;
-}
-.quiet {
-  color: var(--muted-foreground);
-  margin-top: 38px;
 }
 .text-input {
   display: block;
@@ -653,7 +659,7 @@ h2:focus {
 .compact svg {
   height: auto;
 }
-/* The person's own words, as context above the heading that answers them. */
+/* The echo's compact form for Map, where a band would stack a box under the map box. */
 .situation-context {
   margin: 0 0 var(--space-in);
 }
@@ -664,8 +670,6 @@ h2:focus {
   padding: 8px 8px 8px 16px;
   /* Context, not part of the title's group, which is the step below it. */
   margin: 0 0 var(--space-group);
-  background: var(--surface);
-  border-radius: 8px;
 }
 .echo-body {
   display: flex;
@@ -684,28 +688,9 @@ h2:focus {
   flex-shrink: 0;
 }
 /* The step as one object: what you'll do, and how long for. */
-.step-card {
-  background: var(--surface);
-  border-radius: 8px;
-  padding: 16px;
-}
-.step-card p {
-  margin: 0;
-}
-.step-card .meta {
-  margin-bottom: var(--space-in);
-}
-.step-card .duration {
-  margin-top: 12px;
+.panel .duration {
+  margin-top: var(--space-in);
   border-top: 1px solid var(--border);
-}
-.panel {
-  background: var(--surface);
-  border-radius: 8px;
-  padding: 16px;
-}
-.panel > p {
-  margin-bottom: var(--space-in);
 }
 .timer {
   /* Sized in rem so the circle grows with its digits when text is enlarged. */
@@ -728,7 +713,7 @@ h2:focus {
 .active .timer {
   margin-top: 24px;
 }
-.active .step-card {
+.active .panel {
   margin-bottom: var(--space-group);
 }
 .invitation {
@@ -758,8 +743,6 @@ h2:focus {
 }
 /* Answered questions, reduced to one line each on a shared surface. */
 .summary-panel {
-  background: var(--surface);
-  border-radius: 8px;
   padding: 0 16px;
 }
 .answered-row {
@@ -786,8 +769,6 @@ h2:focus {
   font-weight: 600;
   color: var(--foreground);
   padding: 12px 16px;
-  border-radius: 7px;
-  background: var(--surface);
   font-size: 1rem;
   margin: 8px 0 24px;
 }
@@ -846,8 +827,6 @@ h2:focus {
 }
 /* The rarest finding stands apart from ordinary observations. */
 .discovery-entry {
-  background: var(--surface);
-  border-radius: 8px;
   border-bottom: 0;
   padding: 20px;
   margin: var(--space-pair) 0;
@@ -862,13 +841,8 @@ h2:focus {
   gap: 8px 16px;
   margin: 12px 0 0;
   padding: 12px 16px;
-  background: var(--surface);
-  border-radius: 8px;
 }
 .facts dt {
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--meta-foreground);
   padding-top: 2px;
 }
 .facts dd {
