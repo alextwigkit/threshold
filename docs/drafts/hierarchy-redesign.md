@@ -12,7 +12,7 @@ Baseline: 2026-09-27, screenshots `.playwright-mcp/base-*` (390x844, sharp + 7px
 | Active | timer | step | I'm back |
 | Return (each state) | open question's controls | question text | Continue |
 | Observation | expected vs experienced | title | See my map |
-| Map | today's step + Explore | map (largest by area, per DESIGN) | I'm avoiding something |
+| Map | today's step + Explore | map (largest by area, per DESIGN) | Work on something else |
 | Atlas | latest entry | page title | footer note |
 | Me | Keep your map / Export | privacy line | Delete (quietest) |
 

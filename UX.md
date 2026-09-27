@@ -11,7 +11,7 @@ Mobile-first at 390px, resilient at 320px and on desktop. Readable central colum
 
 ## State transitions
 Name → optional Clarify → Setup → Active → Return → Observation → Map.
-Map → Explore → Setup; Map → I'm avoiding something → Name.
+Map → Explore → Setup; Map → Work on something else (I'm avoiding something before any step exists) → Name.
 Map ↔ Atlas ↔ Me. Existing active sessions resume rather than creating overlapping attempts.
 
 ### 1. Name

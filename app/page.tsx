@@ -1178,7 +1178,8 @@ export default function Home() {
               patch({ situation: '', custom: '', draft: null, screen: 'name' })
             }
           >
-            I'm avoiding something
+            {/* With a step already here, this starts a different situation. */}
+            {next ? 'Work on something else' : "I'm avoiding something"}
           </button>
         </section>
       )}
