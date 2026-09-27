@@ -18,6 +18,7 @@ export default function MapFragment({
   revealId,
   newDiscoveryId,
   onTerritory,
+  className = '',
 }: {
   encounters: Encounter[];
   territory?: Territory;
@@ -25,6 +26,7 @@ export default function MapFragment({
   revealId?: string;
   newDiscoveryId?: string;
   onTerritory?: (t: Territory) => void;
+  className?: string;
 }) {
   const id = useId().replace(/:/g, '');
   const map = projectMap(encounters);
@@ -49,7 +51,7 @@ export default function MapFragment({
     return `Your map shows ${count} in ${where}.${last}${found}${how}`;
   };
   return (
-    <div className={`map-fragment ${compact ? 'compact' : ''}`}>
+    <div className={`map-fragment ${compact ? 'compact' : ''} ${className}`}>
       <svg
         viewBox={compact && territory ? compactCrops[territory] : '0 0 400 470'}
         role={onTerritory ? 'group' : 'img'}

@@ -116,7 +116,7 @@ function AnsweredRow({
     </div>
   );
 }
-// The person's own words echoed back on their own surface, with a way to edit them.
+// The person's own words echoed back as quiet context, with a way to edit them.
 function Echo({
   text,
   detail,
@@ -129,12 +129,11 @@ function Echo({
   onEdit: () => void;
 }) {
   return (
-    <div className="echo panel">
-      <div className="echo-body">
-        <span className="meta">You’re avoiding</span>
-        <span className="echo-text">{text}</span>
-        {detail && <span className="meta echo-detail">{detail}</span>}
-      </div>
+    <div className="echo">
+      <p className="meta echo-body">
+        You’re avoiding: <span className="echo-text">{text}</span>
+        {detail && <> · {detail}</>}
+      </p>
       <button className="text-button" aria-label={editLabel} onClick={onEdit}>
         Edit
       </button>
@@ -397,7 +396,7 @@ export default function Home() {
       );
       const draft = {
         ...candidate(situation, confirmed ?? 'other'),
-        title: 'Choose Your Own Step',
+        title: 'Choose your own step',
         action: '',
       };
       patch({
@@ -735,7 +734,7 @@ export default function Home() {
           <p className="premise">
             Threshold turns the things you avoid into territory you can explore.
           </p>
-          <div className="entry panel">
+          <div className="entry">
             <textarea
               id="situation"
               aria-labelledby="screen-title"
@@ -806,7 +805,7 @@ export default function Home() {
         </section>
       )}
       {s.screen === 'setup' && s.draft && (
-        <section>
+        <section className="setup">
           {/*
            * No map preview here: on a first situation there is no history yet
            * for it to show, so it read as an unexplained, empty rectangle.
@@ -823,12 +822,10 @@ export default function Home() {
             onEdit={() => go('clarify')}
           />
           {title(s.draft.title)}
-          <div className="panel">
-            <label className="meta field-label" htmlFor="action">
-              Your step
-            </label>
+          <div>
             <textarea
               id="action"
+              aria-label="Your step"
               className="text-input action-input lead"
               maxLength={1000}
               value={s.draft.action}
@@ -872,13 +869,6 @@ export default function Home() {
               </button>
             </div>
           </div>
-          {/* Explains the loop once; after a first encounter it is known. */}
-          {s.encounters.length === 0 && (
-            <p className="mechanic-note">
-              You'll leave the app to try this for real, then say what actually
-              happened.
-            </p>
-          )}
           <Scale
             id="expected"
             label="How uncomfortable do you expect this to be?"
@@ -903,7 +893,7 @@ export default function Home() {
             </>
           ) : (
             <button
-              className="text-button"
+              className="text-button note-toggle"
               onClick={() => setShowPredictionNote(true)}
             >
               Add what you expect will happen
@@ -915,6 +905,13 @@ export default function Home() {
           >
             Begin
           </Primary>
+          {/* Explains the loop once; after a first encounter it is known. */}
+          {s.encounters.length === 0 && (
+            <p className="meta mechanic-note">
+              You'll leave the app to try this for real, then say what actually
+              happened.
+            </p>
+          )}
         </section>
       )}
       {s.screen === 'active' && active && (
@@ -930,7 +927,7 @@ export default function Home() {
               .padStart(2, '0')}
             :{(remaining(active, now) % 60).toString().padStart(2, '0')}
           </div>
-          <div className="panel">
+          <div className="step-text">
             <p className="meta">Your step</p>
             <p className="lead">{active.action}</p>
           </div>
@@ -971,7 +968,7 @@ export default function Home() {
           )}
           {/* Answers already given share one surface, apart from the open question. */}
           {(!actualOpen || !urgeOpen) && (
-            <div className="summary-panel panel">
+            <div className="summary">
               {!actualOpen && (
                 <AnsweredRow
                   label="Discomfort"
@@ -1056,7 +1053,14 @@ export default function Home() {
                   />
                 </label>
               )}
-              <Primary onClick={() => finish()}>Continue</Primary>
+              {/* Optional: a quiet Skip until something is chosen. */}
+              {active.notices.length ? (
+                <Primary onClick={() => finish()}>Continue</Primary>
+              ) : (
+                <button className="secondary continue" onClick={() => finish()}>
+                  Skip
+                </button>
+              )}
             </section>
           )}
           <button className="text-button exit" onClick={() => finish(true)}>
@@ -1065,14 +1069,15 @@ export default function Home() {
         </section>
       )}
       {s.screen === 'observation' && last && (
-        <section>
+        <section className="observation">
           <MapFragment
+            className="short"
             encounters={s.encounters}
             revealId={last.id}
             newDiscoveryId={newDiscovery?.id}
           />
           <div className={newDiscovery ? 'discovery-reveal' : undefined}>
-            <p className="eyebrow">
+            <p className="eyebrow accent">
               {newDiscovery
                 ? 'Discovery'
                 : last.outcome === 'not_started'
@@ -1084,14 +1089,25 @@ export default function Home() {
             </p>
             {title(newDiscovery?.title ?? observation(last).title)}
             {last.actual !== null && (
-              <p className="evidence panel">
-                Expected{' '}
-                {newDiscovery ? expectedMean.toFixed(1) : last.prediction}{' '}
-                <span aria-hidden="true">→</span> Experienced{' '}
-                {newDiscovery ? experiencedMean.toFixed(1) : last.actual}
-              </p>
+              <div className="evidence">
+                <div>
+                  <span className="meta">Expected</span>
+                  <strong>
+                    {newDiscovery ? expectedMean.toFixed(1) : last.prediction}
+                  </strong>
+                </div>
+                <span className="arrow" aria-hidden="true">
+                  →
+                </span>
+                <div>
+                  <span className="meta">Experienced</span>
+                  <strong>
+                    {newDiscovery ? experiencedMean.toFixed(1) : last.actual}
+                  </strong>
+                </div>
+              </div>
             )}
-            <p className="lead observation-copy">
+            <p className="observation-copy">
               {newDiscovery?.body ?? observation(last).body}
             </p>
             {newDiscovery && (
@@ -1112,6 +1128,7 @@ export default function Home() {
                 Your map
               </h1>
               <MapFragment
+                className="home"
                 encounters={s.encounters}
                 onTerritory={showTerritory}
               />
@@ -1119,7 +1136,7 @@ export default function Home() {
           ) : (
             <>
               {title('Your map starts with something real.')}
-              <MapFragment encounters={[]} />
+              <MapFragment className="home" encounters={[]} />
             </>
           )}
           {next && (
@@ -1129,7 +1146,7 @@ export default function Home() {
                * always the most recent one, and without it there is no way to tell
                * whether it's still the thing worth continuing before committing to it. */}
               <p className="meta situation-context">{next.situation}</p>
-              <h2>{next.title}</h2>
+              <h2 className="home-step">{next.title}</h2>
               <p>
                 {next.action ||
                   'Choose a small step toward the situation you last brought here.'}
@@ -1164,6 +1181,7 @@ export default function Home() {
         <section>
           {title(
             atlasTerritory ? territories[atlasTerritory].name : 'Your atlas',
+            'tab-title',
           )}
           {atlasTerritory && (
             <button
@@ -1197,7 +1215,7 @@ export default function Home() {
           )}
           {filteredDiscoveries.map((d) => (
             <article className="atlas-entry discovery-entry panel" key={d.id}>
-              <p className="eyebrow">
+              <p className="eyebrow accent">
                 Discovery · {territories[d.territory].name}
               </p>
               <h2>{d.title}</h2>
@@ -1303,10 +1321,6 @@ export default function Home() {
               Return to your expedition
             </Primary>
           )}
-          <p>
-            Your map lives only in this browser. Suggestions send what you’re
-            avoiding and what makes it hard, never your map.
-          </p>
           {saveBlocked.current && (
             <button
               className="text-button"
@@ -1315,30 +1329,36 @@ export default function Home() {
               Reload the saved map
             </button>
           )}
-          <h2 className="section-heading">Keep your map</h2>
-          <div className="panel">
-            <p>Clearing browser data erases it, so save a copy now and then.</p>
-            <div className="data-actions">
+          <h2 className="section-heading keep-heading">Keep your map</h2>
+          <p>
+            Your map lives only in this browser, and clearing browser data
+            erases it. Save a copy now and then.
+          </p>
+          <div className="data-actions">
+            {/* An expedition in progress keeps the one primary action. */}
+            {s.session ? (
               <button className="secondary" onClick={exportData}>
                 Export my data
               </button>
-              <input
-                ref={fileInput}
-                type="file"
-                accept=".json,application/json"
-                hidden
-                onChange={(e) => {
-                  void stageBackup(e.target.files?.[0]);
-                  e.target.value = '';
-                }}
-              />
-              <button
-                className="text-button"
-                onClick={() => fileInput.current?.click()}
-              >
-                Restore a backup
-              </button>
-            </div>
+            ) : (
+              <Primary onClick={exportData}>Export my data</Primary>
+            )}
+            <input
+              ref={fileInput}
+              type="file"
+              accept=".json,application/json"
+              hidden
+              onChange={(e) => {
+                void stageBackup(e.target.files?.[0]);
+                e.target.value = '';
+              }}
+            />
+            <button
+              className="text-button"
+              onClick={() => fileInput.current?.click()}
+            >
+              Restore a backup
+            </button>
           </div>
           {restoreError && (
             <p className="error" role="alert">
@@ -1373,7 +1393,6 @@ export default function Home() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-          <h2 className="section-heading">Start again</h2>
           <AlertDialog>
             <AlertDialogTrigger className="text-button destructive">
               Delete my map
@@ -1416,6 +1435,10 @@ export default function Home() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+          <p className="meta privacy">
+            Suggestions send what you’re avoiding and what makes it hard, never
+            your map.
+          </p>
         </section>
       )}
       {nav && (
