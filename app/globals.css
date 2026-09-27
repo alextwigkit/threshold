@@ -22,6 +22,8 @@
   --border: #dfddd6;
   --muted: #f3f0eb;
   --muted-foreground: #50534e;
+  /* Third ink tier (labels, meta). 5.3:1 on --background; don't go lighter. */
+  --meta-foreground: #666a62;
   --popover: #fcf9f4;
   --popover-foreground: #20211e;
   --radius: 8px;
@@ -92,6 +94,7 @@ textarea:focus-visible,
  * their own background-color transition, rather than here. */
 .primary,
 .text-button,
+.secondary,
 .back,
 .avoid-row,
 .bottom-nav button {
@@ -101,6 +104,7 @@ textarea:focus-visible,
 .choice:active,
 .scale-choice:active,
 .text-button:active,
+.secondary:active,
 .back:active,
 .avoid-row:active,
 .bottom-nav button:active {
@@ -116,15 +120,30 @@ h3,
   line-height: 1.2;
 }
 h1 {
-  font-size: clamp(1.875rem, 6vw, 2.375rem);
+  font-size: clamp(1.875rem, 6vw, 2rem);
   margin: 0 0 20px;
 }
 h2 {
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   margin: 0 0 16px;
 }
 h3 {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
+}
+/*
+ * Type roles: Display (timer), Title (h1), Heading (h2), Lead, Body (p), Meta.
+ * Serif is reserved for Display, Title and Heading so it always signals structure.
+ */
+.lead {
+  font-size: 1.25rem;
+  line-height: 1.45;
+  color: var(--foreground);
+}
+.meta {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--meta-foreground);
 }
 p {
   margin: 0 0 20px;
@@ -161,9 +180,8 @@ header {
   margin-top: 8px;
 }
 .premise {
-  font-size: 1.125rem;
   max-width: 420px;
-  margin-bottom: 40px;
+  margin: -8px 0 32px;
 }
 .field-label {
   display: block;
@@ -174,7 +192,7 @@ header {
   background: #f5f2ed;
   border-radius: 14px;
   padding: 20px;
-  margin-bottom: 32px;
+  margin-bottom: 28px;
 }
 .entry textarea {
   width: 100%;
@@ -184,27 +202,19 @@ header {
   background: none;
   border: 0;
   padding: 0;
-  font-family: Newsreader, Georgia, serif;
-  font-size: 1.375rem;
-  line-height: 1.55;
+  font-size: 1.25rem;
+  line-height: 1.45;
   color: var(--foreground);
 }
-.entry textarea::placeholder {
-  color: #8a8c83;
+textarea::placeholder {
+  color: var(--meta-foreground);
 }
 .hint {
-  font-family: Newsreader, Georgia, serif;
-  font-size: 1rem;
-  line-height: 1.5;
-  color: #73776e;
-  margin: 16px 0 0;
+  margin: -20px 0 32px;
 }
 .mechanic-note {
-  font-family: Newsreader, Georgia, serif;
-  font-size: 1rem;
-  line-height: 1.5;
-  color: #73776e;
-  margin: 20px 0;
+  font-size: 0.9375rem;
+  margin: 16px 0 0;
 }
 .primary {
   display: flex;
@@ -237,6 +247,22 @@ header {
   padding: 12px 0;
   text-align: left;
   min-height: 44px;
+}
+/* Secondary: outlined, for actions that matter but aren't the screen's one primary. */
+.secondary {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 20px;
+  background: none;
+  border: 1px solid var(--foreground);
+  border-radius: 5px;
+  color: var(--foreground);
+  font-weight: 500;
+  text-align: center;
+}
+.text-button.destructive {
+  color: var(--accent);
 }
 .back {
   border: 0;
@@ -371,7 +397,7 @@ fieldset.choices {
   padding: 16px;
   background: #f5f2ed;
   border-radius: 5px;
-  color: #33362f;
+  color: var(--foreground);
   cursor: pointer;
   /* Also carries the shared transform-on-tap feedback from above — combined
    * here, not appended separately, so this declaration doesn't clobber it. */
@@ -428,7 +454,7 @@ fieldset.choices {
   font-size: 1.125rem;
 }
 .optional {
-  color: #73776e;
+  color: var(--meta-foreground);
   font-size: 0.875rem;
   font-weight: 400;
 }
@@ -438,9 +464,17 @@ fieldset.choices {
   border-top: 1px solid var(--border);
   margin: 24px 0;
 }
+/* On Return the scale is the first question, so there is nothing above it to divide from. */
+h1.sr-only + .scale-field {
+  border-top: 0;
+  padding-top: 0;
+  margin-top: 0;
+}
 .scale-legend {
-  font-size: 1.0625rem;
-  font-weight: 500;
+  font-family: Newsreader, Georgia, 'Times New Roman', serif;
+  font-size: 1.5rem;
+  letter-spacing: -0.035em;
+  line-height: 1.2;
   margin-bottom: 16px;
 }
 .scale {
@@ -482,8 +516,8 @@ fieldset.choices {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  font-size: 0.75rem;
-  color: #73776e;
+  font-size: 0.8125rem;
+  color: var(--meta-foreground);
   margin-top: 8px;
 }
 .scale-ends span:last-child {
@@ -492,10 +526,10 @@ fieldset.choices {
 .duration {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 24px;
   color: var(--muted-foreground);
   font-size: 0.875rem;
+  margin-top: -12px;
 }
 .data-actions {
   display: flex;
@@ -508,7 +542,8 @@ fieldset.choices {
 /* Not underlined like the two buttons beside it: this one is informational, not tappable. */
 .duration-label {
   font-weight: 500;
-  color: var(--foreground);
+  color: var(--meta-foreground);
+  margin-right: auto;
 }
 .map-fragment {
   overflow: hidden;
@@ -554,17 +589,9 @@ fieldset.choices {
 .compact svg {
   height: auto;
 }
-.territory-description {
-  text-align: center;
-  font-size: 0.9375rem;
-  max-width: 370px;
-  margin: 8px auto 28px;
-}
+/* The person's own words, as context above the heading that answers them. */
 .situation-context {
-  font-size: 0.875rem;
-  border-left: 2px solid var(--border);
-  padding-left: 12px;
-  margin: 0 0 22px;
+  margin: 0 0 8px;
 }
 .timer {
   /* Sized in rem so the circle grows with its digits when text is enlarged. */
@@ -584,45 +611,33 @@ fieldset.choices {
 .active {
   text-align: center;
 }
-.active h1 {
-  font-size: 1.875rem;
-}
-.active-action {
-  font-size: 1.5625rem;
-  line-height: 1.5;
-  color: var(--foreground);
+.active .timer {
+  margin-top: 24px;
 }
 .small-rule {
   width: 32px;
   border-top: 1px solid var(--border);
   margin: 24px auto;
 }
-.invitation {
-  font-size: 1.1875rem;
-  line-height: 1.5;
-  font-style: italic;
-}
 .timer-note {
-  font-size: 0.875rem;
   margin: 40px 0 0;
 }
-.timer-note::before {
-  /* Empty alt text keeps the decorative dot out of the accessible name. */
-  content: '●' / '';
-  color: var(--accent);
-  margin-right: 8px;
-}
-.stop {
-  display: block;
-  margin: 12px auto;
-  text-decoration: none;
+.active .secondary {
+  margin-top: 12px;
 }
 .reveal {
   margin-top: 24px;
   animation: appear 0.35s ease-out;
 }
-.reveal h2 {
-  font-size: 1.6875rem;
+/* A question already answered steps down to Meta so the current one leads. */
+.answered > .scale-legend,
+.answered > h2 {
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--meta-foreground);
+  margin-bottom: 8px;
 }
 .evidence {
   display: inline-block;
@@ -635,9 +650,7 @@ fieldset.choices {
   margin: 8px 0 24px;
 }
 .observation-copy {
-  font-size: 1.5rem;
-  line-height: 1.5;
-  margin-bottom: 36px;
+  margin-bottom: 32px;
 }
 .with-nav {
   /* Clears the fixed nav, which grows with its labels, so this must too. */
@@ -647,18 +660,7 @@ fieldset.choices {
   margin-bottom: 20px;
 }
 .avoid-row {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  background: none;
-  border: 0;
-  border-bottom: 1px solid var(--border);
-  padding: 22px 2px;
   margin-top: 12px;
-  text-align: left;
-  color: var(--muted-foreground);
-  text-decoration: underline;
-  text-underline-offset: 4px;
 }
 .bottom-nav {
   position: fixed;
@@ -684,7 +686,7 @@ fieldset.choices {
   min-width: 74px;
   min-height: 50px;
   font-size: 0.8125rem;
-  color: #575c51;
+  color: var(--muted-foreground);
 }
 .bottom-nav button span {
   font-size: 1.5625rem;
@@ -697,12 +699,25 @@ fieldset.choices {
   padding: 24px 0;
   border-bottom: 1px solid var(--border);
 }
-.atlas-entry h2 {
-  font-size: 1.5625rem;
-}
 .atlas-entry details {
-  font-size: 0.875rem;
   color: var(--muted-foreground);
+}
+/* Labelled facts: Meta label, ink value, so each line says what it is. */
+.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 8px 16px;
+  margin: 12px 0 0;
+}
+.facts dt {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--meta-foreground);
+  padding-top: 2px;
+}
+.facts dd {
+  margin: 0;
+  color: var(--foreground);
 }
 summary {
   cursor: pointer;
@@ -715,7 +730,10 @@ details p {
   margin: 12px 0;
 }
 .section-heading {
-  margin-top: 36px;
+  margin-top: 48px;
+}
+.data-actions .secondary {
+  width: auto;
 }
 .route-reveal {
   animation: appear 0.7s ease-out;

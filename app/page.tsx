@@ -53,14 +53,16 @@ function Scale({
   label,
   value,
   onChange,
+  answered = false,
 }: {
   id: string;
   label: string;
   value: number | null;
   onChange: (n: number) => void;
+  answered?: boolean;
 }) {
   return (
-    <div className="scale-field">
+    <div className={`scale-field ${answered ? 'answered' : ''}`}>
       <div className="scale-legend" id={`${id}-label`}>
         {label}
       </div>
@@ -342,8 +344,8 @@ export default function Home() {
     }
   }
 
-  const title = (text: string) => (
-    <h1 ref={heading} tabIndex={-1}>
+  const title = (text: string, className?: string) => (
+    <h1 ref={heading} tabIndex={-1} className={className} id="screen-title">
       {text}
     </h1>
   );
@@ -625,21 +627,20 @@ export default function Home() {
           <p className="premise">
             Threshold turns the things you avoid into territory you can explore.
           </p>
-          <label className="field-label" htmlFor="situation">
-            What's something you've been avoiding lately?
-          </label>
           <div className="entry">
             <textarea
               id="situation"
+              aria-labelledby="screen-title"
+              aria-describedby="situation-hint"
               value={s.situation}
               maxLength={2000}
               onChange={(e) => patch({ situation: e.target.value })}
             />
-            <p className="hint">
-              A conversation, starting a project, answering a message, making a
-              decision.
-            </p>
           </div>
+          <p className="meta hint" id="situation-hint">
+            A conversation, starting a project, answering a message, making a
+            decision.
+          </p>
           <Primary disabled={!s.situation.trim() || busy} onClick={resolve}>
             Continue
           </Primary>
@@ -647,6 +648,7 @@ export default function Home() {
       )}
       {s.screen === 'clarify' && !busy && (
         <section className="screen-fade-in">
+          <p className="meta situation-context">{s.situation}</p>
           {title('What makes it hard to take a step?')}
           <p id="resistance-hint">
             Pick the main thing for now. It doesn’t have to explain everything.
@@ -679,7 +681,7 @@ export default function Home() {
               />
             </label>
           )}
-          <button className="text-button serif" onClick={() => go('name')}>
+          <button className="text-button" onClick={() => go('name')}>
             Edit what I’m avoiding
           </button>
           <Primary disabled={busy} onClick={setup}>
@@ -694,17 +696,14 @@ export default function Home() {
            * for it to show, so it read as an unexplained, empty rectangle.
            * The real map (with real routes) still lives on the Map screen.
            */}
-          <p className="territory-description">
-            {territories[s.draft.territory].description}
-          </p>
+          <p className="meta situation-context">{s.situation}</p>
           {title(s.draft.title)}
-          <p className="situation-context">{s.situation}</p>
-          <label className="field-label" htmlFor="action">
-            The step you'll take
+          <label className="meta field-label" htmlFor="action">
+            Your step
           </label>
           <textarea
             id="action"
-            className="text-input action-input"
+            className="text-input action-input lead"
             maxLength={1000}
             value={s.draft.action}
             placeholder={
@@ -750,9 +749,8 @@ export default function Home() {
             </button>
           </div>
           <p className="mechanic-note">
-            You'll leave the app to try this for real. When you're back, you'll
-            say what actually happened — that's what the prediction below is
-            for.
+            You'll leave the app to try this for real, then say what actually
+            happened.
           </p>
           <Scale
             id="expected"
@@ -781,7 +779,7 @@ export default function Home() {
       )}
       {s.screen === 'active' && active && (
         <section className="active">
-          {title(active.title)}
+          {title(active.title, 'sr-only')}
           <div
             className="timer"
             role="timer"
@@ -792,32 +790,40 @@ export default function Home() {
               .padStart(2, '0')}
             :{(remaining(active, now) % 60).toString().padStart(2, '0')}
           </div>
-          <p className="serif active-action">{active.action}</p>
+          <p className="lead">{active.action}</p>
           <div className="small-rule" />
-          <p className="serif invitation">
-            Go do it. Come back when you're done—or when something interesting
+          <p>
+            Go do it. Come back when you're done, or when something interesting
             happens.
           </p>
-          <p className="timer-note">
+          <p className="meta timer-note">
             Time keeps counting when you leave the app.
           </p>
           <Primary onClick={() => returnFrom()}>I'm back</Primary>
-          <button className="text-button stop" onClick={() => returnFrom(true)}>
+          <button className="secondary" onClick={() => returnFrom(true)}>
             Stop
           </button>
         </section>
       )}
       {s.screen === 'return' && active && (
         <section>
-          {title('What happened?')}
+          <h1 className="sr-only" ref={heading} tabIndex={-1}>
+            What happened?
+          </h1>
           <Scale
             id="actual"
             label="How uncomfortable was it actually?"
             value={active.actual}
             onChange={(actual) => updateSession({ actual })}
+            answered={active.actual !== null}
           />
+          {active.actual === null && (
+            <button className="text-button" onClick={() => finish(true)}>
+              I didn't start
+            </button>
+          )}
           {active.actual !== null && (
-            <section className="reveal">
+            <section className={`reveal ${active.urge ? 'answered' : ''}`}>
               <h2 id="urge-label">Did an urge to avoid or leave show up?</h2>
               <RadioGroup
                 className="choices"
@@ -880,9 +886,11 @@ export default function Home() {
               <Primary onClick={() => finish()}>Continue</Primary>
             </section>
           )}
-          <button className="text-button" onClick={() => finish(true)}>
-            I didn't start
-          </button>
+          {active.actual !== null && (
+            <button className="text-button" onClick={() => finish(true)}>
+              I didn't start
+            </button>
+          )}
         </section>
       )}
       {s.screen === 'observation' && last && (
@@ -912,7 +920,7 @@ export default function Home() {
                 {newDiscovery ? experiencedMean.toFixed(1) : last.actual}
               </p>
             )}
-            <p className="serif observation-copy">
+            <p className="lead observation-copy">
               {newDiscovery?.body ?? observation(last).body}
             </p>
             {newDiscovery && (
@@ -949,7 +957,7 @@ export default function Home() {
               {/* Which situation this reflects, not just the resulting step — this is
                * always the most recent one, and without it there is no way to tell
                * whether it's still the thing worth continuing before committing to it. */}
-              <p className="situation-context">{next.situation}</p>
+              <p className="meta situation-context">{next.situation}</p>
               <h2>{next.title}</h2>
               <p>
                 {next.action ||
@@ -972,12 +980,12 @@ export default function Home() {
             </>
           )}
           <button
-            className="avoid-row"
+            className="secondary avoid-row"
             onClick={() =>
               patch({ situation: '', custom: '', draft: null, screen: 'name' })
             }
           >
-            I'm avoiding something <span aria-hidden="true">→</span>
+            I'm avoiding something
           </button>
         </section>
       )}
@@ -1002,7 +1010,7 @@ export default function Home() {
                 compare.
               </p>
               <button
-                className="avoid-row"
+                className="secondary avoid-row"
                 onClick={() =>
                   patch({
                     situation: '',
@@ -1012,7 +1020,7 @@ export default function Home() {
                   })
                 }
               >
-                I'm avoiding something <span aria-hidden="true">→</span>
+                I'm avoiding something
               </button>
             </>
           )}
@@ -1053,24 +1061,56 @@ export default function Home() {
               <p>{observation(e).body}</p>
               <details>
                 <summary>The encounter</summary>
-                <p>{e.situation}</p>
-                <p>{e.action}</p>
-                {e.resistanceNote && <p>{e.resistanceNote}</p>}
-                {e.actual !== null && (
-                  <p>
-                    Expected {e.prediction} → Experienced {e.actual}
-                  </p>
-                )}
-                <p>
-                  {e.outcome === 'not_started'
-                    ? 'Not started'
-                    : urgeChoices.find(([v]) => v === e.urge)?.[1]}
-                </p>
-                {e.predictionNote && <p>Expected: {e.predictionNote}</p>}
-                {e.notices.map((n) => (
-                  <p key={n}>{noticingChoices.find(([v]) => v === n)?.[1]}</p>
-                ))}
-                {e.note && <p>{e.note}</p>}
+                <dl className="facts">
+                  <dt>Avoiding</dt>
+                  <dd>{e.situation}</dd>
+                  <dt>Step</dt>
+                  <dd>{e.action}</dd>
+                  {e.resistanceNote && (
+                    <>
+                      <dt>What made it hard</dt>
+                      <dd>{e.resistanceNote}</dd>
+                    </>
+                  )}
+                  {e.actual !== null && (
+                    <>
+                      <dt>Discomfort</dt>
+                      <dd>
+                        Expected {e.prediction} → Experienced {e.actual}
+                      </dd>
+                    </>
+                  )}
+                  {e.predictionNote && (
+                    <>
+                      <dt>Expected</dt>
+                      <dd>{e.predictionNote}</dd>
+                    </>
+                  )}
+                  <dt>Urge to leave</dt>
+                  <dd>
+                    {e.outcome === 'not_started'
+                      ? 'Not started'
+                      : urgeChoices.find(([v]) => v === e.urge)?.[1]}
+                  </dd>
+                  {e.notices.length > 0 && (
+                    <>
+                      <dt>Noticed</dt>
+                      <dd>
+                        {e.notices
+                          .map(
+                            (n) => noticingChoices.find(([v]) => v === n)?.[1],
+                          )
+                          .join('; ')}
+                      </dd>
+                    </>
+                  )}
+                  {e.note && (
+                    <>
+                      <dt>Note</dt>
+                      <dd>{e.note}</dd>
+                    </>
+                  )}
+                </dl>
               </details>
             </article>
           ))}
@@ -1114,7 +1154,7 @@ export default function Home() {
             to keep a backup.
           </p>
           <div className="data-actions">
-            <button className="text-button" onClick={exportData}>
+            <button className="secondary" onClick={exportData}>
               Export my data
             </button>
             <input
@@ -1169,7 +1209,7 @@ export default function Home() {
           </AlertDialog>
           <h2 className="section-heading">Start again</h2>
           <AlertDialog>
-            <AlertDialogTrigger className="text-button">
+            <AlertDialogTrigger className="text-button destructive">
               Delete my map
             </AlertDialogTrigger>
             <AlertDialogContent>
