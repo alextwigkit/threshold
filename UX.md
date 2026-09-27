@@ -2,6 +2,8 @@
 
 > September 12 decision: the owner explicitly requested removing the AI suggestions section and making suggestions always on. Situation/resistance continuation now requests the existing model automatically when online, including on fresh browsers and after local data deletion. The old consent preference is no longer read. Existing minimal payload, API limits, validation and offline fallback remain. Earlier default-off/toggle instructions below are historical and superseded. This authorization applies to the current private personal app.
 
+> September 27 decision: the owner said this document is not binding on visual and layout passes. Sections 1, 3 and 4 now describe the app as built (no separate Name label, no Setup territory preview, Active title for screen readers only).
+
 Current release: private version 3, including optional AI. Read [HANDOFF.md](HANDOFF.md) for current status, decision precedence and verification boundaries. Sections describing the initial build are historical where explicitly labeled.
 
 ## Global
@@ -13,16 +15,16 @@ Map → Explore → Setup; Map → I'm avoiding something → Name.
 Map ↔ Atlas ↔ Me. Existing active sessions resume rather than creating overlapping attempts.
 
 ### 1. Name
-THRESHOLD. “What do you keep turning away from?” Then the approved premise and a substantial textarea labeled “What's something you've been avoiding lately?” Examples stay hints. Trim input, reject empty text, cap at 2,000 characters with a clear limit. Continue resolves a candidate or asks for clarification. No signup or onboarding tour.
+THRESHOLD. “What do you keep turning away from?” Then the approved premise and a substantial textarea named by the screen title, with no second visible label. Examples stay hints, inside the input panel. Trim input, reject empty text, cap at 2,000 characters with a clear limit. Continue resolves a candidate or asks for clarification. No signup or onboarding tour.
 
 ### 2. Clarify — conditional
 One tentative interpretation, “What feels closest?”, and the five approved choices: understand it first; don't know where to start; worried I'll do it badly; unpleasant to begin; something else. A correction can change territory and action; it is not a cosmetic edit. Something else accepts text and permits an unclassified action. High-confidence, concrete input can skip this step; correction remains available on Setup.
 
 ### 3. Setup
-Reveal only the relevant territory alongside the action. Territory is context, not a separate destination selection. Show title, concrete instruction, duration and brief rationale if useful. Let the user edit the action or make it smaller. The prediction scale has eleven labeled integer choices 0–10, no default. Use wrapping rows on narrow screens rather than tiny hit areas. Prediction note is optional. Begin requires an action and explicit prediction. Prior responses do not auto-fill a new prediction.
+No territory preview: on a first situation it was an empty rectangle, so the map lives on the Map screen only. Show the person's situation and chosen difficulty as context with an Edit link, then title, concrete instruction, duration and brief rationale if useful. Let the user edit the action or make it smaller. The prediction scale has eleven labeled integer choices 0–10, no default. Use wrapping rows on narrow screens rather than tiny hit areas. Prediction note is optional. Begin requires an action and explicit prediction. Prior responses do not auto-fill a new prediction.
 
 ### 4. Active
-Action title, remaining time and exact action. “Go do it. Come back when you're done—or when something interesting happens.” I'm back and Stop remain available immediately. Time is derived from start/deadline timestamps, not decrement ticks; reaching zero does not complete an encounter. No demand to hold or turn over a device. No notification permission prompt. Stop must permit reporting an attempted action or recording that it was not started.
+Remaining time and exact action; the action title is a screen reader heading only. “Go do it. Come back when you're done, or when something interesting happens.” I'm back and Stop remain available immediately. Time is derived from start/deadline timestamps, not decrement ticks; reaching zero does not complete an encounter. No demand to hold or turn over a device. No notification permission prompt. Stop must permit reporting an attempted action or recording that it was not started.
 
 ### 5. Return
 First show only “How uncomfortable was it actually?” with 0–10. Selecting reveals “Did an urge to avoid or leave show up?” Choices: No; Yes, and I stayed; Yes, I left and came back; Yes, and I stopped. Selecting reveals “What did you notice?” Multiple compatible choices may be selected. Nothing stood out is exclusive; Something else reveals optional text. Include harder-than-expected alongside the approved neutral/positive options. Do not require surprise. Allow an explicit “I didn't start” outcome without inventing discomfort or approach evidence. Continue saves once; repeated clicks/reloads cannot duplicate records.
