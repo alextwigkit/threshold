@@ -53,17 +53,15 @@ function Scale({
   label,
   value,
   onChange,
-  answered = false,
 }: {
   id: string;
   label: string;
   value: number | null;
   onChange: (n: number) => void;
-  answered?: boolean;
 }) {
   return (
-    <div className={`scale-field ${answered ? 'answered' : ''}`}>
-      <div className="scale-legend" id={`${id}-label`}>
+    <div className="scale-field">
+      <div className="scale-legend" id={`${id}-label`} tabIndex={-1}>
         {label}
       </div>
       <RadioGroup
@@ -87,6 +85,29 @@ function Scale({
       <div className="scale-ends" id={`${id}-ends`}>
         <span>0 · No discomfort</span> <span>10 · Very uncomfortable</span>
       </div>
+    </div>
+  );
+}
+function AnsweredRow({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: () => void;
+}) {
+  return (
+    <div className="answered-row">
+      <span className="meta">{label}</span>
+      <span className="answered-value">{value}</span>
+      <button
+        className="text-button"
+        aria-label={`Change ${label.toLowerCase()}`}
+        onClick={onChange}
+      >
+        Change
+      </button>
     </div>
   );
 }
@@ -144,6 +165,11 @@ export default function Home() {
   const [backup, setBackup] = useState<Saved | null>(null);
   const [restoreError, setRestoreError] = useState('');
   const [restoreMessage, setRestoreMessage] = useState('');
+  // Return: an answered question collapses to a summary until the person reopens it.
+  const [reopened, setReopened] = useState<'actual' | 'urge' | null>(null);
+  // Clarify: "Something else" may be preselected; its text field waits for an explicit pick.
+  const [pickedOther, setPickedOther] = useState(false);
+  const [showPredictionNote, setShowPredictionNote] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const rawUnreadable = useRef<string | null>(null);
 
@@ -205,6 +231,10 @@ export default function Home() {
       heading.current?.focus();
     }
   }, [s.screen, ready]);
+  // "Change" unmounts itself, so focus follows it to the question it reopened.
+  useEffect(() => {
+    if (reopened) document.getElementById(`${reopened}-label`)?.focus();
+  }, [reopened]);
   // A textarea scrolls rather than grows, so a long action loses its last
   // lines once text is enlarged or the screen is narrow. Fit each one to its
   // content after every render; the CSS min-height still sets the floor.
@@ -353,6 +383,7 @@ export default function Home() {
     if (await requestStep(null)) return;
     const guess = infer(s.situation);
     const draft = candidate(s.situation.trim(), guess.resistance, s.encounters);
+    setPickedOther(false);
     patch({
       resistance: guess.resistance,
       draft,
@@ -380,6 +411,8 @@ export default function Home() {
     }
     if (!s.draft?.action.trim() || !validScale(s.prediction)) return;
     setSuggestionMessage('');
+    setShowPredictionNote(false);
+    setReopened(null);
     patch({
       session: {
         ...s.draft,
@@ -650,13 +683,16 @@ export default function Home() {
         <section className="screen-fade-in">
           <p className="meta situation-context">{s.situation}</p>
           {title('What makes it hard to take a step?')}
-          <p id="resistance-hint">
-            Pick the main thing for now. It doesn’t have to explain everything.
+          <p className="meta" id="resistance-hint">
+            Pick the closest. It doesn’t have to explain everything.
           </p>
           <RadioGroup
             className="choices"
             value={s.resistance}
-            onValueChange={(v) => patch({ resistance: v as Resistance })}
+            onValueChange={(v) => {
+              setPickedOther(v === 'other');
+              patch({ resistance: v as Resistance });
+            }}
             aria-label="What makes it hard to take a step?"
             aria-describedby="resistance-hint"
           >
@@ -670,7 +706,7 @@ export default function Home() {
               </label>
             ))}
           </RadioGroup>
-          {s.resistance === 'other' && (
+          {s.resistance === 'other' && (pickedOther || s.custom) && (
             <label className="field-label">
               What makes it hard?
               <textarea
@@ -681,12 +717,12 @@ export default function Home() {
               />
             </label>
           )}
-          <button className="text-button" onClick={() => go('name')}>
-            Edit what I’m avoiding
-          </button>
           <Primary disabled={busy} onClick={setup}>
             Continue
           </Primary>
+          <button className="text-button" onClick={() => go('name')}>
+            Edit what I’m avoiding
+          </button>
         </section>
       )}
       {s.screen === 'setup' && s.draft && (
@@ -748,27 +784,42 @@ export default function Home() {
               Adjust the fit
             </button>
           </div>
-          <p className="mechanic-note">
-            You'll leave the app to try this for real, then say what actually
-            happened.
-          </p>
+          {/* Explains the loop once; after a first encounter it is known. */}
+          {s.encounters.length === 0 && (
+            <p className="mechanic-note">
+              You'll leave the app to try this for real, then say what actually
+              happened.
+            </p>
+          )}
           <Scale
             id="expected"
             label="How uncomfortable do you expect this to be?"
             value={s.prediction}
             onChange={(prediction) => patch({ prediction })}
           />
-          <label className="field-label" htmlFor="prediction">
-            What do you expect will happen?{' '}
-            <span className="optional">Optional</span>
-          </label>
-          <textarea
-            className="text-input"
-            id="prediction"
-            value={s.predictionNote}
-            maxLength={1000}
-            onChange={(e) => patch({ predictionNote: e.target.value })}
-          />
+          {showPredictionNote || s.predictionNote ? (
+            <>
+              <label className="field-label" htmlFor="prediction">
+                What do you expect will happen?{' '}
+                <span className="optional">Optional</span>
+              </label>
+              <textarea
+                className="text-input"
+                id="prediction"
+                value={s.predictionNote}
+                maxLength={1000}
+                autoFocus={showPredictionNote && !s.predictionNote}
+                onChange={(e) => patch({ predictionNote: e.target.value })}
+              />
+            </>
+          ) : (
+            <button
+              className="text-button"
+              onClick={() => setShowPredictionNote(true)}
+            >
+              Add what you expect will happen
+            </button>
+          )}
           <Primary
             onClick={begin}
             disabled={!s.draft.action.trim() || s.prediction === null}
@@ -791,8 +842,7 @@ export default function Home() {
             :{(remaining(active, now) % 60).toString().padStart(2, '0')}
           </div>
           <p className="lead">{active.action}</p>
-          <div className="small-rule" />
-          <p>
+          <p className="invitation">
             Go do it. Come back when you're done, or when something interesting
             happens.
           </p>
@@ -810,39 +860,56 @@ export default function Home() {
           <h1 className="sr-only" ref={heading} tabIndex={-1}>
             What happened?
           </h1>
-          <Scale
-            id="actual"
-            label="How uncomfortable was it actually?"
-            value={active.actual}
-            onChange={(actual) => updateSession({ actual })}
-            answered={active.actual !== null}
-          />
-          {active.actual === null && (
-            <button className="text-button" onClick={() => finish(true)}>
-              I didn't start
-            </button>
+          {active.actual === null || reopened === 'actual' ? (
+            <Scale
+              id="actual"
+              label="How uncomfortable was it actually?"
+              value={active.actual}
+              onChange={(actual) => {
+                setReopened(null);
+                updateSession({ actual });
+              }}
+            />
+          ) : (
+            <AnsweredRow
+              label="Discomfort"
+              value={`${active.actual} of 10`}
+              onChange={() => setReopened('actual')}
+            />
           )}
-          {active.actual !== null && (
-            <section className={`reveal ${active.urge ? 'answered' : ''}`}>
-              <h2 id="urge-label">Did an urge to avoid or leave show up?</h2>
-              <RadioGroup
-                className="choices"
-                value={active.urge}
-                onValueChange={(v) => updateSession({ urge: v as Urge })}
-                aria-labelledby="urge-label"
-              >
-                {urgeChoices.map(([v, l]) => (
-                  <label
-                    className={`choice ${active.urge === v ? 'selected' : ''}`}
-                    key={v}
-                  >
-                    <span>{l}</span>
-                    <RadioGroupItem value={v} />
-                  </label>
-                ))}
-              </RadioGroup>
-            </section>
-          )}
+          {active.actual !== null &&
+            (!active.urge || reopened === 'urge' ? (
+              <section className="reveal">
+                <h2 id="urge-label" tabIndex={-1}>
+                  Did an urge to avoid or leave show up?
+                </h2>
+                <RadioGroup
+                  className="choices"
+                  value={active.urge}
+                  onValueChange={(v) => {
+                    setReopened(null);
+                    updateSession({ urge: v as Urge });
+                  }}
+                  aria-labelledby="urge-label"
+                >
+                  {urgeChoices.map(([v, l]) => (
+                    <label
+                      className={`choice ${active.urge === v ? 'selected' : ''}`}
+                      key={v}
+                    >
+                      <span>{l}</span>
+                      <RadioGroupItem value={v} />
+                    </label>
+                  ))}
+                </RadioGroup>
+              </section>
+            ) : (
+              <AnsweredRow
+                label="Urge"
+                value={urgeChoices.find(([v]) => v === active.urge)?.[1] ?? ''}
+                onChange={() => setReopened('urge')}
+              />
+            ))}
           {active.actual !== null && active.urge && (
             <section className="reveal">
               <h2 id="noticing-label">What did you notice?</h2>
@@ -886,11 +953,9 @@ export default function Home() {
               <Primary onClick={() => finish()}>Continue</Primary>
             </section>
           )}
-          {active.actual !== null && (
-            <button className="text-button" onClick={() => finish(true)}>
-              I didn't start
-            </button>
-          )}
+          <button className="text-button" onClick={() => finish(true)}>
+            I didn't start
+          </button>
         </section>
       )}
       {s.screen === 'observation' && last && (
@@ -1133,12 +1198,8 @@ export default function Home() {
             </Primary>
           )}
           <p>
-            Your map and encounters are saved in this browser, on this device.
-            They aren’t synced to an account.
-          </p>
-          <p>
-            Threshold currently offers a small set of editable suggestions. You
-            decide what fits and what step to take.
+            Your map lives only in this browser. Suggestions send what you’re
+            avoiding and what makes it hard, never your map.
           </p>
           {saveBlocked.current && (
             <button
@@ -1148,11 +1209,8 @@ export default function Home() {
               Reload the saved map
             </button>
           )}
-          <h2>Keep your map</h2>
-          <p>
-            Clearing browser data will remove it. Save a copy whenever you want
-            to keep a backup.
-          </p>
+          <h2 className="section-heading">Keep your map</h2>
+          <p>Clearing browser data erases it, so save a copy now and then.</p>
           <div className="data-actions">
             <button className="secondary" onClick={exportData}>
               Export my data

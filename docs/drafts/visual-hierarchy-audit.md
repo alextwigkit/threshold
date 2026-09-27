@@ -169,3 +169,18 @@ Done in `app/globals.css` and `app/page.tsx`. After-captures are `../.playwright
 - The Explore label is unchanged (UX.md names it).
 - The login page (`server/auth.ts`) is untouched.
 - The 0 to 10 scale keeps its deliberate 6+5 wrap below 700px (the 44px touch-target decision documented in the CSS).
+
+## 8. Density pass
+
+Rules applied (sources: NN/g progressive disclosure and cognitive load, Cowan 2001, Krug, GOV.UK one thing per page, Apple State of Mind, Daylio, How We Feel):
+
+- Three gaps only: `--space-in` 8px inside a group, `--space-pair` 16px from a heading to its content, `--space-group` 40px between groups. Each is at least double the one before. Divider rules replaced by whitespace.
+- One open question at a time. UX.md keeps Return on one progressively revealed screen, so an answered question collapses to a summary row with Change (focus moves to the reopened question).
+- Explanations that are only new once are shown once: the setup mechanic note appears only before the first encounter.
+- Optional inputs sit behind a link until wanted: the prediction note, and the Clarify "What makes it hard?" field, which waits for an explicit Something else pick instead of opening because it was preselected.
+- Tertiary actions go below the primary (Edit what I'm avoiding, I didn't start).
+- Copy cut: Me went from three paragraphs to two short ones; the stale "small set of editable suggestions" line was replaced with the accurate transmission boundary.
+
+Measured at 390x844: Clarify 1117px to 931px; Return (all answered) 1345px to 996px, 85 to 61 words; Me 76 to 55 words.
+
+Not done, and why: splitting Setup or Return into separate screens (the research default) conflicts with DESIGN.md/UX.md; a slider in place of the 0 to 10 grid conflicts with UX.md's eleven labeled choices.

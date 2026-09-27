@@ -24,6 +24,13 @@
   --muted-foreground: #50534e;
   /* Third ink tier (labels, meta). 5.3:1 on --background; don't go lighter. */
   --meta-foreground: #666a62;
+  /*
+   * Three gaps only, each at least double the one before, so grouping is
+   * visible at a glance: inside a group, heading to its content, between groups.
+   */
+  --space-in: 8px;
+  --space-pair: 16px;
+  --space-group: 40px;
   --popover: #fcf9f4;
   --popover-foreground: #20211e;
   --radius: 8px;
@@ -121,11 +128,11 @@ h3,
 }
 h1 {
   font-size: clamp(1.875rem, 6vw, 2rem);
-  margin: 0 0 20px;
+  margin: 0 0 var(--space-pair);
 }
 h2 {
   font-size: 1.5rem;
-  margin: 0 0 16px;
+  margin: 0 0 var(--space-pair);
 }
 h3 {
   font-size: 1.25rem;
@@ -146,7 +153,7 @@ h3 {
   color: var(--meta-foreground);
 }
 p {
-  margin: 0 0 20px;
+  margin: 0 0 var(--space-pair);
   color: var(--muted-foreground);
 }
 .shell {
@@ -181,18 +188,18 @@ header {
 }
 .premise {
   max-width: 420px;
-  margin: -8px 0 32px;
+  margin: 0 0 var(--space-group);
 }
 .field-label {
   display: block;
   font-weight: 500;
-  margin-bottom: 12px;
+  margin-bottom: var(--space-in);
 }
 .entry {
   background: #f5f2ed;
   border-radius: 14px;
   padding: 20px;
-  margin-bottom: 28px;
+  margin-bottom: var(--space-in);
 }
 .entry textarea {
   width: 100%;
@@ -210,11 +217,11 @@ textarea::placeholder {
   color: var(--meta-foreground);
 }
 .hint {
-  margin: -20px 0 32px;
+  margin: 0 0 var(--space-group);
 }
 .mechanic-note {
   font-size: 0.9375rem;
-  margin: 16px 0 0;
+  margin: var(--space-pair) 0 0;
 }
 .primary {
   display: flex;
@@ -229,7 +236,7 @@ textarea::placeholder {
   min-height: 54px;
   width: 100%;
   font-weight: 500;
-  margin-top: 24px;
+  margin-top: var(--space-group);
 }
 .primary .arrow {
   font-size: 1.5rem;
@@ -247,6 +254,13 @@ textarea::placeholder {
   padding: 12px 0;
   text-align: left;
   min-height: 44px;
+}
+/* A lone tertiary action sits on its own line, close under the action it follows. */
+section > .text-button {
+  display: block;
+}
+.primary + .text-button {
+  margin-top: var(--space-in);
 }
 /* Secondary: outlined, for actions that matter but aren't the screen's one primary. */
 .secondary {
@@ -380,8 +394,8 @@ h1:focus {
 }
 .choices {
   display: grid;
-  gap: 8px;
-  margin: 20px 0 28px;
+  gap: var(--space-in);
+  margin: var(--space-pair) 0 0;
 }
 fieldset.choices {
   border: 0;
@@ -444,10 +458,16 @@ fieldset.choices {
   background: #f5f2ed;
   color: var(--foreground);
   padding: 14px;
-  margin: 8px 0 20px;
+  margin: 0;
   font-size: 1rem;
   font-weight: 400;
   line-height: 1.5;
+}
+.field-label .text-input {
+  margin-top: var(--space-in);
+}
+.choices + .field-label {
+  margin-top: var(--space-pair);
 }
 .action-input {
   min-height: 7.875rem;
@@ -458,16 +478,13 @@ fieldset.choices {
   font-size: 0.875rem;
   font-weight: 400;
 }
+/* Whitespace, not a rule, separates it from the group above. */
 .scale-field {
-  padding: 24px 0;
+  padding: 0;
   border: 0;
-  border-top: 1px solid var(--border);
-  margin: 24px 0;
+  margin: var(--space-group) 0 var(--space-pair);
 }
-/* On Return the scale is the first question, so there is nothing above it to divide from. */
 h1.sr-only + .scale-field {
-  border-top: 0;
-  padding-top: 0;
   margin-top: 0;
 }
 .scale-legend {
@@ -475,7 +492,11 @@ h1.sr-only + .scale-field {
   font-size: 1.5rem;
   letter-spacing: -0.035em;
   line-height: 1.2;
-  margin-bottom: 16px;
+  margin-bottom: var(--space-pair);
+}
+.scale-legend:focus,
+h2:focus {
+  outline: none;
 }
 .scale {
   display: grid !important;
@@ -529,7 +550,6 @@ h1.sr-only + .scale-field {
   gap: 24px;
   color: var(--muted-foreground);
   font-size: 0.875rem;
-  margin-top: -12px;
 }
 .data-actions {
   display: flex;
@@ -591,7 +611,7 @@ h1.sr-only + .scale-field {
 }
 /* The person's own words, as context above the heading that answers them. */
 .situation-context {
-  margin: 0 0 8px;
+  margin: 0 0 var(--space-in);
 }
 .timer {
   /* Sized in rem so the circle grows with its digits when text is enlarged. */
@@ -614,30 +634,39 @@ h1.sr-only + .scale-field {
 .active .timer {
   margin-top: 24px;
 }
-.small-rule {
-  width: 32px;
-  border-top: 1px solid var(--border);
-  margin: 24px auto;
+.active .lead {
+  margin-bottom: var(--space-group);
+}
+.invitation {
+  margin-bottom: var(--space-in);
 }
 .timer-note {
-  margin: 40px 0 0;
+  margin: 0;
 }
 .active .secondary {
-  margin-top: 12px;
+  margin-top: var(--space-in);
 }
 .reveal {
-  margin-top: 24px;
+  margin-top: var(--space-group);
   animation: appear 0.35s ease-out;
 }
-/* A question already answered steps down to Meta so the current one leads. */
-.answered > .scale-legend,
-.answered > h2 {
-  font-family: inherit;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  letter-spacing: 0;
-  color: var(--meta-foreground);
-  margin-bottom: 8px;
+/* An answered question, reduced to one line so only the current one is open. */
+.answered-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+.answered-row .meta {
+  min-width: 5.5rem;
+}
+.answered-value {
+  color: var(--foreground);
+  margin-right: auto;
+}
+.answered-row .text-button {
+  font-size: 0.875rem;
 }
 .evidence {
   display: inline-block;
@@ -660,7 +689,7 @@ h1.sr-only + .scale-field {
   margin-bottom: 20px;
 }
 .avoid-row {
-  margin-top: 12px;
+  margin-top: var(--space-in);
 }
 .bottom-nav {
   position: fixed;
@@ -730,7 +759,7 @@ details p {
   margin: 12px 0;
 }
 .section-heading {
-  margin-top: 48px;
+  margin-top: var(--space-group);
 }
 .data-actions .secondary {
   width: auto;
