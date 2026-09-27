@@ -953,7 +953,7 @@ export default function Home() {
               <Primary onClick={() => finish()}>Continue</Primary>
             </section>
           )}
-          <button className="text-button" onClick={() => finish(true)}>
+          <button className="text-button exit" onClick={() => finish(true)}>
             I didn't start
           </button>
         </section>

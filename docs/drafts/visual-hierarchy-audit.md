@@ -184,3 +184,12 @@ Rules applied (sources: NN/g progressive disclosure and cognitive load, Cowan 20
 Measured at 390x844: Clarify 1117px to 931px; Return (all answered) 1345px to 996px, 85 to 61 words; Me 76 to 55 words.
 
 Not done, and why: splitting Setup or Return into separate screens (the research default) conflicts with DESIGN.md/UX.md; a slider in place of the 0 to 10 grid conflicts with UX.md's eleven labeled choices.
+
+Second density pass (fit without scrolling at 390x844, primary action in view):
+
+- The offline notice drops to 14px with less padding: it is a transient system message, not content.
+- Choice rows 56px to 52px tall (touch target still over 44px); the empty step textarea starts at the same height as other text inputs and still grows with content.
+- The header gap joins the 40px between-group token.
+- "I didn't start" gets the between-group gap, since it escapes the whole screen, except right after Continue, where it pairs with it.
+
+Measured: Clarify Continue now ends at 793px (in view); Setup Begin ends at 883px with the offline notice, about 830px without it; Return with all questions open is 959px. Atlas already follows the rules (details behind a disclosure) and was left alone.
