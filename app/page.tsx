@@ -696,7 +696,7 @@ export default function Home() {
           </button>
         </div>
       )}
-      {suggestionMessage && (
+      {suggestionMessage && s.screen !== 'setup' && (
         <p className="notice" role="status">
           {suggestionMessage}
         </p>
@@ -754,14 +754,14 @@ export default function Home() {
         </section>
       )}
       {s.screen === 'clarify' && !busy && (
-        <section className="screen-fade-in">
+        <section className="screen-fade-in clarify">
           <Echo
             text={s.situation}
             editLabel="Edit what I’m avoiding"
             onEdit={() => go('name')}
           />
           {title('What makes it hard to take a step?')}
-          <p className="meta" id="resistance-hint">
+          <p className="meta question-hint" id="resistance-hint">
             Pick the main thing for now. It doesn’t have to explain everything.
           </p>
           <RadioGroup
@@ -912,6 +912,11 @@ export default function Home() {
               happened.
             </p>
           )}
+          {suggestionMessage && (
+            <p className="notice" role="status">
+              {suggestionMessage}
+            </p>
+          )}
         </section>
       )}
       {s.screen === 'active' && active && (
@@ -1016,7 +1021,7 @@ export default function Home() {
               <h2 id="noticing-label" tabIndex={-1}>
                 What did you notice?
               </h2>
-              <p className="meta" id="noticing-hint">
+              <p className="meta question-hint" id="noticing-hint">
                 Choose any that fit.
               </p>
               <fieldset

@@ -46,3 +46,16 @@ Baseline: 2026-09-27, screenshots `.playwright-mcp/base-*` (390x844, sharp + 7px
 - [x] tsc, tests, commit
 
 Open nits (not blocking): 6+5 scale wrap; selected scale chip's rust fill outweighs the filled field; Map eyebrow and situation line read as one band; privacy note vs Delete mass on Me.
+
+## Spacing follow-up
+
+Owner feedback after 9c78c5b: screens felt scrunched. Cause: the hierarchy pass demoted things by shrinking gaps as well as size, and compressed Setup to keep Begin above the fold; auditors were only asked what reads first.
+
+- Added `--space-block` (24px) between pair (16) and group (40): context or heading to the next block.
+- Setup's suggestions notice moved below Begin (the title already says "Choose your own step").
+- Header gap 40 to 24 on flow screens; question hints bind to their question (8px) with the answers 24px below.
+- Map: eyebrow and situation line pair at 4px, 24px to the title, 40px under the map, 24px between the two actions.
+- Clarify question 1.625rem so the answer list leads; choice dividers firmer.
+- Observation: 24px above the numbers.
+
+Audits (now also asked about crowding): v9 Clarify and Map NOT READY (crowding), rest READY; v10 Map READY, Clarify (question outweighed list) and Observation (numbers squeezed) NOT READY; v11 all three READY.
