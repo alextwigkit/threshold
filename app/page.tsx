@@ -265,7 +265,7 @@ export default function Home() {
     }
   }, [s.screen, ready]);
   // Collapsing a question unmounts the focused control, so focus moves to the
-  // heading named here once it has rendered.
+  // heading named here once it has rendered. No deps: it checks after every render.
   useEffect(() => {
     const target =
       pendingFocus.current && document.getElementById(pendingFocus.current);
@@ -598,6 +598,7 @@ export default function Home() {
     pendingFocus.current =
       question === 'actual' && !active?.urge ? 'urge-label' : 'noticing-label';
   }
+  // Only a move to another control counts; leaving the window keeps it open.
   function left(question: 'actual' | 'urge', e: React.FocusEvent) {
     const outside =
       e.relatedTarget && !e.currentTarget.contains(e.relatedTarget as Node);

@@ -10,7 +10,7 @@
   --color-input: var(--border);
   --color-ring: var(--accent);
   --color-destructive: #ac3d24;
-  --radius-lg: 8px;
+  --radius-lg: var(--radius);
 }
 :root {
   color-scheme: light;
@@ -201,17 +201,18 @@ header {
   font-weight: 500;
   margin-bottom: var(--space-in);
 }
-/* The one surface primitive: tone and radius. Uses override the padding. */
+/* The one surface primitive: tone, radius, padding and default child spacing.
+   :where() keeps the defaults from outranking a use's own rules, e.g. .facts dt. */
 .panel {
   background: var(--surface);
   border-radius: var(--radius);
   padding: 16px;
 }
-.panel > p,
-.panel > .meta {
+:where(.panel) > p,
+:where(.panel) > .meta {
   margin: 0 0 var(--space-in);
 }
-.panel > :last-child {
+:where(.panel) > :last-child {
   margin-bottom: 0;
 }
 .entry {
@@ -659,7 +660,7 @@ h2:focus {
 .compact svg {
   height: auto;
 }
-/* The echo's compact form for Map, where a band would stack a box under the map box. */
+/* Map's inline context line; a band here would stack a box under the map box. */
 .situation-context {
   margin: 0 0 var(--space-in);
 }
@@ -843,6 +844,7 @@ h2:focus {
   padding: 12px 16px;
 }
 .facts dt {
+  margin: 0;
   padding-top: 2px;
 }
 .facts dd {
