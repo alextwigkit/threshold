@@ -477,6 +477,8 @@ export default function Home() {
     if (s.session) {
       setSuggestionMessage('');
       setReopened(null);
+      keyed.current = false;
+      pendingFocus.current = null;
       patch({
         session: { ...s.session, returnedAt: Date.now(), stopped },
         screen: 'return',
