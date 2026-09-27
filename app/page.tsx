@@ -111,6 +111,31 @@ function AnsweredRow({
     </div>
   );
 }
+// The person's own words echoed back on their own surface, with a way to edit them.
+function Echo({
+  text,
+  detail,
+  editLabel,
+  onEdit,
+}: {
+  text: string;
+  detail?: string;
+  editLabel: string;
+  onEdit: () => void;
+}) {
+  return (
+    <div className="echo">
+      <div className="echo-body">
+        <span className="meta">You’re avoiding</span>
+        <span className="echo-text">{text}</span>
+        {detail && <span className="meta echo-detail">{detail}</span>}
+      </div>
+      <button className="text-button" aria-label={editLabel} onClick={onEdit}>
+        Edit
+      </button>
+    </div>
+  );
+}
 function Primary({
   children,
   onClick,
@@ -537,6 +562,8 @@ export default function Home() {
 
   const nav = ['map', 'atlas', 'me'].includes(s.screen);
   const active = s.session;
+  const actualOpen = active?.actual === null || reopened === 'actual';
+  const urgeOpen = !active?.urge || reopened === 'urge';
   function exportData() {
     const raw = saveBlocked.current
       ? rawUnreadable.current
@@ -669,11 +696,11 @@ export default function Home() {
               maxLength={2000}
               onChange={(e) => patch({ situation: e.target.value })}
             />
+            <p className="meta hint" id="situation-hint">
+              A conversation, starting a project, answering a message, making a
+              decision.
+            </p>
           </div>
-          <p className="meta hint" id="situation-hint">
-            A conversation, starting a project, answering a message, making a
-            decision.
-          </p>
           <Primary disabled={!s.situation.trim() || busy} onClick={resolve}>
             Continue
           </Primary>
@@ -681,7 +708,11 @@ export default function Home() {
       )}
       {s.screen === 'clarify' && !busy && (
         <section className="screen-fade-in">
-          <p className="meta situation-context">{s.situation}</p>
+          <Echo
+            text={s.situation}
+            editLabel="Edit what I’m avoiding"
+            onEdit={() => go('name')}
+          />
           {title('What makes it hard to take a step?')}
           <p className="meta" id="resistance-hint">
             Pick the closest. It doesn’t have to explain everything.
@@ -707,7 +738,7 @@ export default function Home() {
             ))}
           </RadioGroup>
           {s.resistance === 'other' && (pickedOther || s.custom) && (
-            <label className="field-label">
+            <label className="field-label panel-extension">
               What makes it hard?
               <textarea
                 className="text-input"
@@ -720,9 +751,6 @@ export default function Home() {
           <Primary disabled={busy} onClick={setup}>
             Continue
           </Primary>
-          <button className="text-button" onClick={() => go('name')}>
-            Edit what I’m avoiding
-          </button>
         </section>
       )}
       {s.screen === 'setup' && s.draft && (
@@ -732,57 +760,65 @@ export default function Home() {
            * for it to show, so it read as an unexplained, empty rectangle.
            * The real map (with real routes) still lives on the Map screen.
            */}
-          <p className="meta situation-context">{s.situation}</p>
-          {title(s.draft.title)}
-          <label className="meta field-label" htmlFor="action">
-            Your step
-          </label>
-          <textarea
-            id="action"
-            className="text-input action-input lead"
-            maxLength={1000}
-            value={s.draft.action}
-            placeholder={
-              s.draft.territory === 'spotlight'
-                ? 'Name one question, message, or small thing you could let someone see.'
-                : s.draft.territory === 'loop'
-                  ? 'Name one necessary check, and the extra polishing pass you could leave undone.'
-                  : s.draft.territory === 'water'
-                    ? 'Name a feeling you could notice briefly before opening a distraction.'
-                    : 'Name one small, concrete thing you can do toward this situation.'
+          <Echo
+            text={s.situation}
+            detail={
+              s.resistance === 'other'
+                ? s.custom
+                : resistanceChoices.find(([v]) => v === s.resistance)?.[1]
             }
-            onChange={(e) =>
-              patch({
-                draft: {
-                  ...s.draft!,
-                  action: e.target.value,
-                  userAction: e.target.value,
-                },
-              })
-            }
+            editLabel="Edit what makes it hard"
+            onEdit={() => go('clarify')}
           />
-          <div className="duration">
-            <span className="duration-label">{s.draft!.minutes} min</span>
-            <button
-              className="text-button"
-              onClick={() =>
+          {title(s.draft.title)}
+          <div className="step-card">
+            <label className="meta field-label" htmlFor="action">
+              Your step
+            </label>
+            <textarea
+              id="action"
+              className="text-input action-input lead"
+              maxLength={1000}
+              value={s.draft.action}
+              placeholder={
+                s.draft.territory === 'spotlight'
+                  ? 'Name one question, message, or small thing you could let someone see.'
+                  : s.draft.territory === 'loop'
+                    ? 'Name one necessary check, and the extra polishing pass you could leave undone.'
+                    : s.draft.territory === 'water'
+                      ? 'Name a feeling you could notice briefly before opening a distraction.'
+                      : 'Name one small, concrete thing you can do toward this situation.'
+              }
+              onChange={(e) =>
                 patch({
                   draft: {
                     ...s.draft!,
-                    minutes: s.draft!.minutes === 1 ? 3 : 1,
-                    action: s.draft!.action.replace(
-                      /\b[13] minutes?\b/g,
-                      s.draft!.minutes === 1 ? '3 minutes' : '1 minute',
-                    ),
+                    action: e.target.value,
+                    userAction: e.target.value,
                   },
                 })
               }
-            >
-              {s.draft!.minutes === 1 ? 'Use 3 minutes' : 'Make it smaller'}
-            </button>
-            <button className="text-button" onClick={() => go('clarify')}>
-              Adjust the fit
-            </button>
+            />
+            <div className="duration">
+              <span className="duration-label">{s.draft!.minutes} min</span>
+              <button
+                className="text-button"
+                onClick={() =>
+                  patch({
+                    draft: {
+                      ...s.draft!,
+                      minutes: s.draft!.minutes === 1 ? 3 : 1,
+                      action: s.draft!.action.replace(
+                        /\b[13] minutes?\b/g,
+                        s.draft!.minutes === 1 ? '3 minutes' : '1 minute',
+                      ),
+                    },
+                  })
+                }
+              >
+                {s.draft!.minutes === 1 ? 'Use 3 minutes' : 'Make it smaller'}
+              </button>
+            </div>
           </div>
           {/* Explains the loop once; after a first encounter it is known. */}
           {s.encounters.length === 0 && (
@@ -841,7 +877,10 @@ export default function Home() {
               .padStart(2, '0')}
             :{(remaining(active, now) % 60).toString().padStart(2, '0')}
           </div>
-          <p className="lead">{active.action}</p>
+          <div className="step-card">
+            <p className="meta">Your step</p>
+            <p className="lead">{active.action}</p>
+          </div>
           <p className="invitation">
             Go do it. Come back when you're done, or when something interesting
             happens.
@@ -849,10 +888,12 @@ export default function Home() {
           <p className="meta timer-note">
             Time keeps counting when you leave the app.
           </p>
-          <Primary onClick={() => returnFrom()}>I'm back</Primary>
-          <button className="secondary" onClick={() => returnFrom(true)}>
-            Stop
-          </button>
+          <div className="action-pair">
+            <button className="secondary" onClick={() => returnFrom(true)}>
+              Stop
+            </button>
+            <Primary onClick={() => returnFrom()}>I'm back</Primary>
+          </div>
         </section>
       )}
       {s.screen === 'return' && active && (
@@ -860,7 +901,7 @@ export default function Home() {
           <h1 className="sr-only" ref={heading} tabIndex={-1}>
             What happened?
           </h1>
-          {active.actual === null || reopened === 'actual' ? (
+          {actualOpen && (
             <Scale
               id="actual"
               label="How uncomfortable was it actually?"
@@ -870,46 +911,54 @@ export default function Home() {
                 updateSession({ actual });
               }}
             />
-          ) : (
-            <AnsweredRow
-              label="Discomfort"
-              value={`${active.actual} of 10`}
-              onChange={() => setReopened('actual')}
-            />
           )}
-          {active.actual !== null &&
-            (!active.urge || reopened === 'urge' ? (
-              <section className="reveal">
-                <h2 id="urge-label" tabIndex={-1}>
-                  Did an urge to avoid or leave show up?
-                </h2>
-                <RadioGroup
-                  className="choices"
-                  value={active.urge}
-                  onValueChange={(v) => {
-                    setReopened(null);
-                    updateSession({ urge: v as Urge });
-                  }}
-                  aria-labelledby="urge-label"
-                >
-                  {urgeChoices.map(([v, l]) => (
-                    <label
-                      className={`choice ${active.urge === v ? 'selected' : ''}`}
-                      key={v}
-                    >
-                      <span>{l}</span>
-                      <RadioGroupItem value={v} />
-                    </label>
-                  ))}
-                </RadioGroup>
-              </section>
-            ) : (
-              <AnsweredRow
-                label="Urge"
-                value={urgeChoices.find(([v]) => v === active.urge)?.[1] ?? ''}
-                onChange={() => setReopened('urge')}
-              />
-            ))}
+          {/* Answers already given share one surface, apart from the open question. */}
+          {(!actualOpen || !urgeOpen) && (
+            <div className="summary-panel">
+              {!actualOpen && (
+                <AnsweredRow
+                  label="Discomfort"
+                  value={`${active.actual} of 10`}
+                  onChange={() => setReopened('actual')}
+                />
+              )}
+              {!urgeOpen && (
+                <AnsweredRow
+                  label="Urge"
+                  value={
+                    urgeChoices.find(([v]) => v === active.urge)?.[1] ?? ''
+                  }
+                  onChange={() => setReopened('urge')}
+                />
+              )}
+            </div>
+          )}
+          {active.actual !== null && urgeOpen && (
+            <section className="reveal">
+              <h2 id="urge-label" tabIndex={-1}>
+                Did an urge to avoid or leave show up?
+              </h2>
+              <RadioGroup
+                className="choices"
+                value={active.urge}
+                onValueChange={(v) => {
+                  setReopened(null);
+                  updateSession({ urge: v as Urge });
+                }}
+                aria-labelledby="urge-label"
+              >
+                {urgeChoices.map(([v, l]) => (
+                  <label
+                    className={`choice ${active.urge === v ? 'selected' : ''}`}
+                    key={v}
+                  >
+                    <span>{l}</span>
+                    <RadioGroupItem value={v} />
+                  </label>
+                ))}
+              </RadioGroup>
+            </section>
+          )}
           {active.actual !== null && active.urge && (
             <section className="reveal">
               <h2 id="noticing-label">What did you notice?</h2>
@@ -939,7 +988,7 @@ export default function Home() {
                 ))}
               </fieldset>
               {active.notices.includes('other') && (
-                <label className="field-label">
+                <label className="field-label panel-extension">
                   What else did you notice?{' '}
                   <span className="optional">Optional</span>
                   <textarea
@@ -1090,7 +1139,7 @@ export default function Home() {
             </>
           )}
           {filteredDiscoveries.map((d) => (
-            <article className="atlas-entry" key={d.id}>
+            <article className="atlas-entry discovery-entry" key={d.id}>
               <p className="eyebrow">
                 Discovery · {territories[d.territory].name}
               </p>
@@ -1210,27 +1259,29 @@ export default function Home() {
             </button>
           )}
           <h2 className="section-heading">Keep your map</h2>
-          <p>Clearing browser data erases it, so save a copy now and then.</p>
-          <div className="data-actions">
-            <button className="secondary" onClick={exportData}>
-              Export my data
-            </button>
-            <input
-              ref={fileInput}
-              type="file"
-              accept=".json,application/json"
-              hidden
-              onChange={(e) => {
-                void stageBackup(e.target.files?.[0]);
-                e.target.value = '';
-              }}
-            />
-            <button
-              className="text-button"
-              onClick={() => fileInput.current?.click()}
-            >
-              Restore a backup
-            </button>
+          <div className="panel">
+            <p>Clearing browser data erases it, so save a copy now and then.</p>
+            <div className="data-actions">
+              <button className="secondary" onClick={exportData}>
+                Export my data
+              </button>
+              <input
+                ref={fileInput}
+                type="file"
+                accept=".json,application/json"
+                hidden
+                onChange={(e) => {
+                  void stageBackup(e.target.files?.[0]);
+                  e.target.value = '';
+                }}
+              />
+              <button
+                className="text-button"
+                onClick={() => fileInput.current?.click()}
+              >
+                Restore a backup
+              </button>
+            </div>
           </div>
           {restoreError && (
             <p className="error" role="alert">

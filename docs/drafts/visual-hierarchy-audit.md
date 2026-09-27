@@ -1,26 +1,26 @@
 # Visual hierarchy audit (2026-09-27)
 
-Status: first implementation pass done (see section 7). The diagnosis below describes the screens *before* that pass. Screens were captured at 390x844 from the local dev server (offline suggestion path) and compared with the owner's phone screenshots and the approved Stitch references in `references/`. Captures live in `../.playwright-mcp/` (01 to 10).
+Status: first implementation pass done (see section 7). The diagnosis below describes the screens _before_ that pass. Screens were captured at 390x844 from the local dev server (offline suggestion path) and compared with the owner's phone screenshots and the approved Stitch references in `references/`. Captures live in `../.playwright-mcp/` (01 to 10).
 
 ## 1. What the sources say
 
 These principles are the core of any typography or visual design foundations course. Each one is phrased as a rule you can test.
 
-| # | Principle | Source |
-|---|---|---|
-| P1 | **One dominant focal point per screen.** Only 1 or 2 elements are "large"; the most important thing is clearly the heaviest. | NN/g, [Visual Hierarchy in UX](https://www.nngroup.com/articles/visual-hierarchy-ux-definition/); NN/g, [5 Principles of Visual Design](https://www.nngroup.com/articles/principles-visual-design/) |
-| P2 | **Few levels.** About 3 sizes and 3 contrast levels per screen. Typographic roles are assigned by meaning (screen title, body, label), not by eye. | NN/g (as above); [Material 3 type roles](https://m3.material.io/styles/typography/applying-type); [Apple HIG Typography](https://developer.apple.com/design/human-interface-guidelines/typography) |
-| P3 | **Steps must be judged, not arbitrary.** Use a modular scale (a ratio such as 1.25 or 1.333) so each level differs clearly from the next. Sizes 1 or 2px apart read as the same level. | Tim Brown, [More Meaningful Typography](https://alistapart.com/article/more-meaningful-typography/); Butterick, [Point size](https://practicaltypography.com/point-size.html) |
-| P4 | **Consistent cues, at most about 3 per level.** A level is size plus weight plus color, applied the same way everywhere. Stacking caps, color, borders and italics on top becomes noise. | Ellen Lupton, [Thinking with Type: Hierarchy](https://thinkingwithtype.com/text/) |
-| P5 | **Emphasize by de-emphasizing.** When the important thing doesn't stand out, quiet its neighbors instead of shouting louder. Use 2 or 3 ink tiers (dark, mid gray, light gray) rather than many sizes. | Wathan & Schoger, *Refactoring UI*, "Hierarchy is Everything" (secondary summaries; the book isn't freely hosted) |
-| P6 | **Proximity and similarity.** Related things sit closer together than unrelated things. Things that look alike are read as the same kind of thing, so unrelated roles must not share a style. | Gestalt principles; NN/g 5 Principles |
-| P7 | **Reading order equals priority order.** The eye should be pulled through the screen in the order the user needs, with the heading first. | NN/g Visual Hierarchy; Lupton |
-| P8 | **One question per page, and the question is the heading.** Hints are one short sentence and are never the only guidance. Placeholders are not labels. | GOV.UK, [Question pages](https://design-system.service.gov.uk/patterns/question-pages/) and [One thing per page](https://www.gov.uk/service-manual/design/form-structure); NN/g, [Placeholders are harmful](https://www.nngroup.com/articles/form-design-placeholders/) |
-| P9 | **Button emphasis tracks importance and consequence.** One filled button per screen, and lower levels are visibly lower. A destructive action must not look identical to a benign one. | [Material 3 Buttons](https://m3.material.io/components/buttons/guidelines); NN/g, [Command links](https://www.nngroup.com/articles/command-links/) |
-| P10 | **Accent color is a scarce signal.** When terracotta marks several unrelated things, it stops meaning "important." | NN/g 5 Principles (contrast) |
-| P11 | **Never de-emphasize by dropping below legible contrast.** Keep at least 4.5:1 for text under 18px. | NN/g 5 Principles; WCAG 2.2 SC 1.4.3 |
-| P12 | **Squint test.** Blur the screen: the thing that survives should be the thing that matters, and related items should still group together. | [LukeW](https://www.lukew.com/); [Polypane squint test](https://polypane.app/blog/debug-your-visual-hierarchy-with-the-squint-test/) |
-| P13 | **Primary action within thumb reach.** Keep the main action near the bottom and reachable without hunting. | Hoober via LukeW, [Designing for large screen smartphones](https://www.lukew.com/ff/entry.asp?1927) |
+| #   | Principle                                                                                                                                                                                              | Source                                                                                                                                                                                                                                                                  |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P1  | **One dominant focal point per screen.** Only 1 or 2 elements are "large"; the most important thing is clearly the heaviest.                                                                           | NN/g, [Visual Hierarchy in UX](https://www.nngroup.com/articles/visual-hierarchy-ux-definition/); NN/g, [5 Principles of Visual Design](https://www.nngroup.com/articles/principles-visual-design/)                                                                     |
+| P2  | **Few levels.** About 3 sizes and 3 contrast levels per screen. Typographic roles are assigned by meaning (screen title, body, label), not by eye.                                                     | NN/g (as above); [Material 3 type roles](https://m3.material.io/styles/typography/applying-type); [Apple HIG Typography](https://developer.apple.com/design/human-interface-guidelines/typography)                                                                      |
+| P3  | **Steps must be judged, not arbitrary.** Use a modular scale (a ratio such as 1.25 or 1.333) so each level differs clearly from the next. Sizes 1 or 2px apart read as the same level.                 | Tim Brown, [More Meaningful Typography](https://alistapart.com/article/more-meaningful-typography/); Butterick, [Point size](https://practicaltypography.com/point-size.html)                                                                                           |
+| P4  | **Consistent cues, at most about 3 per level.** A level is size plus weight plus color, applied the same way everywhere. Stacking caps, color, borders and italics on top becomes noise.               | Ellen Lupton, [Thinking with Type: Hierarchy](https://thinkingwithtype.com/text/)                                                                                                                                                                                       |
+| P5  | **Emphasize by de-emphasizing.** When the important thing doesn't stand out, quiet its neighbors instead of shouting louder. Use 2 or 3 ink tiers (dark, mid gray, light gray) rather than many sizes. | Wathan & Schoger, _Refactoring UI_, "Hierarchy is Everything" (secondary summaries; the book isn't freely hosted)                                                                                                                                                       |
+| P6  | **Proximity and similarity.** Related things sit closer together than unrelated things. Things that look alike are read as the same kind of thing, so unrelated roles must not share a style.          | Gestalt principles; NN/g 5 Principles                                                                                                                                                                                                                                   |
+| P7  | **Reading order equals priority order.** The eye should be pulled through the screen in the order the user needs, with the heading first.                                                              | NN/g Visual Hierarchy; Lupton                                                                                                                                                                                                                                           |
+| P8  | **One question per page, and the question is the heading.** Hints are one short sentence and are never the only guidance. Placeholders are not labels.                                                 | GOV.UK, [Question pages](https://design-system.service.gov.uk/patterns/question-pages/) and [One thing per page](https://www.gov.uk/service-manual/design/form-structure); NN/g, [Placeholders are harmful](https://www.nngroup.com/articles/form-design-placeholders/) |
+| P9  | **Button emphasis tracks importance and consequence.** One filled button per screen, and lower levels are visibly lower. A destructive action must not look identical to a benign one.                 | [Material 3 Buttons](https://m3.material.io/components/buttons/guidelines); NN/g, [Command links](https://www.nngroup.com/articles/command-links/)                                                                                                                      |
+| P10 | **Accent color is a scarce signal.** When terracotta marks several unrelated things, it stops meaning "important."                                                                                     | NN/g 5 Principles (contrast)                                                                                                                                                                                                                                            |
+| P11 | **Never de-emphasize by dropping below legible contrast.** Keep at least 4.5:1 for text under 18px.                                                                                                    | NN/g 5 Principles; WCAG 2.2 SC 1.4.3                                                                                                                                                                                                                                    |
+| P12 | **Squint test.** Blur the screen: the thing that survives should be the thing that matters, and related items should still group together.                                                             | [LukeW](https://www.lukew.com/); [Polypane squint test](https://polypane.app/blog/debug-your-visual-hierarchy-with-the-squint-test/)                                                                                                                                    |
+| P13 | **Primary action within thumb reach.** Keep the main action near the bottom and reachable without hunting.                                                                                             | Hoober via LukeW, [Designing for large screen smartphones](https://www.lukew.com/ff/entry.asp?1927)                                                                                                                                                                     |
 
 ## 2. System-level causes (why most screens fail)
 
@@ -34,24 +34,27 @@ Almost every per-screen failure traces back to these five problems. Fixing them 
 
 ## 3. Screen by screen
 
-For each screen: what the squint test shows first, what it *should* show first, the failures, and the fix.
+For each screen: what the squint test shows first, what it _should_ show first, the failures, and the fix.
 
 ### Name (`01-name.png`)
+
 - **Squint:** the heading and the large serif textarea tie. The intro paragraph (18px) is bigger than the actual question label (16px/500).
 - **Should be:** the question, then the field.
 - **Failures:** the intro is larger than the label (P3, P7). The hint sits inside the field in serif, looking like entered text (P6, P8). The header's "Preferences"/"My map" link sits at the same weight as the wordmark.
 - **Fix:** make the question the h1 (P8), cut the intro to one short muted line under it or remove it, set the textarea in sans ink 18px so it doesn't mimic a heading, and move the example hint below the field in the meta style.
 
 ### Clarify (`03-clarify.png`)
+
 - Closest to passing. The heading is clear, and options are equal-weight rows.
 - **Failures:** "Something else" was preselected (P1: nothing should be preselected in a question). Unselected radio circles are faint. "Edit what I'm avoiding" is the only serif link in the app (P6). The user's own situation isn't shown, so they answer "what makes it hard" without seeing "it."
 - **Fix:** no default selection. Show the situation as one meta line above the question. Use the standard tertiary link style.
 
 ### Setup (`04-setup.png`, `04b`, owner's screenshot) **worst offender**
+
 - **Squint:** in order, the Title Case heading, the gray textarea box, the 11 scale cells and the black Begin (below the fold). The step itself (the thing they're about to go do) is only the third-strongest element, sitting inside a pale box under a small label.
 - **Should be:** the step, then the prediction, then Begin.
 - **Failures:**
-  - The territory sentence (15px, centered, gray) comes *before* the heading, and in the offline path it is stacked under a notice banner. The first thing read is neither the heading nor the task (P7).
+  - The territory sentence (15px, centered, gray) comes _before_ the heading, and in the offline path it is stacked under a notice banner. The first thing read is neither the heading nor the task (P7).
   - The heading "Take One Small Step" / "Choose Your Own Step" is an instruction dressed as a title (P8: the heading should say what this page asks). It then carries onto the active screen as if it were the step's name (see Active).
   - The user's own situation appears small and gray in a quote bar, the weakest text on the screen, even though it is the context everything answers to.
   - "The step you'll take" (label) and "How uncomfortable do you expect this to be?" (a question) share one style. So do "What do you expect will happen?" and the label. Four unrelated roles, one look (P6).
@@ -66,6 +69,7 @@ For each screen: what the squint test shows first, what it *should* show first, 
   - Drop the territory sentence from this screen or fold it into the meta line.
 
 ### Active (`05-active.png`, owner's screenshot)
+
 - **Squint:** the timer wins (correct), but the heading, step text and italic invitation are all serif at 30 / 25 / 19px, which is three near-levels of one voice.
 - **Failures:**
   - The heading shows "Choose Your Own Step" (the setup instruction) as if it named the step. In the owner's run, the step text read like a situation ("Wanting to move away from tension..."), so either the model returned a situation-shaped action or the field was filled that way. That's worth checking separately; it's content, not layout.
@@ -75,46 +79,52 @@ For each screen: what the squint test shows first, what it *should* show first, 
 - **Fix:** Timer (display), then the step (the only other large text), then everything else at body/meta. Drop the h1 on this screen, or show the real step name, never the setup instruction. Remove the accent dot. Make Stop a standard secondary button.
 
 ### Reflection (`06a` to `06d`, owner's screenshot)
+
 - **Squint:** "What happened?" (h1), then each revealed h2 question at 28px, then 11 cells and 11 option cards. Everything already answered stays at full weight, so the current question never stands out.
 - **Failures:**
   - "What happened?" is a heading that asks nothing. The first real question, "How uncomfortable was it actually?", is styled as a small label under a rule (P8). The reference makes that question the heading and has no "What happened?".
   - Answered questions don't recede (P5, P7). By the third question, the screen is a wall of 7 equal cards plus 4 more above.
-  - "I didn't start" sits *after* Continue, at the bottom of a long page. For someone who didn't start, the right answer is the last thing they find.
+  - "I didn't start" sits _after_ Continue, at the bottom of a long page. For someone who didn't start, the right answer is the last thing they find.
 - **Fix:** make each question its own heading at a single level. Collapse answered questions to a one-line summary ("Actually: 4 · Urge: No", meta style, tap to change). Put "I didn't start" directly under the first question, where it is relevant. The 7 noticing options would benefit from being cut or grouped (content decision, see calls below).
 
 ### Observation (`07-observation.png`)
+
 - **Squint:** the map card (huge), then the h1 "The Doorway Felt Worse", then the 24px gray serif paragraph competing with it, then the evidence pill.
 - **Failures:** there are three attention senders stacked: the accent caps eyebrow, the h1 and the large muted serif copy (P4). The observation copy at 24px is nearly the h1's size. The map card uses about half the viewport for a single short line.
 - **Fix:** Eyebrow (meta), h1, then the evidence as a quiet line, then the copy at body size in ink. Shrink the map card on this screen so the claim sits in the upper half.
 
 ### Map / Home (`08-map.png`)
+
 - **Squint:** map, then the accent eyebrow, then "Let It Be Seen", then Explore.
 - **Failures:** there is no visible page heading once history exists (the h1 is sr-only), so the eyebrow plus the h2 recommendation act as the heading. The situation quote bar repeats the setup's weak treatment. The terracotta is used on the eyebrow, the map path, the active tab and the map dot (P10). "Explore" as a label doesn't say what happens.
 - **Fix:** keep the map dominant (DESIGN.md intent), and let the recommendation below read as h2 plus step plus one button. Use the accent in one place per screen (the path). Rename Explore to the action ("Start this step").
 
 ### Atlas (`09b-atlas-open.png`)
+
 - **Failures:** the open encounter is six unlabeled 14px lines ("No", "Expected 6 → Experienced 4", ...). Nothing tells you which line is the situation, the step, the urge answer or the notices (P6, and Refactoring UI's "labels when users scan for fields"). "No" on its own is meaningless.
 - **Fix:** use a small definition list with meta-style labels ("Situation", "Step", "Discomfort", "Urge", "Noticed") and ink values.
 
 ### Me (`10-me.png`)
+
 - **Failures:** Export, Restore and **Delete my map** share one style (P9). Two intro paragraphs at body size come before the only actionable section. The spacing between "Keep your map" and its paragraph is the same as between sections (P6).
 - **Fix:** Export as a secondary (outlined) button, Restore as a tertiary link, Delete as a destructive-colored tertiary in its own section. Tighten spacing within sections and loosen it between them.
 
 ### Login (`server/auth.ts`)
+
 - Not captured in this pass. It is a simple single form, but it duplicates the tokens as raw hex. When the scale changes, it has to change too.
 
 ## 4. Proposed system
 
 **Type roles** (1.25 scale off a 16px base; serif only for the page heading and the timer):
 
-| Role | Face | Size | Weight / color | Used for |
-|---|---|---|---|---|
-| Display | Newsreader | 54px | ink | Timer only |
-| Title | Newsreader | 30px (32 on wide screens) | ink | The one page heading, always the question or the name |
-| Heading | Newsreader | 24px | ink | Sub-questions (reflection), Atlas entries, Me sections |
-| Lead | sans | 20px | ink | The step, observation claim, and other content the user must read |
-| Body | sans | 16px | `--muted-foreground` | Explanations, options |
-| Meta | sans | 13px, 500 | tertiary gray (new, at least 4.5:1) | Labels, eyebrows (caps only here), situation line, scale ends, "Optional" |
+| Role    | Face       | Size                      | Weight / color                      | Used for                                                                  |
+| ------- | ---------- | ------------------------- | ----------------------------------- | ------------------------------------------------------------------------- |
+| Display | Newsreader | 54px                      | ink                                 | Timer only                                                                |
+| Title   | Newsreader | 30px (32 on wide screens) | ink                                 | The one page heading, always the question or the name                     |
+| Heading | Newsreader | 24px                      | ink                                 | Sub-questions (reflection), Atlas entries, Me sections                    |
+| Lead    | sans       | 20px                      | ink                                 | The step, observation claim, and other content the user must read         |
+| Body    | sans       | 16px                      | `--muted-foreground`                | Explanations, options                                                     |
+| Meta    | sans       | 13px, 500                 | tertiary gray (new, at least 4.5:1) | Labels, eyebrows (caps only here), situation line, scale ends, "Optional" |
 
 Italic serif survives only as one intentional voice line where the reference uses it (active invitation), or it goes.
 
@@ -161,6 +171,7 @@ Done in `app/globals.css` and `app/page.tsx`. After-captures are `../.playwright
 - **Verified:** `tsc` is clean, 72/72 tests pass, and there's no horizontal overflow at 320px.
 
 **Not done (open):**
+
 - The global notice banner still sits above the setup content.
 - On the offline path, the setup h1 still reads "Choose Your Own Step". It's now hidden on Active, but the heading itself is still an instruction.
 - "Something else" is still preselected on Clarify. That comes from `infer()` returning `other` when it isn't confident, and changing it touches validation.
@@ -178,7 +189,7 @@ Rules applied (sources: NN/g progressive disclosure and cognitive load, Cowan 20
 - One open question at a time. UX.md keeps Return on one progressively revealed screen, so an answered question collapses to a summary row with Change (focus moves to the reopened question).
 - Explanations that are only new once are shown once: the setup mechanic note appears only before the first encounter.
 - Optional inputs sit behind a link until wanted: the prediction note, and the Clarify "What makes it hard?" field, which waits for an explicit Something else pick instead of opening because it was preselected.
-- Tertiary actions go below the primary (Edit what I'm avoiding, I didn't start).
+- Tertiary actions go below the primary (I didn't start). Editing the situation later moved into the echo band (section 9).
 - Copy cut: Me went from three paragraphs to two short ones; the stale "small set of editable suggestions" line was replaced with the accurate transmission boundary.
 
 Measured at 390x844: Clarify 1117px to 931px; Return (all answered) 1345px to 996px, 85 to 61 words; Me 76 to 55 words.
@@ -193,3 +204,30 @@ Second density pass (fit without scrolling at 390x844, primary action in view):
 - "I didn't start" gets the between-group gap, since it escapes the whole screen, except right after Continue, where it pairs with it.
 
 Measured: Clarify Continue now ends at 793px (in view); Setup Begin ends at 883px with the offline notice, about 830px without it; Return with all questions open is 959px. Atlas already follows the rules (details behind a disclosure) and was left alone.
+
+## 9. Surface pass (layout and shading)
+
+Whitespace and type alone could not show which things belong together, so tone now carries structure. Sources: Palmer 1992 (common region beats proximity), Palmer and Rock 1994 (uniform connectedness), NN/g on common region and cards, Material 3 tonal surfaces, Apple grouped backgrounds, GOV.UK summary list, WCAG 1.4.11.
+
+Rules:
+
+- Three tones, each with one meaning. Ground (`--background`) is the open question. Surface (`--surface`, DESIGN's secondary surface) holds the person's own words, answers already given, and things that must read as one unit. Strong (`--surface-strong`) marks what is selected. The five near-identical hard-coded tints were folded into these tokens (the map keeps its own).
+- Nest one level at most. Hairlines divide inside a surface; boxes never sit inside boxes.
+- Lists are one grouped surface with hairline rows, not stacks of tiles (Clarify, urge, noticing).
+- Selection never relies on tone alone: tone, weight 500 and the accent control together.
+- Panel edges are about 1.1:1 against ground, so no control relies on the edge: text fields sit on ground inside a surface (a visible well with a hairline), and choices keep their radio or checkbox.
+- Actions are never tinted.
+
+Per screen:
+
+- Name: the examples hint moved inside the input surface, under a hairline.
+- Clarify and Setup: an echo band ("You're avoiding", their words, the chosen difficulty on Setup, and Edit). It replaces the loose situation line, "Edit what I'm avoiding" and "Adjust the fit".
+- Clarify: six tiles became one grouped list; the Something else field continues the list's surface.
+- Setup: the step and its duration form one step card, with the duration as a footer under a hairline.
+- Active: the same step card, so the commitment is recognisably the same object; Stop and I'm back sit side by side (escape narrow, expected path wide).
+- Return: answered questions share one summary surface; the open question stays on ground.
+- Atlas: discoveries sit on a surface, apart from ordinary observations; opened encounter facts sit in a surface inset.
+- Me: Keep your map (Export, Restore) sits in a panel; Delete stays on ground so it doesn't look like the safe actions. The privacy line stays as intro body on ground (a deviation from the plan, which had it in a panel: it answers the title, it isn't a group).
+- Unchanged: header, map, Today's Threshold, observation (the evidence pill was already a surface), bottom nav.
+
+Cost, measured at 390x844: Setup Begin ends at 1025px with the offline notice (was 883px), Clarify Continue at 854px (was 793px, now just below the fold). The echo band's label line, the 40px gap that keeps the title with the step, and the card padding account for it. If fit matters more than grouping, the first cuts would be the echo's "You're avoiding" label and a pair gap in place of the group gap after it.

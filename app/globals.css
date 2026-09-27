@@ -25,6 +25,13 @@
   /* Third ink tier (labels, meta). 5.3:1 on --background; don't go lighter. */
   --meta-foreground: #666a62;
   /*
+   * Tone means something. Ground: the open question. Surface: the person's own
+   * words, answers already given, things kept together. Strong: selected.
+   * One level of nesting at most; hairlines divide inside a surface.
+   */
+  --surface: #f3f0eb;
+  --surface-strong: #ebe7e0;
+  /*
    * Three gaps only, each at least double the one before, so grouping is
    * visible at a glance: inside a group, heading to its content, between groups.
    */
@@ -196,10 +203,10 @@ header {
   margin-bottom: var(--space-in);
 }
 .entry {
-  background: #f5f2ed;
+  background: var(--surface);
   border-radius: 14px;
   padding: 20px;
-  margin-bottom: var(--space-in);
+  margin-bottom: var(--space-group);
 }
 .entry textarea {
   width: 100%;
@@ -216,8 +223,11 @@ header {
 textarea::placeholder {
   color: var(--meta-foreground);
 }
+/* Help for the field, inside its surface so it reads as belonging to it. */
 .hint {
-  margin: 0 0 var(--space-group);
+  margin: 12px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
 }
 .mechanic-note {
   font-size: 0.9375rem;
@@ -383,7 +393,7 @@ section > .text-button {
 }
 @media (min-width: 700px) {
   body {
-    background: #f3f0eb;
+    background: var(--surface);
   }
   .shell {
     background: var(--background);
@@ -403,10 +413,13 @@ section > .text-button {
 h1:focus {
   outline: none;
 }
+/* One grouped surface with hairline rows, not a stack of separate tiles. */
 .choices {
   display: grid;
-  gap: var(--space-in);
+  gap: 0;
   margin: var(--space-pair) 0 0;
+  background: var(--surface);
+  border-radius: 8px;
 }
 fieldset.choices {
   border: 0;
@@ -420,8 +433,6 @@ fieldset.choices {
   gap: 16px;
   min-height: 52px;
   padding: 12px 16px;
-  background: #f5f2ed;
-  border-radius: 5px;
   color: var(--foreground);
   cursor: pointer;
   /* Also carries the shared transform-on-tap feedback from above — combined
@@ -430,8 +441,32 @@ fieldset.choices {
     transform 100ms ease-out,
     background-color 120ms ease-out;
 }
+.choice + .choice {
+  border-top: 1px solid var(--border);
+}
+.choice:first-child {
+  border-radius: 8px 8px 0 0;
+}
+.choice:last-child {
+  border-radius: 0 0 8px 8px;
+}
+/* Tone, weight and the accent control together, so selection never rests on tone alone. */
 .choice.selected {
-  background: #ebe7e0;
+  background: var(--surface-strong);
+  font-weight: 500;
+}
+/* A field that belongs to the last choice continues its surface. */
+.choices:has(+ .panel-extension),
+.choices:has(+ .panel-extension) .choice:last-child {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.panel-extension {
+  margin: 0;
+  padding: 12px 16px 16px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 8px 8px;
 }
 .choice [data-slot='radio-group-item'],
 .choice [data-slot='checkbox'] {
@@ -466,7 +501,8 @@ fieldset.choices {
   min-height: 5.625rem;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: #f5f2ed;
+  /* Ground, so a field reads as a well even when it sits on a surface. */
+  background: var(--background);
   color: var(--foreground);
   padding: 14px;
   margin: 0;
@@ -476,9 +512,6 @@ fieldset.choices {
 }
 .field-label .text-input {
   margin-top: var(--space-in);
-}
-.choices + .field-label {
-  margin-top: var(--space-pair);
 }
 .action-input {
   min-height: 5.625rem;
@@ -519,7 +552,7 @@ h2:focus {
   min-height: 44px;
   display: grid;
   place-items: center;
-  background: #efede7;
+  background: var(--surface);
   border-radius: 4px;
   cursor: pointer;
   /* Combined with the shared transform-on-tap feedback above, not appended
@@ -624,6 +657,56 @@ h2:focus {
 .situation-context {
   margin: 0 0 var(--space-in);
 }
+.echo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 8px 8px 16px;
+  /* Context, not part of the title's group, which is the step below it. */
+  margin: 0 0 var(--space-group);
+  background: var(--surface);
+  border-radius: 8px;
+}
+.echo-body {
+  display: flex;
+  flex-direction: column;
+  margin-right: auto;
+  min-width: 0;
+}
+.echo-text {
+  color: var(--foreground);
+}
+.echo-detail {
+  font-weight: 400;
+}
+.echo .text-button {
+  padding: 12px 8px;
+  flex-shrink: 0;
+}
+/* The step as one object: what you'll do, and how long for. */
+.step-card {
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 16px;
+}
+.step-card p {
+  margin: 0;
+}
+.step-card .meta {
+  margin-bottom: var(--space-in);
+}
+.step-card .duration {
+  margin-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.panel {
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 16px;
+}
+.panel > p {
+  margin-bottom: var(--space-in);
+}
 .timer {
   /* Sized in rem so the circle grows with its digits when text is enlarged. */
   height: 12.5rem;
@@ -645,7 +728,7 @@ h2:focus {
 .active .timer {
   margin-top: 24px;
 }
-.active .lead {
+.active .step-card {
   margin-bottom: var(--space-group);
 }
 .invitation {
@@ -654,20 +737,39 @@ h2:focus {
 .timer-note {
   margin: 0;
 }
-.active .secondary {
-  margin-top: var(--space-in);
+/* Two alternatives side by side: the escape narrow, the expected path wide. */
+.action-pair {
+  display: flex;
+  gap: var(--space-in);
+  margin-top: var(--space-group);
+}
+.action-pair .secondary {
+  width: auto;
+  flex: 0 0 32%;
+  min-height: 54px;
+}
+.action-pair .primary {
+  margin-top: 0;
+  flex: 1;
 }
 .reveal {
   margin-top: var(--space-group);
   animation: appear 0.35s ease-out;
 }
-/* An answered question, reduced to one line so only the current one is open. */
+/* Answered questions, reduced to one line each on a shared surface. */
+.summary-panel {
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 0 16px;
+}
 .answered-row {
   display: flex;
   align-items: baseline;
   gap: 12px;
-  padding: 4px 0;
-  border-bottom: 1px solid var(--border);
+  padding: 2px 0;
+}
+.answered-row + .answered-row {
+  border-top: 1px solid var(--border);
 }
 .answered-row .meta {
   min-width: 5.5rem;
@@ -685,7 +787,7 @@ h2:focus {
   color: var(--foreground);
   padding: 12px 16px;
   border-radius: 7px;
-  background: #efede7;
+  background: var(--surface);
   font-size: 1rem;
   margin: 8px 0 24px;
 }
@@ -742,12 +844,26 @@ h2:focus {
 .atlas-entry details {
   color: var(--muted-foreground);
 }
+/* The rarest finding stands apart from ordinary observations. */
+.discovery-entry {
+  background: var(--surface);
+  border-radius: 8px;
+  border-bottom: 0;
+  padding: 20px;
+  margin: var(--space-pair) 0;
+}
+.discovery-entry p:last-of-type {
+  margin-bottom: 0;
+}
 /* Labelled facts: Meta label, ink value, so each line says what it is. */
 .facts {
   display: grid;
   grid-template-columns: max-content 1fr;
   gap: 8px 16px;
   margin: 12px 0 0;
+  padding: 12px 16px;
+  background: var(--surface);
+  border-radius: 8px;
 }
 .facts dt {
   font-size: 0.8125rem;
