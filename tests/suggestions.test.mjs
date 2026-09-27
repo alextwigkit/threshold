@@ -30,8 +30,15 @@ function makeDb() {
     sql,
     db: {
       prepare: (query) => ({
+        // node:sqlite's positional spread binding doesn't accept the app's ?1/?2-style
+        // numbered placeholders (throws "column index out of range"); an object keyed
+        // by 1-based position is what it actually wants for those. D1 in production
+        // accepts both styles, so this is a test-shim-only translation.
         bind: (...values) => ({
-          first: async () => sql.prepare(query).get(...values),
+          first: async () =>
+            sql.prepare(query).get(
+              Object.fromEntries(values.map((v, i) => [i + 1, v])),
+            ),
         }),
       }),
     },
