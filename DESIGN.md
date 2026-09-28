@@ -16,27 +16,35 @@ Use the recovered latest Stitch screens in references/ as the visual foundation.
 These numerical tokens translate screenshots into implementation; pixel values are engineering choices. Fonts must be bundled or have deliberate offline fallbacks. No remote font dependency required for the core loop.
 
 ## Composition
-Name is an editorial question plus a large natural input, not a hero page. Clarify uses spare selectable rows. Setup combines compact territory fragment with exact action, prediction and Begin; the scale must not disappear beneath decorative map space. Active centers the timer with a quiet circle and action, preserving room to return. Return uses typography and spaced controls, progressively revealed. Observation gives world response and a scoped claim. Home gives most visual weight to the map with an integrated recommendation underneath; Map / Atlas / Me is spare bottom navigation.
+Name is an editorial question plus a large natural input, not a hero page. Clarify uses spare selectable rows. Setup combines compact territory fragment with exact action, prediction and Begin; the scale must not disappear beneath decorative space. Active centers the timer with a quiet circle and action, preserving room to return. Return uses typography and spaced controls, progressively revealed. Observation gives world response and a scoped claim. Home puts the trail above today's step, which leads; Trail / Atlas / Me is spare bottom navigation.
 
-## Map grammar
-Map geometry is an interactive representation of stored evidence, not a geographic claim. Stable territory placement and stable encounter positions are required. Existing traces do not relocate randomly on render.
-- Start: a marked doorstep at the bottom that every route leaves from.
-- Unknown: dotted ground and faint unnamed linework, no territory catalog. Real attempts clear the dots along their route, and each visited place opens into a paper-light clearing that grows with repeat visits, so being there visibly makes ground known.
-- Encountered: territory name appears; an attempted action adds an actual-history trace.
-- Familiar: stronger line continuity derived from repeated encounters, never a percentage or completion status.
-- Current: restrained terracotta candidate/active direction, visibly distinct from permanent history. It is only ever today's step (dashed, open circle): into a new place from the start, or onward from the latest trace in a place already reached. Solid lines are always taken steps: grey history, with the route just recorded drawn in ink on Observation.
-- Stopped: incomplete line or truthful “stopped here” annotation.
-- Discovery: an evidence-backed feature resolves; repeated opening never grows it.
+## Trail grammar
+Home and Observation show a trail: one stone per step taken, oldest first, along a single path. Every mark encodes a stored field; nothing is placed for decoration or by hash.
 
-The Fog dissolves at boundaries; The Spotlight has exposed/radiating structure without a bullseye; The Open Loop has approaching but incomplete contours; Still Water has continuous calm structure. Preserve one visual world. Implement functional map paths and states as code-native vector geometry, not a background screenshot. Rich illustrative inhabitants remain future authored assets, unlocked only by recurring behavior evidence.
+| Channel | Data |
+|---|---|
+| Order along the path | when the step happened |
+| Numbers under a stone | expected → experienced discomfort |
+| Solid or half-filled stone | stayed, or stopped early (never a failure mark) |
+| Word under a stone | what made it hard (territory short name) |
+| Dashed open accent stone at the end | today's step, on Home only |
+| Accent ring | the step that established a discovery |
+
+- Start: a short bar the path leaves from. Only the latest four stones show; earlier steps collapse into "+N earlier", which opens the Atlas.
+- Not started leaves no stone. Opening the app, waiting or tapping Begin never changes the trail.
+- The step just recorded is the largest stone on Observation and settles in once.
+- Tapping a stone opens that encounter in the Atlas.
+- Accent means only today's step, a discovery ring, or the observation label.
+
+Rich illustrative inhabitants remain future authored assets, unlocked only by recurring behavior evidence.
 
 ## Motion
-Short terrain reveal and route draw can provide curiosity and satisfaction, about 400–800ms. No endless pulsing or mandatory wait. Respect prefers-reduced-motion; information remains understandable with animation disabled. An old path may join new evidence, but never fabricate causal history.
+A short stone settle and discovery ring can provide curiosity and satisfaction, about 400–800ms. No endless pulsing or mandatory wait. Respect prefers-reduced-motion; information remains understandable with animation disabled. Never fabricate history.
 
 ## Copy contract
 The model reasons; the product speaks. UI strings come from reviewed templates. Action text may contain user-edited or validated situation-specific slots. Never directly render arbitrary model prose as a psychological conclusion.
 
-Allowed concepts: Threshold, map, territory, expedition, explore, path, observation, discovery, inhabitant. World language may communicate real state (unknown, familiar, stopped here). Functional actions use ordinary language: Continue, Begin, I'm back, Stop, See my map.
+Allowed concepts: Threshold, trail, step, territory, expedition, explore, path, observation, discovery, inhabitant. World language may communicate real state (unknown, familiar, stopped here). Functional actions use ordinary language: Continue, Begin, I'm back, Stop, See my trail.
 
 Prohibited: coordinates, elevations, scales, folios, taxonomy, protocols, invented records, faux scientific metadata, motivational praise, “Great job”, AI sparkles, chat bubbles, gradient buttons, glass surfaces, XP, streaks, badges, dashboard analytics, card grids. No hard-coded “Another Step into The Fog” recommendation. Never use “Follow the initial clarity before the doubt returns.”
 
@@ -44,9 +52,9 @@ Prohibited: coordinates, elevations, scales, folios, taxonomy, protocols, invent
 Compare each implemented screen with its reference for hierarchy, spacing, palette and interaction meaning. Apply only documented corrections. Check 320/390px widths, desktop, keyboard, 200% text and reduced motion before release. A technically built screen is not proof of visual or device QA.
 
 ## Evidence projection continuation
-Keep route geometry stable by encounter ID, including when older history is restored. Clear texture only around real attempted routes. Draw settled paths once during the observation reveal, with reduced-motion fallback. Mark qualified discoveries with a restrained evidence-linked map mark, not a fictional named landmark. Known territory labels are accessible links to that territory's Atlas evidence.
+Stone order is stable by createdAt then encounter ID, including when older history is restored; restoring never changes an existing stone except its step number. Mark qualified discoveries with a ring on the establishing stone, not a fictional named landmark. Atlas entry eyebrows filter the Atlas by territory.
 
 
 ## September 7 integration update
 
-Optional AI suggestions preserve the approved screens and first-use flow. The current contract, privacy disclosure, bounded request limits and validation status are recorded in [INFERENCE_INTEGRATION.md](INFERENCE_INTEGRATION.md). AI remains off until the user opts in; observations, discoveries and map evidence remain local and deterministic.
+Optional AI suggestions preserve the approved screens and first-use flow. The current contract, privacy disclosure, bounded request limits and validation status are recorded in [INFERENCE_INTEGRATION.md](INFERENCE_INTEGRATION.md). AI remains off until the user opts in; observations, discoveries and trail evidence remain local and deterministic.

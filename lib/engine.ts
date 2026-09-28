@@ -4,27 +4,32 @@ export type Resistance =
 export type Urge = 'no' | 'stayed' | 'returned' | 'stopped' | '';
 export const territories: Record<
   Territory,
-  { name: string; description: string }
+  { name: string; short: string; description: string }
 > = {
   fog: {
     name: 'The Fog',
+    short: 'Fog',
     description: 'When action has to happen before everything is clear.',
   },
   spotlight: {
     name: 'The Spotlight',
+    short: 'Spotlight',
     description: 'When being seen or heard is part of the hard thing.',
   },
   loop: {
     name: 'The Open Loop',
+    short: 'Open Loop',
     description: 'When stopping means leaving some uncertainty unresolved.',
   },
   water: {
     name: 'Still Water',
+    short: 'Still Water',
     description:
       'When an unpleasant feeling is here, without needing to fix it first.',
   },
   unknown: {
     name: 'Somewhere new',
+    short: '',
     description:
       'Start with the situation. The shape of this territory can come later.',
   },
@@ -285,7 +290,7 @@ export function observation(e: Encounter) {
   )
     return {
       title: 'Different Than Expected',
-      body: 'This encounter felt easier than you expected. That is one piece of your map.',
+      body: 'This encounter felt easier than you expected. That is one step on your trail.',
       code: 'easier',
     };
   return {

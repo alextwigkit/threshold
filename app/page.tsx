@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -31,7 +31,8 @@ import {
   type Encounter,
   type Urge,
 } from '@/lib/engine';
-import MapFragment from './map-fragment';
+import Trail from './trail';
+import { pattern, taken, trailCaption, trailStones } from '@/lib/trail';
 import { SuggestionRequest } from '@/lib/suggestions';
 import {
   KEY,
@@ -181,111 +182,6 @@ function Spinner() {
     </svg>
   );
 }
-/** What this encounter did to the map, so the changing place name has a reason. */
-function mapChange(last: Encounter, encounters: Encounter[]) {
-  if (last.outcome === 'not_started')
-    return 'Your map changes only when you start a step.';
-  const place = territories[last.territory];
-  if (last.territory === 'unknown') return 'A new place is on your map.';
-  const visits = encounters.filter(
-    (e) => e.territory === last.territory && e.outcome !== 'not_started',
-  ).length;
-  // Descriptions read "When …", so they complete "the place for when …".
-  const kind = `the place for ${place.description[0].toLowerCase()}${place.description.slice(1)}`;
-  return visits === 1
-    ? `${place.name} is now on your map: ${kind}`
-    : `More of ${place.name} is mapped: ${kind}`;
-}
-
-function MapLegend({
-  taken = false,
-  next,
-  linked = false,
-  empty = false,
-}: {
-  taken?: boolean;
-  next: boolean;
-  linked?: boolean;
-  empty?: boolean;
-}) {
-  const swatch = (line: ReactNode) => (
-    <svg viewBox="0 0 24 8" width="24" height="8" aria-hidden="true">
-      {line}
-    </svg>
-  );
-  return (
-    <div className="map-legend">
-      <p className="meta">
-        {empty && 'Your map starts with something real. '}
-        Each step maps more of what you’ve been avoiding.
-        {linked && ' Places are named for what made it hard; tap one.'}
-      </p>
-      <ul className="meta legend-keys">
-        {/* Once routes are drawn, lines converging on the bar already show the start. */}
-        {!taken && (
-          <li>
-            {swatch(
-              <line
-                x1="3"
-                x2="21"
-                y1="4"
-                y2="4"
-                stroke="#20211e"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-              />,
-            )}
-            Start
-          </li>
-        )}
-        {taken && (
-          <li>
-            {swatch(
-              <line
-                x1="1"
-                x2="23"
-                y1="4"
-                y2="4"
-                stroke="#7d8176"
-                strokeWidth="1.6"
-                opacity=".7"
-              />,
-            )}
-            Your steps
-          </li>
-        )}
-        {taken && (
-          <li>
-            {swatch(
-              <>
-                <rect width="24" height="8" rx="2" fill="#d6d1c6" />
-                <ellipse cx="12" cy="4" rx="8" ry="3.4" fill="#fcfaf6" />
-              </>,
-            )}
-            Mapped
-          </li>
-        )}
-        {next && (
-          <li>
-            {swatch(
-              <line
-                x1="1"
-                x2="23"
-                y1="4"
-                y2="4"
-                stroke="#ac3d24"
-                strokeWidth="1.8"
-                strokeDasharray="4 3"
-              />,
-            )}
-            Today’s step
-          </li>
-        )}
-      </ul>
-    </div>
-  );
-}
-
 export default function Home() {
   const [s, setS] = useState<Saved>(initial);
   const [busy, setBusy] = useState(false);
@@ -296,6 +192,8 @@ export default function Home() {
   const [error, setError] = useState('');
   const [now, setNow] = useState(0);
   const [atlasTerritory, setAtlasTerritory] = useState<Territory | null>(null);
+  // The encounter a trail stone opened, scrolled to and expanded in Atlas.
+  const [atlasFocus, setAtlasFocus] = useState<string | null>(null);
   const [backup, setBackup] = useState<Saved | null>(null);
   const [restoreError, setRestoreError] = useState('');
   const [restoreMessage, setRestoreMessage] = useState('');
@@ -324,7 +222,7 @@ export default function Home() {
     } catch {
       saveBlocked.current = true;
       setError(
-        'Your saved map could not be read. It has not been overwritten. You can export it in Me before clearing it.',
+        'Your saved trail could not be read. It has not been overwritten. You can export it in Me before clearing it.',
       );
     }
     setReady(true);
@@ -336,7 +234,7 @@ export default function Home() {
       setBusy(false);
       saveBlocked.current = true;
       setError(
-        'Your map changed in another tab. Export any unfinished work here, then reload to use the latest map.',
+        'Your trail changed in another tab. Export any unfinished work here, then reload to use the latest trail.',
       );
     };
     window.addEventListener('storage', changedElsewhere);
@@ -358,7 +256,7 @@ export default function Home() {
       setError('');
     } catch {
       setError(
-        'This browser could not save your map. Keep this page open and export your data in Me.',
+        'This browser could not save your trail. Keep this page open and export your data in Me.',
       );
     }
   }, [s, ready]);
@@ -368,6 +266,15 @@ export default function Home() {
       heading.current?.focus();
     }
   }, [s.screen, ready]);
+  // A stone opened from the trail: land on its entry, already expanded.
+  useEffect(() => {
+    if (s.screen !== 'atlas' || !atlasFocus) return;
+    const entry = document.getElementById(`entry-${atlasFocus}`);
+    if (!entry) return;
+    entry.querySelector('details')?.setAttribute('open', '');
+    entry.scrollIntoView({ block: 'start' });
+    entry.focus({ preventScroll: true });
+  }, [s.screen, atlasFocus]);
   // Collapsing a question unmounts the focused control, so focus moves to the
   // heading named here once it has rendered. No deps: it checks after every render.
   useEffect(() => {
@@ -642,8 +549,18 @@ export default function Home() {
     ? found.filter((d) => d.territory === atlasTerritory)
     : found;
   const backupSummary = backup ? restoreSummary(s, backup) : null;
+  const steps = taken(s.encounters);
+  // Only explain half-filled stones when one is on screen.
+  const stoppedShown = trailStones(s.encounters).stones.some(
+    (st) => st.stopped,
+  );
   function showTerritory(t: Territory) {
+    setAtlasFocus(null);
     setAtlasTerritory(t);
+  }
+  function openEntry(id: string | null) {
+    setAtlasTerritory(null);
+    setAtlasFocus(id);
     go('atlas');
   }
   async function stageBackup(file: File | undefined) {
@@ -666,7 +583,7 @@ export default function Home() {
     if (!backup) return;
     if (saveBlocked.current) {
       setRestoreError(
-        'Export the unreadable data, then clear this device’s map before restoring a backup.',
+        'Export the unreadable data, then clear this device’s trail before restoring a backup.',
       );
       return;
     }
@@ -674,11 +591,11 @@ export default function Home() {
     try {
       localStorage.setItem(KEY, JSON.stringify(merged));
       setS(merged);
-      setRestoreMessage('Your backup has been merged into this map.');
+      setRestoreMessage('Your backup has been merged into this trail.');
       setBackup(null);
     } catch {
       setRestoreError(
-        'Your browser could not save the restored map. Your existing map has not changed.',
+        'Your browser could not save the restored trail. Your existing trail has not changed.',
       );
     }
   }
@@ -737,7 +654,7 @@ export default function Home() {
         <header>
           <span className="brand">THRESHOLD</span>
         </header>
-        <p>Opening your map…</p>
+        <p>Opening your trail…</p>
       </main>
     );
   return (
@@ -789,7 +706,7 @@ export default function Home() {
         )}
         {s.screen === 'name' && s.encounters.length > 0 && (
           <button className="text-button" onClick={() => go('map')}>
-            My map
+            My trail
           </button>
         )}
       </header>
@@ -1180,13 +1097,16 @@ export default function Home() {
       )}
       {s.screen === 'observation' && last && (
         <section className="observation">
-          <MapFragment
-            className="short"
+          <Trail
             encounters={s.encounters}
+            found={found}
             revealId={last.id}
             newDiscoveryId={newDiscovery?.id}
           />
-          <p className="meta map-caption">{mapChange(last, s.encounters)}</p>
+          <p className="meta trail-key">
+            {trailCaption(last, s.encounters)}
+            {stoppedShown && ' Half-filled means you stopped early.'}
+          </p>
           <div className={newDiscovery ? 'discovery-reveal' : undefined}>
             <p className="eyebrow accent">
               {newDiscovery
@@ -1228,41 +1148,44 @@ export default function Home() {
               </p>
             )}
           </div>
-          <Primary onClick={() => go('map')}>See my map</Primary>
+          <Primary onClick={() => go('map')}>See my trail</Primary>
         </section>
       )}
       {s.screen === 'map' && (
         <section>
-          {s.encounters.some((e) => e.outcome !== 'not_started') ? (
+          {steps.length ? (
             <>
               <h1 className="sr-only" ref={heading} tabIndex={-1}>
-                Your map
+                Your trail
               </h1>
-              <MapFragment
-                className="home"
+              <Trail
                 encounters={s.encounters}
-                territory={next?.territory}
-                highlightLatest={false}
-                onTerritory={showTerritory}
+                found={found}
+                next={next}
+                onStep={openEntry}
+                onEarlier={() => openEntry(null)}
               />
-              <MapLegend taken next={!!next} linked />
+              <p className="meta trail-key">
+                {pattern(s.encounters)} Stones show expected → felt
+                {stoppedShown && '; half-filled means you stopped early'}. Tap
+                one to open it.
+              </p>
             </>
           ) : (
             <>
-              {/* With a step waiting, the step leads and this line joins the map's key. */}
+              {/* With a step waiting, the step leads and this line joins the trail's key. */}
               {next ? (
                 <h1 className="sr-only" ref={heading} tabIndex={-1}>
-                  Your map
+                  Your trail
                 </h1>
               ) : (
-                title('Your map starts with something real.')
+                title('Your trail starts with something real.')
               )}
-              <MapFragment
-                className="home empty"
-                encounters={[]}
-                territory={next?.territory}
-              />
-              <MapLegend next={!!next} empty={!!next} />
+              {next && <Trail encounters={[]} next={next} />}
+              <p className="meta trail-key">
+                {next && 'Your trail starts with something real. '}Each step you
+                take adds a stone.
+              </p>
             </>
           )}
           {next && (
@@ -1365,13 +1288,29 @@ export default function Home() {
             </article>
           ))}
           {[...filteredEncounters].reverse().map((e) => (
-            <article className="atlas-entry" key={e.id}>
+            <article
+              className="atlas-entry"
+              key={e.id}
+              id={`entry-${e.id}`}
+              tabIndex={-1}
+            >
               <p className="eyebrow">
                 {new Date(e.createdAt).toLocaleDateString(undefined, {
                   month: 'short',
                   day: 'numeric',
                 })}{' '}
-                · {territories[e.territory].name}
+                ·{' '}
+                {atlasTerritory ? (
+                  territories[e.territory].name
+                ) : (
+                  <button
+                    className="eyebrow-link"
+                    aria-label={`Only show ${territories[e.territory].name}`}
+                    onClick={() => showTerritory(e.territory)}
+                  >
+                    {territories[e.territory].name}
+                  </button>
+                )}
               </p>
               <h2>{observation(e).title}</h2>
               <p>{observation(e).body}</p>
@@ -1442,7 +1381,7 @@ export default function Home() {
       )}
       {s.screen === 'me' && (
         <section>
-          {title('A map of your own')}
+          {title('A trail of your own')}
           {s.session && (
             <Primary onClick={() => go('active')}>
               Return to your expedition
@@ -1453,12 +1392,12 @@ export default function Home() {
               className="text-button"
               onClick={() => window.location.reload()}
             >
-              Reload the saved map
+              Reload the saved trail
             </button>
           )}
-          <h2 className="section-heading keep-heading">Keep your map</h2>
+          <h2 className="section-heading keep-heading">Keep your trail</h2>
           <p>
-            Your map lives only in this browser, and clearing browser data
+            Your trail lives only in this browser, and clearing browser data
             erases it. Save a copy now and then.
           </p>
           <div className="data-actions">
@@ -1502,7 +1441,7 @@ export default function Home() {
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>
-                  Merge this backup into your map?
+                  Merge this backup into your trail?
                 </AlertDialogTitle>
                 <AlertDialogDescription>
                   {backupSummary?.added ?? 0} encounters will be added.{' '}
@@ -1522,12 +1461,12 @@ export default function Home() {
           </AlertDialog>
           <AlertDialog>
             <AlertDialogTrigger className="text-button destructive">
-              Delete my map
+              Delete my trail
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>
-                  Delete your map from this device?
+                  Delete your trail from this device?
                 </AlertDialogTitle>
                 <AlertDialogDescription>
                   This removes your situations, encounters and observations.
@@ -1535,7 +1474,7 @@ export default function Home() {
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Keep my map</AlertDialogCancel>
+                <AlertDialogCancel>Keep my trail</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={() => {
                     try {
@@ -1552,19 +1491,19 @@ export default function Home() {
                       setError('');
                     } catch {
                       setError(
-                        'Your map could not be deleted. Try your browser’s site-data settings.',
+                        'Your trail could not be deleted. Try your browser’s site-data settings.',
                       );
                     }
                   }}
                 >
-                  Delete my map
+                  Delete my trail
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
           <p className="meta privacy">
             Suggestions send what you’re avoiding and what makes it hard, never
-            your map.
+            your trail.
           </p>
         </section>
       )}
@@ -1575,12 +1514,15 @@ export default function Home() {
               key={n}
               aria-current={s.screen === n ? 'page' : undefined}
               onClick={() => {
-                if (n === 'atlas') setAtlasTerritory(null);
+                if (n === 'atlas') {
+                  setAtlasTerritory(null);
+                  setAtlasFocus(null);
+                }
                 go(n);
               }}
             >
               <span aria-hidden="true">{['↗', '▤', '○'][i]}</span>
-              {n[0].toUpperCase() + n.slice(1)}
+              {['Trail', 'Atlas', 'Me'][i]}
             </button>
           ))}
         </nav>

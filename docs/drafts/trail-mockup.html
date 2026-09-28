@@ -1,0 +1,448 @@
+<!doctype html>
+<!--
+  Static mockup of the trail (plan stage 1). Synthetic data only.
+  Open with ?s=home|empty|obs&v=a|b
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Trail mockup</title>
+    <style>
+      :root {
+        --background: #fcf9f4;
+        --foreground: #20211e;
+        --accent: #ac3d24;
+        --muted-foreground: #50534e;
+        --meta-foreground: #666a62;
+        --path: #7d8176;
+        --space-in: 8px;
+        --space-pair: 16px;
+        --space-block: 24px;
+        --space-group: 40px;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--background);
+        color: var(--foreground);
+        font-family: 'Avenir Next', Avenir, 'Segoe UI', sans-serif;
+        line-height: 1.55;
+      }
+      .shell {
+        max-width: 560px;
+        min-height: 100svh;
+        margin: auto;
+        padding: 24px 24px 96px;
+      }
+      header {
+        margin-bottom: var(--space-block);
+        min-height: 32px;
+        display: flex;
+        align-items: center;
+      }
+      .brand {
+        font-size: 0.875rem;
+        letter-spacing: 0.22em;
+        font-weight: 600;
+        color: var(--meta-foreground);
+      }
+      h1,
+      h2 {
+        font-family: Newsreader, Georgia, serif;
+        font-weight: 400;
+        letter-spacing: -0.035em;
+        line-height: 1.2;
+      }
+      h1 {
+        font-size: 1.5rem;
+        margin: 0 0 var(--space-pair);
+      }
+      .home-step {
+        font-size: 1.75rem;
+        margin: 0 0 var(--space-in);
+      }
+      p {
+        margin: 0 0 var(--space-pair);
+        color: var(--muted-foreground);
+      }
+      .meta {
+        font-size: 0.8125rem;
+        font-weight: 500;
+        line-height: 1.45;
+        color: var(--meta-foreground);
+      }
+      .eyebrow {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        color: var(--meta-foreground);
+        margin: 0 0 var(--space-in);
+      }
+      .eyebrow.accent {
+        color: var(--accent);
+      }
+      .situation-context {
+        margin: -4px 0 var(--space-block);
+      }
+      .primary,
+      .secondary {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        min-height: 56px;
+        padding: 0 24px;
+        border-radius: 6px;
+        font: inherit;
+        font-weight: 600;
+        font-size: 1rem;
+      }
+      .primary {
+        background: var(--foreground);
+        color: var(--background);
+        border: 0;
+        margin-top: var(--space-block);
+      }
+      .secondary {
+        background: transparent;
+        color: var(--foreground);
+        border: 1px solid var(--foreground);
+        margin-top: var(--space-block);
+        justify-content: center;
+      }
+      .evidence {
+        display: flex;
+        align-items: flex-end;
+        gap: 24px;
+        margin: var(--space-block) 0 var(--space-in);
+      }
+      .evidence strong {
+        display: block;
+        font-family: Newsreader, Georgia, serif;
+        font-size: 5.5rem;
+        font-weight: 500;
+        line-height: 0.9;
+      }
+      .evidence .arrow {
+        font-size: 1.75rem;
+        padding-bottom: 12px;
+      }
+      .observation-copy {
+        margin-bottom: var(--space-group);
+      }
+      nav {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        justify-content: space-around;
+        padding: 12px 0 20px;
+        background: var(--background);
+        border-top: 1px solid #dfddd6;
+        font-size: 0.8125rem;
+        color: var(--meta-foreground);
+      }
+      nav .on {
+        color: var(--foreground);
+        font-weight: 600;
+      }
+
+      /* The trail */
+      .trail {
+        list-style: none;
+        margin: 0 0 var(--space-in);
+        padding: 0;
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: 1fr;
+      }
+      .trail li {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        min-width: 0;
+      }
+      /* The path: a line from this stone to the previous one. */
+      .trail li + li::before {
+        content: '';
+        position: absolute;
+        top: var(--stone-y);
+        right: 50%;
+        width: 100%;
+        border-top: 1.5px solid var(--path);
+        transform: translateY(-50%);
+      }
+      .trail li.today::before {
+        border-top: 1.5px dashed var(--accent);
+      }
+      .trail .band {
+        height: var(--band);
+        width: 100%;
+        position: relative;
+      }
+      .stone {
+        position: relative;
+        z-index: 1;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--foreground);
+        border: 2px solid var(--foreground);
+        margin-top: calc(var(--stone-y) - 8px - var(--band));
+      }
+      .stone.stopped {
+        background: linear-gradient(
+          to right,
+          var(--foreground) 50%,
+          var(--background) 50%
+        );
+      }
+      .stone.new {
+        width: 22px;
+        height: 22px;
+        margin-top: calc(var(--stone-y) - 11px - var(--band));
+        animation: settle 650ms ease-out both;
+      }
+      .start .stone {
+        width: 4px;
+        height: 22px;
+        border-radius: 2px;
+        margin-top: calc(var(--stone-y) - 11px - var(--band));
+      }
+      .today .stone {
+        background: var(--background);
+        border: 2px dashed var(--accent);
+        width: 20px;
+        height: 20px;
+        margin-top: calc(var(--stone-y) - 10px - var(--band));
+      }
+      .ring {
+        position: absolute;
+        inset: -7px;
+        border: 1px solid var(--accent);
+        border-radius: 50%;
+      }
+      .nums {
+        margin-top: var(--space-in);
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: var(--foreground);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        letter-spacing: -0.02em;
+      }
+      @media (max-width: 359px) {
+        .nums {
+          font-size: 0.8125rem;
+        }
+        .trail {
+          column-gap: 6px;
+        }
+      }
+      .place {
+        font-size: 0.75rem;
+        font-weight: 500;
+        line-height: 1.3;
+        color: var(--meta-foreground);
+      }
+      .start .nums,
+      .today .nums {
+        font-weight: 500;
+        color: var(--meta-foreground);
+      }
+      .today .nums {
+        color: var(--accent);
+      }
+      .trail-key {
+        margin: 0 0 var(--space-group);
+      }
+      .obs .trail-key {
+        margin-bottom: var(--space-group);
+      }
+
+      /* Variant B: a drop from expected (tick) to experienced (stone). */
+      .trail-wrap {
+        position: relative;
+      }
+      .trail-wrap .path {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 72px;
+      }
+      .v-b .trail li + li::before {
+        display: none;
+      }
+      .v-b .nums {
+        margin-top: 12px;
+      }
+      .v-b .trail-key {
+        margin-top: 0;
+      }
+      .evidence + .observation-copy {
+        margin-top: var(--space-pair);
+      }
+      .drop {
+        position: absolute;
+        left: 50%;
+        width: 0;
+        border-left: 2px solid var(--path);
+        transform: translateX(-50%);
+      }
+      .drop.up {
+        border-left-color: var(--accent);
+      }
+      .tick {
+        position: absolute;
+        left: 50%;
+        width: 24px;
+        border-top: 2px solid var(--foreground);
+        transform: translate(-50%, -50%);
+      }
+      @keyframes settle {
+        from {
+          transform: scale(0.3);
+          opacity: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell" id="root"></main>
+    <nav id="nav"></nav>
+    <script>
+      const q = new URLSearchParams(location.search);
+      const state = q.get('s') || 'home';
+      const variant = q.get('v') || 'a';
+      document.body.classList.add('v-' + variant);
+
+      // Synthetic steps: expected, experienced, place, stopped.
+      const home = [
+        [6, 3, 'Fog', false],
+        [5, 3, 'Open Loop', false],
+        [7, 7, 'Fog', true],
+        [4, 2, 'Still Water', false],
+      ];
+      const obs = home;
+
+      // Stone height in B: experienced on a 0 (low) to 10 (high) band.
+      const BAND = variant === 'b' ? 72 : 0;
+      const yFor = (v) => BAND - (v / 10) * BAND;
+      // In A every stone sits on one line; in B the path runs along the bottom.
+      const stoneY = BAND + 8 + (variant === 'b' ? 0 : 3);
+
+      function stoneLi([exp, act, place, stopped], i, isNew) {
+        let band = '';
+        if (variant === 'b') {
+          const top = Math.min(yFor(exp), yFor(act));
+          const h = Math.abs(yFor(exp) - yFor(act));
+          // The stone sits at what it felt like; a tick marks what was expected.
+          band = `<div class="band" aria-hidden="true">
+            <span class="drop ${act > exp ? 'up' : ''}" style="top:${top}px;height:${h}px"></span>
+            <span class="tick" style="top:${yFor(exp)}px"></span>
+          </div>`;
+        }
+        const label = `Step ${i + 1}, ${place}: expected ${exp}, experienced ${act}, ${stopped ? 'stopped early' : 'stayed'}`;
+        const btn = `<button class="stone ${stopped ? 'stopped' : ''} ${isNew ? 'new' : ''}" aria-label="${label}"${BAND ? ` style="position:absolute;left:50%;top:${yFor(act)}px;margin:0;transform:translate(-50%,-50%)"` : ''}></button>`;
+        return BAND
+          ? `<li>${band.replace('</div>', btn + '</div>')}
+          <span class="nums">${exp} → ${act}</span>
+          <span class="place">${place}</span></li>`
+          : `<li>${btn}
+          <span class="nums">${exp} → ${act}</span>
+          <span class="place">${place}</span></li>`;
+      }
+      function startLi(y) {
+        return BAND
+          ? `<li class="start"><div class="band"><span class="stone" style="position:absolute;left:50%;top:${y}px;margin:0;transform:translate(-50%,-50%)"></span></div>
+          <span class="nums">Start</span></li>`
+          : `<li class="start"><span class="stone"></span>
+          <span class="nums">Start</span></li>`;
+      }
+      function todayLi(place, y) {
+        return BAND
+          ? `<li class="today"><div class="band"><button class="stone" aria-label="Today's step, ${place}" style="position:absolute;left:50%;top:${y}px;margin:0;transform:translate(-50%,-50%)"></button></div>
+          <span class="nums">Today</span>
+          <span class="place">${place}</span></li>`
+          : `<li class="today"><button class="stone" aria-label="Today's step, ${place}"></button>
+          <span class="nums">Today</span>
+          <span class="place">${place}</span></li>`;
+      }
+      function trail(steps, opts = {}) {
+        const mid = BAND / 2;
+        const base = BAND;
+        const ys = [base]
+          .concat(steps.map((s) => yFor(s[1])))
+          .concat(opts.today ? [base] : []);
+        const items = [startLi(ys[0])]
+          .concat(steps.map((s, i) => stoneLi(s, i, opts.newLast && i === steps.length - 1)))
+          .concat(opts.today ? [todayLi(opts.today, ys.at(-1))] : []);
+        let path = '';
+        if (BAND) {
+          // The path joins the stones, so it rises and falls with how each step felt.
+          const n = ys.length;
+          const pts = ys.map((y, i) => [((i + 0.5) / n) * 100, y]);
+          const past = pts.slice(1, opts.today ? -1 : undefined);
+          const seg = (p) => p.map(([x, y]) => `${x},${y}`).join(' ');
+          path = `<svg class="path" viewBox="0 0 100 ${BAND}" preserveAspectRatio="none" aria-hidden="true">
+            <polyline points="${seg(past)}" fill="none" stroke="#7d8176" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+            ${opts.today && !steps.length ? `<polyline points="${seg([pts[0], pts.at(-1)])}" fill="none" stroke="#ac3d24" stroke-width="1.5" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>` : ''}
+          </svg>`;
+        }
+        return `<div class="trail-wrap">${path}<ol class="trail" style="--band:${BAND}px;--stone-y:${stoneY}px">${items.join('')}</ol></div>`;
+      }
+
+      const homeKey =
+        variant === 'b'
+          ? 'Each stone is a step, placed by how hard it felt: higher is harder. The tick is what you expected. Half-filled means you stopped early.'
+          : 'Each stone is a step: what you expected → what it felt like. Half-filled means you stopped early.';
+
+      const step = `
+        <p class="eyebrow">Today's Threshold · 3 min</p>
+        <p class="meta situation-context">Replying to the email from my landlord</p>
+        <h2 class="home-step">Open the Email</h2>
+        <p>Open it and read the first line. You don't have to reply.</p>
+        <button class="primary">Explore <span>→</span></button>
+        <button class="secondary">Work on something else</button>`;
+
+      const screens = {
+        home: `<header><span class="brand">THRESHOLD</span></header>
+          ${trail(home, { today: 'Open Loop' })}
+          <p class="meta trail-key">${homeKey}</p>
+          ${step}`,
+        empty: `<header><span class="brand">THRESHOLD</span></header>
+          ${trail([], { today: 'Open Loop' })}
+          <p class="meta trail-key">Your trail starts with something real. Each step you take adds a stone.</p>
+          ${step}`,
+        obs: `<header><span class="brand">THRESHOLD</span></header>
+          <section class="obs">
+          ${trail(obs, { newLast: true })}
+          <p class="meta trail-key">Your 4th step. 3 of 4 felt easier than you expected.</p>
+          <p class="eyebrow accent">Observation</p>
+          <h1>Different Than Expected</h1>
+          <div class="evidence">
+            <div><span class="meta">Expected</span><strong>4</strong></div>
+            <span class="arrow">→</span>
+            <div><span class="meta">Experienced</span><strong>2</strong></div>
+          </div>
+          <p class="observation-copy">This encounter felt easier than you expected. That is one step on your trail.</p>
+          <button class="primary">See my trail <span>→</span></button>
+          </section>`,
+      };
+      document.getElementById('root').innerHTML = screens[state];
+      document.getElementById('nav').innerHTML =
+        state === 'obs'
+          ? ''
+          : '<span class="on">Trail</span><span>Atlas</span><span>Me</span>';
+      if (state === 'obs') document.getElementById('nav').remove();
+    </script>
+  </body>
+</html>

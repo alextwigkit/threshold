@@ -75,4 +75,17 @@ Owner feedback: the Observation map (a red line pointing at a changing word) did
 - Fixes: places named only once reached; history opacity 0.4 (newest 0.7); brighter clearings; key gains "Mapped", drops Start once routes exist; numbers 5.5rem/500 with a solid arrow, bound 8px to the body, 40px before the button.
 - Round 3 (`v18-*`): comprehension READY (start, past steps, today's step, map filling in all read correctly); hierarchy READY on Home, Empty Home and Observation.
 
-Open nits: dotted ground never explicitly named; "Somewhere new" reads like a placeholder; Start drops from the key once routes exist; Observation title vs red eyebrow; arrow sits low; Empty Home's secondary button label is cut by the nav; the Observation map's dot texture is letterboxed.
+Outcome: Alex found the committed map (ff426f9) meaningless; positions encode no data. Replaced by the trail plan below.
+
+## Trail (replaces the map)
+
+Plan: `~/.claude/plans/sequential-petting-taco.md`. Stage 1 mockup: `docs/drafts/trail-mockup.html` (`?s=home|empty|obs&v=a|b`, serve with `python3 -m http.server 8765 --bind 127.0.0.1`), screenshots `.playwright-mcp/trail-*`.
+
+- Stage 1 round 1: both variants MEANING PASS (auditors read "3 of 4 easier than feared; the one that matched was the one stopped"). Blockers: pairs collided at 320px; mockup data differed between Home and Observation. B: tick hidden at equal values, Start/Today heights implied values. All fixed.
+- Alex picked A. Stage 2 built: `lib/trail.ts`, `app/trail.tsx`, map code deleted, copy and docs say trail.
+- Stage 2 checks: keyboard reaches "+N earlier", every stone, then Explore; tapping a stone opens and focuses its Atlas entry; discovery ring lands on the establishing stone; empty Home without a step hides the trail (a lone Start bar encoded nothing).
+- Stage 2 round 1 (`v20-*`): meaning PASS. Hierarchy NOT READY: Observation button beat the title, Home stone numbers outweighed the step title, "Still Water" and "Spotlight" read as one label at 390. Fixes: nums weight 500, column gap, Home step 2rem, Observation title 1.875rem, shorter key, half-fill key on Observation when a stopped stone shows.
+- Stage 2 round 2 (`v21-*`): Home, Empty Home, discovery Observation READY; Observation NOT READY (one-line title behind the button). Title to 2.25rem.
+- Stage 2 round 3 (`v22-*`): Observation and discovery READY. Nit fixed: stone numbers share one baseline whatever the stone size. Synthetic data cleared.
+
+Open nits (old map): dotted ground never explicitly named; "Somewhere new" reads like a placeholder; Start drops from the key once routes exist; Observation title vs red eyebrow; arrow sits low; Empty Home's secondary button label is cut by the nav; the Observation map's dot texture is letterboxed.

@@ -7,7 +7,7 @@ import {
   mergeBackup,
   restoreSummary,
 } from '../lib/storage.ts';
-import { projectMap } from '../lib/map.ts';
+import { trailStones } from '../lib/trail.ts';
 const e = (id, extra = {}) => ({
   ...candidate('starting a proposal', 'understand'),
   id,
@@ -123,19 +123,23 @@ test('corrupt and unsupported backups fail without mutating the current state', 
     assert.throws(() => parseSaved(bad));
   assert.equal(JSON.stringify(local), before);
 });
-test('not-started never clears map and restored earlier history cannot move an existing route', () => {
-  const route = projectMap([e('3')]).routes[0];
+test('not starting adds no stone, and restored earlier history keeps later stones as they were', () => {
   assert.equal(
-    projectMap([e('1', { outcome: 'not_started', actual: null })]).routes
+    trailStones([e('1', { outcome: 'not_started', actual: null })]).stones
       .length,
     0,
   );
-  const later = projectMap([e('1'), e('3')]).routes.find((r) => r.id === '3');
-  assert.deepEqual(later, route);
+  const stone = trailStones([e('3')]).stones[0];
+  const later = trailStones([e('1'), e('3')]).stones.find((x) => x.id === '3');
+  assert.deepEqual({ ...later, step: 1 }, stone);
+  assert.equal(later.step, 2);
 });
-test('map projection deduplicates history and remains deterministic', () => {
-  assert.deepEqual(projectMap([e('1'), e('1')]), projectMap([e('1')]));
-  assert.deepEqual(projectMap([e('2'), e('1')]), projectMap([e('1'), e('2')]));
+test('the trail deduplicates history and remains deterministic', () => {
+  assert.deepEqual(trailStones([e('1'), e('1')]), trailStones([e('1')]));
+  assert.deepEqual(
+    trailStones([e('2'), e('1')]),
+    trailStones([e('1'), e('2')]),
+  );
 });
 test('a backup cannot preempt the current active encounter using the same id', () => {
   const local = { ...saved(), screen: 'active', session: e('1') };

@@ -693,51 +693,7 @@ h2:focus {
   color: var(--meta-foreground);
   margin-right: auto;
 }
-.map-fragment {
-  overflow: hidden;
-  border-radius: 12px;
-  background: #f4f1eb;
-  margin: 0 0 28px;
-}
-.map-fragment svg {
-  display: block;
-  width: 100%;
-  max-height: 470px;
-}
-/*
- * Map text stays in px: it lives inside a `viewBox`, so these are user-space
- * units that must stay proportionate to the geometry they label. The SVG
- * already scales with its container.
- */
-.map-label {
-  font-family: Newsreader, Georgia, serif;
-  font-style: italic;
-  font-size: 24px;
-  fill: #40443b;
-  letter-spacing: -1px;
-  /* Halo instead of an opaque plate, so a route drawn underneath still reads through. */
-  paint-order: stroke fill;
-  stroke: #f4f1eb;
-  stroke-width: 5px;
-  stroke-linejoin: round;
-}
-.map-note {
-  font-size: 11px;
-  fill: #656b5e;
-  /* Placed clear of the names, but its own route still runs under it. */
-  paint-order: stroke fill;
-  stroke: #f4f1eb;
-  stroke-width: 3px;
-  stroke-linejoin: round;
-}
-/* The preview frames one territory in its own viewBox window rather than letterboxing the full map. */
-.compact {
-  margin-bottom: 16px;
-}
-.compact svg {
-  height: auto;
-}
-/* Map's inline context line; a band here would stack a box under the map box. */
+/* Home's inline context line under the eyebrow. */
 .situation-context {
   margin: 0 0 var(--space-block);
 }
@@ -934,52 +890,157 @@ h1.tab-title {
   font-size: 1.75rem;
   margin-bottom: var(--space-in);
 }
-.map-fragment.short svg {
-  max-height: 13rem;
-}
 /* The numbers below are the finding, so the title steps down a level. */
 .observation h1 {
-  font-size: 1.5rem;
+  font-size: 2.25rem;
 }
-/* Home: the map stays largest, but short enough that both actions fit. */
-.map-fragment.home {
-  margin-bottom: var(--space-group);
-}
-/* Text under a map reads as its key: bound tight above, a full group gap below. */
-.map-fragment:has(+ .map-caption, + .map-legend) {
-  margin-bottom: var(--space-in);
-}
-.map-caption {
-  margin: 0 0 var(--space-group);
-}
-.map-legend {
-  margin-bottom: var(--space-group);
-}
-.map-legend p {
+/*
+ * The trail: one stone per step, oldest first. Every mark is data: the pair is
+ * expected → experienced, half fill is a step stopped early, dashed is today.
+ */
+.trail {
+  --stone: 16px;
+  --stone-y: 11px;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  column-gap: var(--space-in);
   margin: 0 0 var(--space-in);
-}
-.legend-keys {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 14px;
-  margin: 0;
   padding: 0;
   list-style: none;
 }
-.legend-keys li {
+.trail > li {
+  position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 6px;
+  min-width: 0;
+  text-align: center;
 }
-.map-fragment.home svg {
-  max-height: 20rem;
+/* The path: from each stone back to the one before it. */
+.trail > li + li::before {
+  content: '';
+  position: absolute;
+  top: var(--stone-y);
+  right: 50%;
+  width: 100%;
+  border-top: 1.5px solid #7d8176;
+  transform: translateY(-50%);
 }
-/* Nothing mapped yet, so it gives up height before the step does. */
-.map-fragment.home.empty svg {
-  max-height: 17rem;
+.trail > li.today::before {
+  border-top-style: dashed;
+  border-top-color: var(--accent);
+}
+.trail-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 0 4px;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+}
+.trail .stone {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  width: var(--stone);
+  height: var(--stone);
+  margin-top: calc(var(--stone-y) - var(--stone) / 2);
+  /* Pad every stone to the largest (22px) so the numbers share one baseline. */
+  margin-bottom: calc(11px - var(--stone) / 2);
+  border: 2px solid var(--foreground);
+  border-radius: 50%;
+  background: var(--foreground);
+}
+.trail .stone.stopped {
+  background: linear-gradient(
+    to right,
+    var(--foreground) 50%,
+    var(--background) 50%
+  );
+}
+/* The step just recorded is the largest stone, and settles into place. */
+.trail .current .stone {
+  --stone: 22px;
+}
+.trail .stone.settle {
+  animation: reveal-mark 650ms ease-out both;
+}
+.trail .start .stone {
+  width: 4px;
+  --stone: 22px;
+  border-width: 0;
+  border-radius: 2px;
+}
+.trail .today .stone {
+  --stone: 20px;
+  border-style: dashed;
+  border-color: var(--accent);
+  background: var(--background);
+}
+.trail .ring {
+  position: absolute;
+  inset: -7px;
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+}
+.trail .nums {
+  margin-top: var(--space-in);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.trail .place {
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--meta-foreground);
+}
+.trail .start .nums,
+.trail .today .nums {
+  font-weight: 500;
+  color: var(--meta-foreground);
+}
+.trail .today .nums {
+  color: var(--accent);
+}
+.trail-earlier .nums {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+/* The key reads with the trail: bound tight above, a full group gap below. */
+.trail-key {
+  margin: 0 0 var(--space-group);
+}
+.eyebrow-link {
+  padding: 0;
+  background: none;
+  border: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+@media (max-width: 359px) {
+  .trail .nums {
+    font-size: 0.8125rem;
+  }
+  .trail {
+    column-gap: 6px;
+  }
 }
 .home-step {
-  font-size: 1.75rem;
+  font-size: 2rem;
   margin-bottom: var(--space-in);
 }
 /* The rarest finding stands apart from ordinary observations. */
@@ -1077,9 +1138,6 @@ details p {
     height: 12.5rem;
     font-size: 3.75rem;
   }
-  .map-label {
-    font-size: 22px;
-  }
 }
 
 @font-face {
@@ -1100,39 +1158,8 @@ details p {
   background: var(--background);
   color: var(--foreground);
 }
-.territory-link {
-  cursor: pointer;
-  outline: none;
-}
-/* Gated: without this, tapping a territory on a touch device leaves its
- * label stuck in the hover color until something else is tapped. */
-@media (hover: hover) and (pointer: fine) {
-  .territory-link:hover .map-label {
-    fill: var(--accent);
-  }
-}
-.territory-link:focus-visible rect {
-  stroke: var(--accent);
-  /* User-space units on a map rendered at less than 1:1 scale; .territory-link sets outline: none. */
-  stroke-width: 3;
-}
-.draw-route {
-  animation: draw-path 700ms ease-out both;
-}
 .discovery-mark {
   animation: reveal-mark 650ms ease-out both;
-  transform-box: fill-box;
-  transform-origin: center;
-}
-@keyframes draw-path {
-  from {
-    stroke-dasharray: 1;
-    stroke-dashoffset: 1;
-  }
-  to {
-    stroke-dasharray: 1;
-    stroke-dashoffset: 0;
-  }
 }
 @keyframes reveal-mark {
   from {
@@ -1148,8 +1175,8 @@ details p {
  * A discovery is the rarest, most significant moment in the app (requires
  * 4+ matching encounters, see discoveries() in lib/engine.ts) — the only
  * place this restrained interface spends its delight budget. Delayed to
- * land just after .discovery-mark's 650ms reveal above, so the mark on the
- * map reads as arriving first and this explains it, not the other way round.
+ * land just after .discovery-mark's 650ms reveal above, so the ring on the
+ * trail reads as arriving first and this explains it, not the other way round.
  * Ordinary observations get no such treatment; the common case stays instant.
  */
 .discovery-reveal {

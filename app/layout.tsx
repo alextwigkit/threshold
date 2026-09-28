@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 export const metadata: Metadata = {
-  title: 'Threshold — Your personal map',
+  title: 'Threshold — Your trail',
   description:
     'Turn toward something you have been avoiding. See what you discover.',
   manifest: '/manifest.webmanifest',
