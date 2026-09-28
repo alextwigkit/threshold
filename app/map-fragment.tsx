@@ -5,12 +5,14 @@ import {
   projectMap,
   positions,
   fields,
-  gates,
   labelAnchors,
   compactCrops,
   notePlacement,
   noteInk,
+  originLine,
+  nextLeg,
 } from '@/lib/map';
+const NAMED: Territory[] = ['fog', 'spotlight', 'loop', 'water'];
 export default function MapFragment({
   encounters,
   territory,
@@ -18,6 +20,7 @@ export default function MapFragment({
   revealId,
   newDiscoveryId,
   onTerritory,
+  highlightLatest = true,
   className = '',
 }: {
   encounters: Encounter[];
@@ -26,17 +29,38 @@ export default function MapFragment({
   revealId?: string;
   newDiscoveryId?: string;
   onTerritory?: (t: Territory) => void;
+  /** Ink on the newest route, for the screen that just recorded it. */
+  highlightLatest?: boolean;
   className?: string;
 }) {
   const id = useId().replace(/:/g, '');
   const map = projectMap(encounters);
-  const known = [...new Set([...map.known, ...(territory ? [territory] : [])])];
+  // A place is named once it has been reached; today's step toward a new one stays unnamed.
+  const known =
+    compact && territory ? [...new Set([...map.known, territory])] : map.known;
   const latest = map.routes.at(-1);
+  const leg = territory && !compact ? nextLeg(map.routes, territory) : null;
+  // Each visit opens more of a place; grows toward, never reaches, a fixed size.
+  const clearings = map.known.map((t) => {
+    const n = map.familiarity[t] ?? 0;
+    const grow = 1.5 + 0.9 * (n / (n + 3));
+    return {
+      t,
+      cx: fields[t].c[0],
+      cy: fields[t].c[1] - 10,
+      rx: fields[t].rx * grow,
+      ry: fields[t].ry * grow + 28,
+    };
+  });
   const describe = () => {
     if (compact && territory)
       return `A closer view of ${territories[territory].name}.`;
+    const next =
+      territory && !compact
+        ? ` A dashed line marks today's step, into ${territories[territory].name}.`
+        : '';
     if (!map.routes.length)
-      return 'An unresolved map. Your first route is still ahead.';
+      return `An unresolved map with a marked start. Your first route is still ahead.${next}`;
     const where = map.known.map((t) => territories[t].name).join(', ');
     const count =
       map.routes.length === 1 ? 'one route' : `${map.routes.length} routes`;
@@ -48,7 +72,7 @@ export default function MapFragment({
       : '';
     // Only claim the territories are selectable where they actually are.
     const how = onTerritory ? ' Select a territory to see its encounters.' : '';
-    return `Your map shows ${count} in ${where}.${last}${found}${how}`;
+    return `Your map shows ${count} from your start into ${where}.${last}${found}${next}${how}`;
   };
   return (
     <div className={`map-fragment ${compact ? 'compact' : ''} ${className}`}>
@@ -64,23 +88,39 @@ export default function MapFragment({
             height="12"
             patternUnits="userSpaceOnUse"
           >
-            <circle cx="3" cy="3" r=".7" fill="#85887e" opacity=".26" />
+            <circle cx="3" cy="3" r=".8" fill="#85887e" opacity=".42" />
           </pattern>
           {/* Black clears the texture, white keeps it. */}
           <radialGradient id={`${id}-clear`}>
             <stop offset="0%" stopColor="#000" />
             <stop offset="100%" stopColor="#fff" />
           </radialGradient>
+          {/* Mapped ground: a paper-light clearing that fades into the dotted unknown. */}
+          <radialGradient id={`${id}-lit`}>
+            <stop offset="0%" stopColor="#fcfaf6" />
+            <stop offset="65%" stopColor="#fcfaf6" stopOpacity=".9" />
+            <stop offset="100%" stopColor="#fcfaf6" stopOpacity="0" />
+          </radialGradient>
           <mask id={`${id}-known`}>
             <rect width="400" height="470" fill="white" />
+            {clearings.map((c) => (
+              <ellipse
+                key={c.t}
+                cx={c.cx}
+                cy={c.cy}
+                rx={c.rx}
+                ry={c.ry}
+                fill={`url(#${id}-clear)`}
+              />
+            ))}
             {/* The corridor only thins the texture; the ground is fully cleared where a mark landed. */}
             {map.routes.map((r) => (
               <path
                 key={r.id}
                 d={r.path}
                 fill="none"
-                stroke="#8c8c8c"
-                strokeWidth="20"
+                stroke="#4d4d4d"
+                strokeWidth="28"
                 strokeLinecap="round"
               />
             ))}
@@ -89,7 +129,7 @@ export default function MapFragment({
                 key={`clear-${r.id}`}
                 cx={r.end[0]}
                 cy={r.end[1]}
-                r="26"
+                r="36"
                 fill={`url(#${id}-clear)`}
               />
             ))}
@@ -101,6 +141,16 @@ export default function MapFragment({
           fill={`url(#${id}-dots)`}
           mask={`url(#${id}-known)`}
         />
+        {clearings.map((c) => (
+          <ellipse
+            key={c.t}
+            cx={c.cx}
+            cy={c.cy}
+            rx={c.rx}
+            ry={c.ry}
+            fill={`url(#${id}-lit)`}
+          />
+        ))}
         {Array.from({ length: 7 }, (_, i) => (
           <path
             key={i}
@@ -111,12 +161,14 @@ export default function MapFragment({
             opacity=".13"
           />
         ))}
-        {known.map((t) => {
+        {NAMED.map((t) => {
           const [x, y] = positions[t];
           const n = map.familiarity[t] ?? 0;
-          // Approaches 0.35 without ever arriving, so it never reads as complete.
-          const ink = 0.13 + 0.22 * (n / (n + 5));
-          const faint = n < 2 ? '3 6' : undefined;
+          const seen = known.includes(t);
+          // Unvisited ground is unresolved linework: there, but unnamed and barely drawn.
+          // Visited ink approaches 0.35 without ever arriving, so it never reads as complete.
+          const ink = seen ? 0.13 + 0.22 * (n / (n + 5)) : 0.1;
+          const faint = !seen ? '2 5' : n < 2 ? '3 6' : undefined;
           return (
             <g key={t}>
               {t === 'fog' &&
@@ -166,8 +218,21 @@ export default function MapFragment({
             </g>
           );
         })}
+        {/* The doorstep: where every route leaves from. */}
+        {!compact && (
+          <line
+            x1={originLine.x[0]}
+            x2={originLine.x[1]}
+            y1={originLine.y}
+            y2={originLine.y}
+            stroke="#20211e"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+          />
+        )}
         {map.routes.map((r) => {
-          const current = r.id === latest?.id;
+          const newest = r.id === latest?.id;
+          const current = highlightLatest && newest;
           return (
             <g key={r.id}>
               <path
@@ -175,10 +240,10 @@ export default function MapFragment({
                 pathLength="1"
                 d={r.path}
                 fill="none"
-                stroke={current ? '#ac3d24' : '#7d8176'}
-                strokeWidth={current ? 2 : 1}
+                stroke={current ? '#20211e' : '#7d8176'}
+                strokeWidth={current ? 2 : newest ? 1.4 : 1}
                 // Held constant so repeated routes through the same gate composite into a darker trunk.
-                opacity={current ? 1 : 0.2}
+                opacity={current ? 1 : newest ? 0.7 : 0.4}
                 strokeDasharray={r.stopped ? '3 4' : undefined}
               />
               {/* Hollow where the person stopped short, solid where they arrived. */}
@@ -186,8 +251,8 @@ export default function MapFragment({
                 cx={r.end[0]}
                 cy={r.end[1]}
                 r={current ? 3.2 : 2.2}
-                fill={r.stopped ? 'none' : current ? '#ac3d24' : '#7d8176'}
-                stroke={r.stopped ? (current ? '#ac3d24' : '#7d8176') : 'none'}
+                fill={r.stopped ? 'none' : current ? '#20211e' : '#7d8176'}
+                stroke={r.stopped ? (current ? '#20211e' : '#7d8176') : 'none'}
                 strokeWidth={r.stopped ? 1 : undefined}
               />
               {/* Not in the preview: a clipped note from an unrelated earlier encounter reads as damage. */}
@@ -224,19 +289,28 @@ export default function MapFragment({
           ) : null;
         })}
         {/*
-         * Not in the compact preview: the origin (200, 437) sits below every
+         * Not in the compact preview: the start (originLine) sits below every
          * compactCrops window, so the visible remnant was a dashed line with
          * no visible start — read as a stray mark, not "the way there".
          */}
-        {territory && !compact && (
-          <path
-            d={`M 200 437 Q ${gates[territory][0]} ${gates[territory][1]} ${fields[territory].c[0]} ${fields[territory].c[1]}`}
-            fill="none"
-            stroke="#ac3d24"
-            strokeWidth="1.3"
-            strokeDasharray="3 6"
-            opacity=".6"
-          />
+        {leg && (
+          <g>
+            <path
+              d={leg.path}
+              fill="none"
+              stroke="#ac3d24"
+              strokeWidth="1.8"
+              strokeDasharray="4 5"
+            />
+            <circle
+              cx={leg.end[0]}
+              cy={leg.end[1]}
+              r="4"
+              fill="#fcf9f4"
+              stroke="#ac3d24"
+              strokeWidth="1.5"
+            />
+          </g>
         )}
         {known.map((t) => {
           const [x, y] = labelAnchors[t];

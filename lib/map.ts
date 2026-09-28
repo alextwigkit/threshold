@@ -103,6 +103,36 @@ export const originBox = {
   x: [START.x0, START.x0 + START.xSpan - 1],
   y: [START.y1 - (START.ySpan - 1), START.y1],
 };
+// The drawn doorstep every route leaves from: a little wider than the start box, just below it.
+export const originLine = {
+  x: [START.x0 - 6, START.x0 + START.xSpan + 6] as [number, number],
+  y: START.y1 + 6,
+};
+/*
+ * Today's step on the map. A new place gets a way in from the start; a place
+ * already reached continues from the latest trace toward its far side, so the
+ * next step never retraces (and hides) the last one.
+ */
+export function nextLeg(
+  routes: { territory: Territory; end: Point }[],
+  t: Territory,
+): { path: string; end: Point } {
+  const { c, rx, ry } = fields[t];
+  const g = gates[t];
+  const from = routes.filter((r) => r.territory === t).at(-1)?.end;
+  if (!from)
+    return {
+      path: `M 200 ${originLine.y - 4} Q ${g[0]} ${g[1]} ${c[0]} ${c[1]}`,
+      end: c,
+    };
+  const len = Math.hypot(c[0] - g[0], c[1] - g[1]);
+  const u: Point = [(c[0] - g[0]) / len, (c[1] - g[1]) / len];
+  let end: Point = [round(c[0] + u[0] * rx), round(c[1] + u[1] * ry)];
+  // Visible even when the last trace already landed near the far side.
+  if (Math.hypot(end[0] - from[0], end[1] - from[1]) < 28)
+    end = [round(from[0] + u[0] * 28), round(from[1] + u[1] * 28)];
+  return { path: `M ${from[0]} ${from[1]} L ${end[0]} ${end[1]}`, end };
+}
 function fnv(s: string) {
   let n = 2166136261;
   for (const c of s) n = Math.imul(n ^ c.charCodeAt(0), 16777619);

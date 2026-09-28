@@ -844,7 +844,7 @@ h2:focus {
   display: flex;
   align-items: flex-end;
   gap: 20px;
-  margin: var(--space-block) 0 var(--space-pair);
+  margin: var(--space-block) 0 var(--space-in);
 }
 .evidence div {
   display: flex;
@@ -852,19 +852,19 @@ h2:focus {
 }
 .evidence strong {
   font-family: Newsreader, Georgia, serif;
-  font-weight: 400;
-  font-size: 4rem;
+  font-weight: 500;
+  font-size: 5.5rem;
   line-height: 1;
   letter-spacing: -0.04em;
   color: var(--foreground);
 }
 .evidence .arrow {
-  font-size: 1.5rem;
-  color: var(--meta-foreground);
-  padding-bottom: 8px;
+  font-size: 1.75rem;
+  color: var(--foreground);
+  padding-bottom: 12px;
 }
 .observation-copy {
-  margin-bottom: 32px;
+  margin-bottom: var(--space-group);
 }
 /* The answers are the task here, so the question steps down beside them. */
 .clarify h1 {
@@ -945,8 +945,38 @@ h1.tab-title {
 .map-fragment.home {
   margin-bottom: var(--space-group);
 }
+/* Text under a map reads as its key: bound tight above, a full group gap below. */
+.map-fragment:has(+ .map-caption, + .map-legend) {
+  margin-bottom: var(--space-in);
+}
+.map-caption {
+  margin: 0 0 var(--space-group);
+}
+.map-legend {
+  margin-bottom: var(--space-group);
+}
+.map-legend p {
+  margin: 0 0 var(--space-in);
+}
+.legend-keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.legend-keys li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
 .map-fragment.home svg {
   max-height: 20rem;
+}
+/* Nothing mapped yet, so it gives up height before the step does. */
+.map-fragment.home.empty svg {
+  max-height: 17rem;
 }
 .home-step {
   font-size: 1.75rem;

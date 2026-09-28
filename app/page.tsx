@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -181,6 +181,111 @@ function Spinner() {
     </svg>
   );
 }
+/** What this encounter did to the map, so the changing place name has a reason. */
+function mapChange(last: Encounter, encounters: Encounter[]) {
+  if (last.outcome === 'not_started')
+    return 'Your map changes only when you start a step.';
+  const place = territories[last.territory];
+  if (last.territory === 'unknown') return 'A new place is on your map.';
+  const visits = encounters.filter(
+    (e) => e.territory === last.territory && e.outcome !== 'not_started',
+  ).length;
+  // Descriptions read "When …", so they complete "the place for when …".
+  const kind = `the place for ${place.description[0].toLowerCase()}${place.description.slice(1)}`;
+  return visits === 1
+    ? `${place.name} is now on your map: ${kind}`
+    : `More of ${place.name} is mapped: ${kind}`;
+}
+
+function MapLegend({
+  taken = false,
+  next,
+  linked = false,
+  empty = false,
+}: {
+  taken?: boolean;
+  next: boolean;
+  linked?: boolean;
+  empty?: boolean;
+}) {
+  const swatch = (line: ReactNode) => (
+    <svg viewBox="0 0 24 8" width="24" height="8" aria-hidden="true">
+      {line}
+    </svg>
+  );
+  return (
+    <div className="map-legend">
+      <p className="meta">
+        {empty && 'Your map starts with something real. '}
+        Each step maps more of what you’ve been avoiding.
+        {linked && ' Places are named for what made it hard; tap one.'}
+      </p>
+      <ul className="meta legend-keys">
+        {/* Once routes are drawn, lines converging on the bar already show the start. */}
+        {!taken && (
+          <li>
+            {swatch(
+              <line
+                x1="3"
+                x2="21"
+                y1="4"
+                y2="4"
+                stroke="#20211e"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              />,
+            )}
+            Start
+          </li>
+        )}
+        {taken && (
+          <li>
+            {swatch(
+              <line
+                x1="1"
+                x2="23"
+                y1="4"
+                y2="4"
+                stroke="#7d8176"
+                strokeWidth="1.6"
+                opacity=".7"
+              />,
+            )}
+            Your steps
+          </li>
+        )}
+        {taken && (
+          <li>
+            {swatch(
+              <>
+                <rect width="24" height="8" rx="2" fill="#d6d1c6" />
+                <ellipse cx="12" cy="4" rx="8" ry="3.4" fill="#fcfaf6" />
+              </>,
+            )}
+            Mapped
+          </li>
+        )}
+        {next && (
+          <li>
+            {swatch(
+              <line
+                x1="1"
+                x2="23"
+                y1="4"
+                y2="4"
+                stroke="#ac3d24"
+                strokeWidth="1.8"
+                strokeDasharray="4 3"
+              />,
+            )}
+            Today’s step
+          </li>
+        )}
+      </ul>
+    </div>
+  );
+}
+
 export default function Home() {
   const [s, setS] = useState<Saved>(initial);
   const [busy, setBusy] = useState(false);
@@ -1081,6 +1186,7 @@ export default function Home() {
             revealId={last.id}
             newDiscoveryId={newDiscovery?.id}
           />
+          <p className="meta map-caption">{mapChange(last, s.encounters)}</p>
           <div className={newDiscovery ? 'discovery-reveal' : undefined}>
             <p className="eyebrow accent">
               {newDiscovery
@@ -1135,13 +1241,28 @@ export default function Home() {
               <MapFragment
                 className="home"
                 encounters={s.encounters}
+                territory={next?.territory}
+                highlightLatest={false}
                 onTerritory={showTerritory}
               />
+              <MapLegend taken next={!!next} linked />
             </>
           ) : (
             <>
-              {title('Your map starts with something real.')}
-              <MapFragment className="home" encounters={[]} />
+              {/* With a step waiting, the step leads and this line joins the map's key. */}
+              {next ? (
+                <h1 className="sr-only" ref={heading} tabIndex={-1}>
+                  Your map
+                </h1>
+              ) : (
+                title('Your map starts with something real.')
+              )}
+              <MapFragment
+                className="home empty"
+                encounters={[]}
+                territory={next?.territory}
+              />
+              <MapLegend next={!!next} empty={!!next} />
             </>
           )}
           {next && (

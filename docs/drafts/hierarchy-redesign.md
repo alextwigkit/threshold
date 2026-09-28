@@ -59,3 +59,20 @@ Owner feedback after 9c78c5b: screens felt scrunched. Cause: the hierarchy pass 
 - Observation: 24px above the numbers.
 
 Audits (now also asked about crowding): v9 Clarify and Map NOT READY (crowding), rest READY; v10 Map READY, Clarify (question outweighed list) and Observation (numbers squeezed) NOT READY; v11 all three READY.
+
+## Map legibility follow-up
+
+Owner feedback: the Observation map (a red line pointing at a changing word) did not read as a map or say anything. Purpose (PRODUCT.md): a real attempt makes the personal map more known.
+
+- Marked start (`originLine`) every route leaves from.
+- Home: history grey, today's step dashed terracotta; continues from the latest trace when the place is already reached (`nextLeg`), so it never overlays the last route.
+- Unmapped dots stronger and cleared harder along routes, so "more known" is visible; unvisited terrain drawn faint and unnamed.
+- Key under the Home map; Observation caption says what this step changed.
+- Empty Home map shortened (13rem) so Explore stays above the fold with the key.
+- Round 1 audits: comprehension NOT READY (ground never visibly became known; red meant "just done" on Observation and "next" on Home). Hierarchy: Home READY; Empty Home (headline outranked the step) and Observation (map group not separated) NOT READY.
+- Fixes: growing paper-light clearings per visited place; just-recorded route in ink so red only means today's step; empty headline folded into the key when a step waits (sr-only h1); caption 40px below; captions read "the place for when …"; Fog description without the dash; continuation minimum 28 units.
+- Round 2 audits: comprehension NOT READY (dots ambiguous, grey history too faint, The Fog named before any visit). Hierarchy: Home and Empty Home READY; Observation NOT READY (button beat the numbers in blur).
+- Fixes: places named only once reached; history opacity 0.4 (newest 0.7); brighter clearings; key gains "Mapped", drops Start once routes exist; numbers 5.5rem/500 with a solid arrow, bound 8px to the body, 40px before the button.
+- Round 3 (`v18-*`): comprehension READY (start, past steps, today's step, map filling in all read correctly); hierarchy READY on Home, Empty Home and Observation.
+
+Open nits: dotted ground never explicitly named; "Somewhere new" reads like a placeholder; Start drops from the key once routes exist; Observation title vs red eyebrow; arrow sits low; Empty Home's secondary button label is cut by the nav; the Observation map's dot texture is letterboxed.

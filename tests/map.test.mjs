@@ -9,6 +9,8 @@ import {
   positions,
   canvas,
   originBox,
+  originLine,
+  nextLeg,
   labelBoxes,
   noteInk,
   inkMargin,
@@ -396,4 +398,30 @@ test('a discovery keeps its id as more supporting evidence arrives', () => {
     before[0].id,
     'id must survive new supporting evidence',
   );
+});
+
+test('the drawn start sits under every route origin', () => {
+  assert.ok(originLine.x[0] < originBox.x[0]);
+  assert.ok(originLine.x[1] > originBox.x[1]);
+  assert.ok(originLine.y > originBox.y[1]);
+  assert.ok(originLine.y - originBox.y[1] <= 8);
+});
+
+test("today's step enters a new place from the start", () => {
+  const leg = nextLeg([], 'water');
+  assert.ok(leg.path.startsWith(`M 200 ${originLine.y - 4}`));
+  assert.deepEqual(leg.end, fields.water.c);
+});
+
+test("today's step continues from the latest trace in a place already reached", () => {
+  const map = projectMap([
+    encounter('a', { territory: 'fog', createdAt: 1 }),
+    encounter('b', { territory: 'fog', createdAt: 2 }),
+  ]);
+  const last = map.routes.at(-1);
+  const leg = nextLeg(map.routes, 'fog');
+  assert.ok(leg.path.startsWith(`M ${last.end[0]} ${last.end[1]} L`));
+  const moved = Math.hypot(leg.end[0] - last.end[0], leg.end[1] - last.end[1]);
+  assert.ok(moved >= 27.9, `only ${moved} long`);
+  assert.ok(leg.end[1] < last.end[1], 'heads further in, away from the start');
 });

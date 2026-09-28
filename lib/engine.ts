@@ -1,11 +1,6 @@
 export type Territory = 'fog' | 'spotlight' | 'loop' | 'water' | 'unknown';
 export type Resistance =
-  | 'understand'
-  | 'start'
-  | 'judged'
-  | 'unpleasant'
-  | 'other'
-  | 'checking';
+  'understand' | 'start' | 'judged' | 'unpleasant' | 'other' | 'checking';
 export type Urge = 'no' | 'stayed' | 'returned' | 'stopped' | '';
 export const territories: Record<
   Territory,
@@ -13,8 +8,7 @@ export const territories: Record<
 > = {
   fog: {
     name: 'The Fog',
-    description:
-      'The territory of uncertainty—when action has to happen before everything is clear.',
+    description: 'When action has to happen before everything is clear.',
   },
   spotlight: {
     name: 'The Spotlight',

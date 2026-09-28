@@ -20,10 +20,11 @@ Name is an editorial question plus a large natural input, not a hero page. Clari
 
 ## Map grammar
 Map geometry is an interactive representation of stored evidence, not a geographic claim. Stable territory placement and stable encounter positions are required. Existing traces do not relocate randomly on render.
-- Unknown: unresolved linework, sparse visibility, no territory catalog.
+- Start: a marked doorstep at the bottom that every route leaves from.
+- Unknown: dotted ground and faint unnamed linework, no territory catalog. Real attempts clear the dots along their route, and each visited place opens into a paper-light clearing that grows with repeat visits, so being there visibly makes ground known.
 - Encountered: territory name appears; an attempted action adds an actual-history trace.
 - Familiar: stronger line continuity derived from repeated encounters, never a percentage or completion status.
-- Current: restrained terracotta candidate/active direction, visibly distinct from permanent history.
+- Current: restrained terracotta candidate/active direction, visibly distinct from permanent history. It is only ever today's step (dashed, open circle): into a new place from the start, or onward from the latest trace in a place already reached. Solid lines are always taken steps: grey history, with the route just recorded drawn in ink on Observation.
 - Stopped: incomplete line or truthful “stopped here” annotation.
 - Discovery: an evidence-backed feature resolves; repeated opening never grows it.
 
