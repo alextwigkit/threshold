@@ -18,7 +18,7 @@ const resistanceIds = [
 const territoryIds = ['fog', 'spotlight', 'loop', 'water', 'unknown'] as const;
 const templates = {
   draft: {
-    title: 'Start Before You Know',
+    title: 'Start Before You’re Sure',
     resistance: ['understand', 'start'],
     render: (object: string, m: number) =>
       `Open ${object} and spend ${m} minute${m === 1 ? '' : 's'} writing three possible starting points, even if you’re unsure.`,
@@ -75,11 +75,7 @@ export type Judgment = {
   object: string;
   minutes: 1 | 3 | 5;
   reason:
-    | 'uncertainty'
-    | 'visibility'
-    | 'rechecking'
-    | 'distraction'
-    | 'unclear';
+    'uncertainty' | 'visibility' | 'rechecking' | 'distraction' | 'unclear';
   eligibility: 'ordinary' | 'needs_user_step';
 };
 export type Suggestion = {

@@ -25,7 +25,7 @@ Name is an editorial question plus a large natural input, not a hero page. Clari
 
 Observation and Atlas entries for an encounter that named a worry show a quiet line under the body: the person's own words in meta colour, quoted, then what happened in ordinary body text. Only the person's own words or this one reviewed sentence shape are shown back; never a generated summary of the worry.
 
-The bluff discovery is about whether the worry happened, not discomfort. Its title is data-dependent: “What You Worried About Didn't Happen” when every encounter in the evidence was answered No, and “What You Worried About Mostly Didn't Happen” otherwise. Its Observation evidence is one figure, “Worries that didn't happen” N of M, rather than the Expected → Experienced arrow pair used everywhere else; the scope line under the figure adds the partly and yes counts when either is above zero. That arrow always means expected → experienced, so it is not reused for this figure, and the Observation trail caption adds “Stones show expected → felt.” so the stones are not read as worry counts. For every discovery, the “Across N encounters with …” scope line sits directly under the figure it qualifies.
+The bluff discovery is about whether the worry happened, not discomfort. Its title is data-dependent: “What You Worried About Didn't Happen” when every encounter in the evidence was answered No, and “What You Worried About Mostly Didn't Happen” otherwise. Its Observation evidence is one figure, “Worries that didn't happen” N of M, rather than the Expected → Experienced arrow pair used everywhere else; the scope line under the figure adds the partly and yes counts when either is above zero. That arrow always means expected → experienced, so it is not reused for this figure, and the Observation trail caption adds “Stones show expected → felt.” so the stones are not read as worry counts. For every discovery, the scope line sits directly under the figure it qualifies and names the territory by its plain description (“Across 4 encounters when being seen or heard is part of the hard thing.”), not by its metaphor. Territory names appear only with their description beside them, as on a filtered Atlas; step titles say what to do in plain words, not the territory metaphor.
 
 ## Trail grammar
 
@@ -36,7 +36,7 @@ Home and Observation show a trail: one stone per step taken, oldest first, along
 | Order along the path | when the step happened |
 | Numbers under a stone | expected → experienced discomfort |
 | Solid or half-filled stone | stayed, or stopped early (never a failure mark) |
-| Word under a stone | what made it hard (territory short name) |
+| Word under a stone | what made it hard, in one plain word (Unclear, Visible, Checking, Feeling), never the territory metaphor |
 | Dashed open accent stone at the end | today's step, on Home only |
 | Accent ring | the step that established a discovery |
 

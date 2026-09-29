@@ -8,22 +8,22 @@ export const territories: Record<
 > = {
   fog: {
     name: 'The Fog',
-    short: 'Fog',
+    short: 'Unclear',
     description: 'When action has to happen before everything is clear.',
   },
   spotlight: {
     name: 'The Spotlight',
-    short: 'Spotlight',
+    short: 'Visible',
     description: 'When being seen or heard is part of the hard thing.',
   },
   loop: {
     name: 'The Open Loop',
-    short: 'Open Loop',
+    short: 'Checking',
     description: 'When stopping means leaving some uncertainty unresolved.',
   },
   water: {
     name: 'Still Water',
-    short: 'Still Water',
+    short: 'Feeling',
     description:
       'When an unpleasant feeling is here, without needing to fix it first.',
   },
@@ -182,7 +182,7 @@ export function candidate(
     title =
       attempted.length && !smaller
         ? 'Keep Going Before Checking'
-        : 'Start Before You Know';
+        : 'Start Before You’re Sure';
     if (writing) {
       template = 'draft';
       action =
@@ -199,7 +199,7 @@ export function candidate(
     }
   }
   if (territory === 'spotlight') {
-    title = 'Let It Be Seen';
+    title = 'Let Someone See It';
     if (question) {
       template = 'visible-question';
       title = 'Ask Before You’re Sure';
@@ -210,6 +210,7 @@ export function candidate(
       action = `Spend ${span} writing the message. Check the recipient and essential details, then send it without another wording pass.`;
     } else if (writing) {
       template = 'visible-draft';
+      title = 'Share One Unfinished Section';
       action = `Choose one unfinished section you are willing to share. Spend ${span} checking essential details, then ask for feedback on that section.`;
     } else if (conversation) {
       template = 'conversation';

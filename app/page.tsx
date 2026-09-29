@@ -1375,8 +1375,11 @@ export default function Home() {
               ))}
             {newDiscovery && (
               <p className="optional evidence-scope">
-                Across {discoveryEvidence.length} encounters with{' '}
-                {territories[newDiscovery.territory].name}.
+                Across {discoveryEvidence.length} encounters{' '}
+                {territories[newDiscovery.territory].description
+                  .replace(/^When/, 'when')
+                  .replace(/\.$/, '')}
+                .
                 {bluffCounts &&
                   bluffCounts.partly + bluffCounts.yes > 0 &&
                   ` ${bluffCounts.partly} partly happened, ${bluffCounts.yes} happened.`}
@@ -1485,6 +1488,9 @@ export default function Home() {
           {title(
             atlasTerritory ? territories[atlasTerritory].name : 'Your atlas',
             'tab-title',
+          )}
+          {atlasTerritory && (
+            <p className="meta">{territories[atlasTerritory].description}</p>
           )}
           {atlasTerritory && (
             <button

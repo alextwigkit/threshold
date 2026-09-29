@@ -76,7 +76,7 @@ test('judgment rejects invented territories, titles and incompatible templates',
 });
 test('product renders controlled title and grounded slots; secondary remains unconfirmed', () => {
   const s = renderSuggestion(input, { ...judgment, secondary: ['spotlight'] });
-  assert.equal(s.candidate.title, 'Start Before You Know');
+  assert.equal(s.candidate.title, 'Start Before You’re Sure');
   assert.match(s.candidate.action, /the design proposal/);
   assert.deepEqual(s.candidate.secondary, []);
   assert.deepEqual(s.secondarySuggestions, ['spotlight']);
