@@ -62,11 +62,22 @@ export type Candidate = {
   resistance: Resistance;
   template: string;
   situation: string;
+  // What this step is for, in the person's own words. Set explicitly by
+  // whatever builds the draft (never by a server response) from `lastPurpose`.
+  purpose?: string;
 };
 export type Session = Candidate & {
   id: string;
   prediction: number;
+  // The old "what do you expect will happen?" note. Superseded by `worry`
+  // below; kept only so existing records still load. New sessions write ''.
   predictionNote: string;
+  // A concrete worry, named on Setup and checked on Return.
+  worry?: string;
+  // The Return answer. Set only from Return, and only once.
+  worryHappened?: 'no' | 'partly' | 'yes' | 'unknown';
+  // A later answer given from the Atlas, only when the Return answer was 'unknown'.
+  worryLater?: 'no' | 'partly' | 'yes';
   startedAt: number;
   returnedAt?: number;
   actual: number | null;
@@ -248,6 +259,15 @@ export function candidate(
     userAction,
   };
 }
+// The most recent purpose named for this situation, across any resistance.
+// Returns '' when there is none, so callers can spread it in unconditionally.
+export function lastPurpose(history: Encounter[], situation: string): string {
+  const normalized = situation.trim().toLowerCase();
+  const prior = history.filter(
+    (e) => e.situation.trim().toLowerCase() === normalized && e.purpose?.trim(),
+  );
+  return prior.at(-1)?.purpose ?? '';
+}
 export function validScale(n: unknown): n is number {
   return typeof n === 'number' && Number.isInteger(n) && n >= 0 && n <= 10;
 }
@@ -309,6 +329,37 @@ export function toggleNotice(current: string[], code: string) {
 export function appendEncounter(all: Encounter[], e: Encounter) {
   return all.some((x) => x.id === e.id) ? all : [...all, e];
 }
+// Encounters are otherwise immutable. This is the one narrow exception: a
+// worry left unanswered on Return ('unknown') can be answered later.
+export function updateEncounter(
+  all: Encounter[],
+  id: string,
+  patch: { worryLater: NonNullable<Encounter['worryLater']> },
+) {
+  return all.map((e) => (e.id === id ? { ...e, ...patch } : e));
+}
+// A quiet caption pairing the person's own worry with what happened, for
+// Observation and the Atlas. Uses the later Atlas answer when there is one.
+export function worryLine(e: Encounter) {
+  const trimmed = e.worry?.trim() ?? '';
+  if (!trimmed || e.outcome === 'not_started') {
+    return '';
+  }
+  const worry =
+    trimmed.length > 120 ? `${trimmed.slice(0, 120).trim()}…` : trimmed;
+  const answer = e.worryLater ?? e.worryHappened;
+  const status =
+    answer === 'no'
+      ? 'It didn’t happen.'
+      : answer === 'partly'
+        ? 'Part of it happened.'
+        : answer === 'yes'
+          ? 'It happened.'
+          : answer === 'unknown'
+            ? 'You weren’t sure yet.'
+            : '';
+  return status ? `“${worry}” ${status}` : `“${worry}”`;
+}
 export type Discovery = {
   id: string;
   territory: Territory;
@@ -317,7 +368,7 @@ export type Discovery = {
   evidence: string[];
   support: string[];
   contrary: string[];
-  rule: 'doorway' | 'carried';
+  rule: 'doorway' | 'carried' | 'bluff';
   establishedAt: number;
 };
 export function supports(e: Encounter, rule: 'doorway' | 'carried') {
@@ -334,6 +385,52 @@ export function supports(e: Encounter, rule: 'doorway' | 'carried') {
     ['stayed', 'returned', 'no'].includes(e.urge)
   );
 }
+type DiscoveryRule = {
+  rule: Discovery['rule'];
+  // Which encounters in a territory count toward this rule at all.
+  eligible: (e: Encounter) => boolean;
+  // Which of those eligible encounters count as supporting evidence.
+  supports: (e: Encounter) => boolean;
+  title: string;
+  body: string;
+  // Copy for when every encounter supports it, so the words match the count.
+  unanimous?: { title: string; body: string };
+};
+// supports() treats stopped and "nothing" as contrary evidence, which is
+// right for doorway/carried but wrong for bluff: a worry can resolve either
+// way regardless of how the attempt itself went. So bluff gets its own,
+// narrower supports() here rather than reusing that one.
+const discoveryRules: DiscoveryRule[] = [
+  {
+    rule: 'doorway',
+    eligible: (e) => e.outcome !== 'not_started',
+    supports: (e) => supports(e, 'doorway'),
+    title: 'The Doorway Is Worse Than the Room',
+    body: 'Across these encounters, starting often felt harder than continuing.',
+  },
+  {
+    rule: 'carried',
+    eligible: (e) => e.outcome !== 'not_started',
+    supports: (e) => supports(e, 'carried'),
+    title: 'You Can Act While Uncomfortable',
+    body: 'Across these encounters, you acted while discomfort was still present.',
+  },
+  {
+    rule: 'bluff',
+    // Only a Return answer counts, never a later Atlas answer: otherwise
+    // answering only the good outcomes later could inflate the evidence.
+    eligible: (e) =>
+      e.outcome !== 'not_started' &&
+      ['no', 'partly', 'yes'].includes(e.worryHappened ?? ''),
+    supports: (e) => e.worryHappened === 'no',
+    title: 'What You Worried About Mostly Didn’t Happen',
+    body: 'Across these encounters, what you were worried about usually didn’t happen.',
+    unanimous: {
+      title: 'What You Worried About Didn’t Happen',
+      body: 'In each of these encounters, what you were worried about didn’t happen.',
+    },
+  },
+];
 export function discoveries(all: Encounter[]): Discovery[] {
   const unique = [...new Map(all.map((e) => [e.id, e])).values()].sort(
     (a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id),
@@ -341,47 +438,48 @@ export function discoveries(all: Encounter[]): Discovery[] {
   return (
     ['fog', 'spotlight', 'loop', 'water', 'unknown'] as Territory[]
   ).flatMap((territory) =>
-    (['doorway', 'carried'] as const).flatMap((rule) => {
-      const eligible = unique.filter(
-        (e) => e.territory === territory && e.outcome !== 'not_started',
-      );
-      for (let end = 4; end <= eligible.length; end++) {
-        const sample = eligible.slice(Math.max(0, end - 6), end);
-        const supporting = sample.filter((e) => supports(e, rule));
-        if (
-          new Set(sample.map((e) => e.localDate)).size < 3 ||
-          supporting.length < 3 ||
-          supporting.length / sample.length < 0.75
-        )
-          continue;
-        const evidence = [...sample, ...eligible.slice(end)];
-        const support = evidence.filter((e) => supports(e, rule));
-        const mixed = support.length / evidence.length < 0.75;
-        return [
-          {
-            id: `${rule}-${territory}`,
-            territory,
-            rule,
-            title:
-              rule === 'doorway'
-                ? 'The Doorway Is Worse Than the Room'
-                : 'You Can Act While Uncomfortable',
-            body: mixed
-              ? 'This pattern appeared in earlier encounters. More recent evidence is mixed.'
-              : rule === 'doorway'
-                ? 'Across these encounters, starting often felt harder than continuing.'
-                : 'Across these encounters, you acted while discomfort was still present.',
-            evidence: evidence.map((e) => e.id),
-            support: support.map((e) => e.id),
-            contrary: evidence
-              .filter((e) => !support.includes(e))
-              .map((e) => e.id),
-            establishedAt: sample.at(-1)!.createdAt,
-          },
-        ];
-      }
-      return [];
-    }),
+    discoveryRules.flatMap(
+      ({ rule, eligible, supports: supportsRule, title, body, unanimous }) => {
+        const eligibleEncounters = unique.filter(
+          (e) => e.territory === territory && eligible(e),
+        );
+        for (let end = 4; end <= eligibleEncounters.length; end++) {
+          const sample = eligibleEncounters.slice(Math.max(0, end - 6), end);
+          const supporting = sample.filter(supportsRule);
+          if (
+            new Set(sample.map((e) => e.localDate)).size < 3 ||
+            supporting.length < 3 ||
+            supporting.length / sample.length < 0.75
+          )
+            continue;
+          const evidence = [...sample, ...eligibleEncounters.slice(end)];
+          const support = evidence.filter(supportsRule);
+          const mixed = support.length / evidence.length < 0.75;
+          const copy =
+            unanimous && support.length === evidence.length
+              ? unanimous
+              : { title, body };
+          return [
+            {
+              id: `${rule}-${territory}`,
+              territory,
+              rule,
+              title: copy.title,
+              body: mixed
+                ? 'This pattern appeared in earlier encounters. More recent evidence is mixed.'
+                : copy.body,
+              evidence: evidence.map((e) => e.id),
+              support: support.map((e) => e.id),
+              contrary: evidence
+                .filter((e) => !support.includes(e))
+                .map((e) => e.id),
+              establishedAt: sample.at(-1)!.createdAt,
+            },
+          ];
+        }
+        return [];
+      },
+    ),
   );
 }
 export function isCandidate(e: unknown): e is Candidate {
@@ -413,7 +511,9 @@ export function isCandidate(e: unknown): e is Candidate {
     x.minutes > 0 &&
     x.minutes <= 30 &&
     Array.isArray(x.secondary) &&
-    x.secondary.every((t) => Object.hasOwn(territories, t))
+    x.secondary.every((t) => Object.hasOwn(territories, t)) &&
+    (x.purpose === undefined ||
+      (typeof x.purpose === 'string' && x.purpose.length <= 300))
   );
 }
 export function isSession(e: unknown): e is Session {
@@ -431,7 +531,15 @@ export function isSession(e: unknown): e is Session {
     Array.isArray(x.notices) &&
     x.notices.every((n) => noticingChoices.some(([code]) => code === n)) &&
     typeof x.predictionNote === 'string' &&
-    typeof x.note === 'string'
+    typeof x.note === 'string' &&
+    (x.worry === undefined ||
+      (typeof x.worry === 'string' && x.worry.length <= 1000)) &&
+    (x.worryHappened === undefined ||
+      (['no', 'partly', 'yes', 'unknown'].includes(x.worryHappened) &&
+        !!x.worry?.trim())) &&
+    (x.worryLater === undefined ||
+      (['no', 'partly', 'yes'].includes(x.worryLater) &&
+        x.worryHappened === 'unknown'))
   );
 }
 export function isEncounter(e: unknown): e is Encounter {
@@ -439,7 +547,9 @@ export function isEncounter(e: unknown): e is Encounter {
   const x = e as Encounter;
   return (
     ['attempted', 'stopped', 'not_started'].includes(x.outcome) &&
-    (x.outcome === 'not_started' ? x.actual === null : validScale(x.actual)) &&
+    (x.outcome === 'not_started'
+      ? x.actual === null && x.worryHappened === undefined
+      : validScale(x.actual)) &&
     Number.isFinite(x.createdAt) &&
     typeof x.localDate === 'string' &&
     /^\d{4}-\d{1,2}-\d{1,2}$/.test(x.localDate)

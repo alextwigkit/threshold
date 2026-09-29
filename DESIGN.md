@@ -3,9 +3,11 @@
 Current release: private version 3, including optional AI. Read [HANDOFF.md](HANDOFF.md) for current status, decision precedence and verification boundaries. Sections describing the initial build are historical where explicitly labeled.
 
 ## Foundation
+
 Use the recovered latest Stitch screens in references/ as the visual foundation. Contemporary Personal Atlas: warm neutral ground, editorial serif, humanist sans, fine charcoal linework, quiet terracotta. This is the locked direction, not a starting point for another redesign.
 
 ## Tokens
+
 - Ground: #FCF9F4; secondary surface: #F3F0EB.
 - Ink: #20211E; muted text: #50534E; hairline: #DFDDD6.
 - Accent: #AC3D24 (selected controls, meaningful route, observation label); use #C85235 only where contrast is not needed for small text.
@@ -16,9 +18,17 @@ Use the recovered latest Stitch screens in references/ as the visual foundation.
 These numerical tokens translate screenshots into implementation; pixel values are engineering choices. Fonts must be bundled or have deliberate offline fallbacks. No remote font dependency required for the core loop.
 
 ## Composition
+
 Name is an editorial question plus a large natural input, not a hero page. Clarify uses spare selectable rows. Setup combines compact territory fragment with exact action, prediction and Begin; the scale must not disappear beneath decorative space. Active centers the timer with a quiet circle and action, preserving room to return. Return uses typography and spaced controls, progressively revealed. Observation gives world response and a scoped claim. Home puts the trail above today's step, which leads; Trail / Atlas / Me is spare bottom navigation.
 
+## The worry line
+
+Observation and Atlas entries for an encounter that named a worry show a quiet line under the body: the person's own words in meta colour, quoted, then what happened in ordinary body text. Only the person's own words or this one reviewed sentence shape are shown back; never a generated summary of the worry.
+
+The bluff discovery is about whether the worry happened, not discomfort. Its title is data-dependent: “What You Worried About Didn't Happen” when every encounter in the evidence was answered No, and “What You Worried About Mostly Didn't Happen” otherwise. Its Observation evidence is one figure, “Worries that didn't happen” N of M, rather than the Expected → Experienced arrow pair used everywhere else; the scope line under the figure adds the partly and yes counts when either is above zero. That arrow always means expected → experienced, so it is not reused for this figure, and the Observation trail caption adds “Stones show expected → felt.” so the stones are not read as worry counts. For every discovery, the “Across N encounters with …” scope line sits directly under the figure it qualifies.
+
 ## Trail grammar
+
 Home and Observation show a trail: one stone per step taken, oldest first, along a single path. Every mark encodes a stored field; nothing is placed for decoration or by hash.
 
 | Channel | Data |
@@ -39,9 +49,11 @@ Home and Observation show a trail: one stone per step taken, oldest first, along
 Rich illustrative inhabitants remain future authored assets, unlocked only by recurring behavior evidence.
 
 ## Motion
+
 A short stone settle and discovery ring can provide curiosity and satisfaction, about 400–800ms. No endless pulsing or mandatory wait. Respect prefers-reduced-motion; information remains understandable with animation disabled. Never fabricate history.
 
 ## Copy contract
+
 The model reasons; the product speaks. UI strings come from reviewed templates. Action text may contain user-edited or validated situation-specific slots. Never directly render arbitrary model prose as a psychological conclusion.
 
 Allowed concepts: Threshold, trail, step, territory, expedition, explore, path, observation, discovery, inhabitant. World language may communicate real state (unknown, familiar, stopped here). Functional actions use ordinary language: Continue, Begin, I'm back, Stop, See my trail.
@@ -49,11 +61,12 @@ Allowed concepts: Threshold, trail, step, territory, expedition, explore, path, 
 Prohibited: coordinates, elevations, scales, folios, taxonomy, protocols, invented records, faux scientific metadata, motivational praise, “Great job”, AI sparkles, chat bubbles, gradient buttons, glass surfaces, XP, streaks, badges, dashboard analytics, card grids. No hard-coded “Another Step into The Fog” recommendation. Never use “Follow the initial clarity before the doubt returns.”
 
 ## Review checklist
+
 Compare each implemented screen with its reference for hierarchy, spacing, palette and interaction meaning. Apply only documented corrections. Check 320/390px widths, desktop, keyboard, 200% text and reduced motion before release. A technically built screen is not proof of visual or device QA.
 
 ## Evidence projection continuation
-Stone order is stable by createdAt then encounter ID, including when older history is restored; restoring never changes an existing stone except its step number. Mark qualified discoveries with a ring on the establishing stone, not a fictional named landmark. Atlas entry eyebrows filter the Atlas by territory.
 
+Stone order is stable by createdAt then encounter ID, including when older history is restored; restoring never changes an existing stone except its step number. Mark qualified discoveries with a ring on the establishing stone, not a fictional named landmark. Atlas entry eyebrows filter the Atlas by territory.
 
 ## September 7 integration update
 

@@ -298,6 +298,13 @@ textarea::placeholder {
   text-align: left;
   min-height: 44px;
 }
+/* Rides at the end of the sentence it edits; the padding keeps the tap area. */
+.inline-change {
+  min-height: 0;
+  padding: 12px 4px;
+  margin-block: -12px;
+  font-size: 0.875rem;
+}
 /* A lone tertiary action sits on its own line, close under the action it follows. */
 section > .text-button {
   display: block;
@@ -591,6 +598,31 @@ h2:has(+ .question-hint) {
   color: var(--meta-foreground);
   font-size: 0.875rem;
 }
+.setup-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+}
+/* Optional extras sit under Begin, so opening one never pushes it down. */
+.setup .primary ~ .setup-links {
+  margin-top: var(--space-in);
+}
+.setup .primary ~ .field-label {
+  margin-top: var(--space-block);
+}
+/* Two related lines about the same situation: group them tighter than the
+ * usual gap before the step title. */
+.echo:has(+ .echo) {
+  margin-bottom: 0;
+}
+/* Keep the tap target without letting it push the two lines apart. */
+.echo:has(+ .echo) .text-button,
+.echo + .echo .text-button {
+  margin-block: -12px;
+}
+.echo:has(+ .echo) .echo-body {
+  margin-bottom: var(--space-in);
+}
 .optional {
   color: var(--meta-foreground);
   font-size: 0.875rem;
@@ -744,6 +776,11 @@ h2:focus {
 }
 .active .step-text {
   margin-bottom: var(--space-group);
+}
+/* Context for the step, not a second step: smaller gap above it than the
+ * step-to-invitation gap, and no lead-sized text competing with the timer. */
+.purpose-block {
+  margin: calc(var(--space-group) * -1 + var(--space-pair)) 0 var(--space-group);
 }
 .invitation {
   margin-bottom: var(--space-in);
@@ -1191,4 +1228,7 @@ details p {
     opacity: 1;
     transform: translateY(0);
   }
+}
+.evidence-scope {
+  margin-bottom: var(--space-block);
 }

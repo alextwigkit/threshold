@@ -8,8 +8,13 @@ import {
   observation,
   toggleNotice,
   appendEncounter,
+  updateEncounter,
+  worryLine,
+  lastPurpose,
   discoveries,
   isEncounter,
+  isSession,
+  isCandidate,
 } from '../lib/engine.ts';
 const encounter = (id, overrides = {}) => ({
   ...candidate('starting a proposal', 'understand'),
@@ -281,4 +286,314 @@ test('a discovery retains its history when later evidence is mixed', () => {
   assert.ok(d);
   assert.equal(d.contrary.length, 4);
   assert.match(d.body, /mixed/);
+});
+
+// A worry check, named on Setup and checked on Return: old predictionNote
+// records still load, and the new fields reject inconsistent combinations.
+test('an old record without worry fields still loads', () => {
+  assert.equal(isSession(encounter('1')), true);
+});
+test('an invalid worryHappened or worryLater value is rejected', () => {
+  assert.equal(
+    isSession(
+      encounter('1', { worry: 'they will say no', worryHappened: 'maybe' }),
+    ),
+    false,
+  );
+  assert.equal(
+    isSession(
+      encounter('1', {
+        worry: 'they will say no',
+        worryHappened: 'no',
+        worryLater: 'nope',
+      }),
+    ),
+    false,
+  );
+});
+test('worryHappened is rejected when there is no worry to answer for', () => {
+  assert.equal(isSession(encounter('1', { worryHappened: 'no' })), false);
+  assert.equal(
+    isSession(encounter('1', { worry: '  ', worryHappened: 'no' })),
+    false,
+  );
+  assert.equal(
+    isSession(
+      encounter('1', { worry: 'they will say no', worryHappened: 'no' }),
+    ),
+    true,
+  );
+});
+test('worryLater is rejected unless the Return answer was unknown', () => {
+  assert.equal(
+    isSession(
+      encounter('1', {
+        worry: 'they will say no',
+        worryHappened: 'no',
+        worryLater: 'yes',
+      }),
+    ),
+    false,
+  );
+  assert.equal(
+    isSession(
+      encounter('1', {
+        worry: 'they will say no',
+        worryHappened: 'unknown',
+        worryLater: 'yes',
+      }),
+    ),
+    true,
+  );
+});
+
+test('worryLine is blank without a worry, quotes it with the outcome otherwise, and uses the later answer when there is one', () => {
+  assert.equal(worryLine(encounter('1', { worry: '' })), '');
+  assert.equal(
+    worryLine(
+      encounter('1', { worry: 'they will say no', worryHappened: 'no' }),
+    ),
+    '“they will say no” It didn’t happen.',
+  );
+  assert.equal(
+    worryLine(
+      encounter('1', { worry: 'it will be awkward', worryHappened: 'partly' }),
+    ),
+    '“it will be awkward” Part of it happened.',
+  );
+  assert.equal(
+    worryLine(
+      encounter('1', { worry: 'they will say no', worryHappened: 'yes' }),
+    ),
+    '“they will say no” It happened.',
+  );
+  assert.equal(
+    worryLine(
+      encounter('1', { worry: 'they will say no', worryHappened: 'unknown' }),
+    ),
+    '“they will say no” You weren’t sure yet.',
+  );
+  assert.equal(
+    worryLine(
+      encounter('1', {
+        worry: 'they will say no',
+        worryHappened: 'unknown',
+        worryLater: 'yes',
+      }),
+    ),
+    '“they will say no” It happened.',
+  );
+});
+test('worryLine truncates a long worry to about 120 characters', () => {
+  const long = 'a'.repeat(200);
+  const line = worryLine(encounter('1', { worry: long, worryHappened: 'no' }));
+  assert.ok(line.startsWith(`“${'a'.repeat(120)}…”`));
+});
+
+test('updateEncounter patches only worryLater and leaves the order unchanged', () => {
+  const all = [encounter('1'), encounter('2'), encounter('3')];
+  const updated = updateEncounter(all, '2', { worryLater: 'no' });
+  assert.deepEqual(
+    updated.map((e) => e.id),
+    ['1', '2', '3'],
+  );
+  assert.equal(updated[1].worryLater, 'no');
+  assert.equal(updated[0], all[0]);
+  assert.equal(updated[2], all[2]);
+});
+
+test('bluff ignores encounters that were never asked, left unknown, only answered later, or not started', () => {
+  const territory = 'spotlight';
+  const all = [1, 2, 3, 4].map((i) =>
+    encounter(String(i), { territory, worryHappened: undefined }),
+  );
+  assert.equal(
+    discoveries(all).some((d) => d.rule === 'bluff'),
+    false,
+  );
+  const unknownOnly = [1, 2, 3, 4].map((i) =>
+    encounter(String(i), { territory, worryHappened: 'unknown' }),
+  );
+  assert.equal(
+    discoveries(unknownOnly).some((d) => d.rule === 'bluff'),
+    false,
+  );
+  const laterOnly = [1, 2, 3, 4].map((i) =>
+    encounter(String(i), {
+      territory,
+      worryHappened: 'unknown',
+      worryLater: 'no',
+    }),
+  );
+  assert.equal(
+    discoveries(laterOnly).some((d) => d.rule === 'bluff'),
+    false,
+  );
+  const notStarted = [1, 2, 3, 4].map((i) =>
+    encounter(String(i), {
+      territory,
+      outcome: 'not_started',
+      actual: null,
+      worryHappened: 'no',
+    }),
+  );
+  assert.equal(
+    discoveries(notStarted).some((d) => d.rule === 'bluff'),
+    false,
+  );
+});
+test('bluff skips interleaved unknown answers instead of counting them against the window', () => {
+  const territory = 'spotlight';
+  const d = discoveries([
+    encounter('1', { territory, worryHappened: 'no' }),
+    encounter('2', { territory, worryHappened: 'unknown' }),
+    encounter('3', { territory, worryHappened: 'no' }),
+    encounter('4', {
+      territory,
+      worryHappened: 'unknown',
+      worryLater: 'no',
+    }),
+    encounter('5', { territory, worryHappened: 'no' }),
+    encounter('6', { territory, worryHappened: 'yes' }),
+  ]).find((x) => x.rule === 'bluff');
+  assert.ok(d);
+  assert.deepEqual(d.evidence, ['1', '3', '5', '6']);
+  assert.doesNotMatch(d.body, /mixed/);
+});
+test('a not-started encounter has no worry answer and no worry line', () => {
+  const skipped = encounter('1', {
+    outcome: 'not_started',
+    actual: null,
+    worry: 'they will say no',
+  });
+  assert.equal(isEncounter(skipped), true);
+  assert.equal(worryLine(skipped), '');
+  assert.equal(isEncounter({ ...skipped, worryHappened: 'no' }), false);
+});
+test('bluff needs at least four samples on at least three dates, and at least 75% support', () => {
+  const territory = 'spotlight';
+  const answered = (id, worryHappened, localDate) =>
+    encounter(id, { territory, worryHappened, localDate });
+  assert.equal(
+    discoveries([
+      answered('1', 'no', '2026-9-1'),
+      answered('2', 'no', '2026-9-2'),
+      answered('3', 'no', '2026-9-3'),
+    ]).some((d) => d.rule === 'bluff'),
+    false,
+  );
+  assert.equal(
+    discoveries([
+      answered('1', 'no', '2026-9-1'),
+      answered('2', 'no', '2026-9-1'),
+      answered('3', 'no', '2026-9-1'),
+      answered('4', 'no', '2026-9-1'),
+    ]).some((d) => d.rule === 'bluff'),
+    false,
+  );
+  assert.equal(
+    discoveries([
+      answered('1', 'yes', '2026-9-1'),
+      answered('2', 'yes', '2026-9-2'),
+      answered('3', 'no', '2026-9-3'),
+      answered('4', 'no', '2026-9-4'),
+    ]).some((d) => d.rule === 'bluff'),
+    false,
+  );
+  const found = discoveries([
+    answered('1', 'no', '2026-9-1'),
+    answered('2', 'no', '2026-9-2'),
+    answered('3', 'no', '2026-9-3'),
+    answered('4', 'yes', '2026-9-4'),
+  ]).find((d) => d.rule === 'bluff');
+  assert.ok(found);
+  assert.equal(found.title, 'What You Worried About Mostly Didn’t Happen');
+  const unanimous = discoveries([
+    answered('1', 'no', '2026-9-1'),
+    answered('2', 'no', '2026-9-2'),
+    answered('3', 'no', '2026-9-3'),
+    answered('4', 'no', '2026-9-4'),
+  ]).find((d) => d.rule === 'bluff');
+  assert.equal(unanimous.title, 'What You Worried About Didn’t Happen');
+  assert.equal(
+    unanimous.body,
+    'In each of these encounters, what you were worried about didn’t happen.',
+  );
+});
+test('bluff shows mixed evidence like the other rules', () => {
+  const territory = 'spotlight';
+  const answered = (id, worryHappened, localDate) =>
+    encounter(id, { territory, worryHappened, localDate });
+  const initial = [1, 2, 3, 4].map((i) =>
+    answered(String(i), 'no', `2026-9-${i}`),
+  );
+  const later = [5, 6, 7, 8].map((i) =>
+    answered(String(i), 'yes', `2026-9-${i}`),
+  );
+  const d = discoveries([...initial, ...later]).find((x) => x.rule === 'bluff');
+  assert.ok(d);
+  assert.match(d.body, /mixed/);
+});
+test('bluff does not change the doorway or carried results', () => {
+  const all = [1, 2, 3, 4].map((i) => encounter(String(i)));
+  const withWorry = [1, 2, 3, 4].map((i) =>
+    encounter(String(i), { worryHappened: 'no' }),
+  );
+  const before = discoveries(all)
+    .filter((d) => d.rule !== 'bluff')
+    .map((d) => ({ ...d }));
+  const after = discoveries(withWorry).filter((d) => d.rule !== 'bluff');
+  assert.deepEqual(after, before);
+});
+
+test('an encounter cleared to not_started excludes it from bluff evidence, whatever its worry was', () => {
+  const notStarted = encounter('1', {
+    territory: 'spotlight',
+    outcome: 'not_started',
+    actual: null,
+    worry: 'they will say no',
+    worryHappened: undefined,
+  });
+  assert.equal(isEncounter(notStarted), true);
+  assert.equal(
+    discoveries([
+      notStarted,
+      ...[2, 3, 4].map((i) =>
+        encounter(String(i), {
+          territory: 'spotlight',
+          worry: 'they will say no',
+          worryHappened: 'no',
+        }),
+      ),
+    ]).some((d) => d.rule === 'bluff'),
+    false,
+  );
+});
+
+test('lastPurpose carries across resistances for the same situation, not across situations', () => {
+  const all = [
+    encounter('1', {
+      situation: 'Starting a proposal',
+      purpose: 'so the team can move',
+    }),
+    encounter('2', {
+      situation: 'starting a proposal',
+      resistance: 'start',
+      purpose: 'to unblock reviewers',
+    }),
+    encounter('3', {
+      situation: 'a different situation',
+      purpose: 'something else',
+    }),
+  ];
+  assert.equal(lastPurpose(all, 'STARTING A PROPOSAL'), 'to unblock reviewers');
+  assert.equal(lastPurpose(all, 'a different situation'), 'something else');
+  assert.equal(lastPurpose(all, 'never seen before'), '');
+});
+
+test('isCandidate accepts a purpose up to 300 characters and rejects longer', () => {
+  const base = candidate('starting a proposal', 'understand');
+  assert.equal(isCandidate(base), true);
+  assert.equal(isCandidate({ ...base, purpose: 'x'.repeat(300) }), true);
+  assert.equal(isCandidate({ ...base, purpose: 'x'.repeat(301) }), false);
 });

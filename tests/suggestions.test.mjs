@@ -36,9 +36,9 @@ function makeDb() {
         // accepts both styles, so this is a test-shim-only translation.
         bind: (...values) => ({
           first: async () =>
-            sql.prepare(query).get(
-              Object.fromEntries(values.map((v, i) => [i + 1, v])),
-            ),
+            sql
+              .prepare(query)
+              .get(Object.fromEntries(values.map((v, i) => [i + 1, v]))),
         }),
       }),
     },

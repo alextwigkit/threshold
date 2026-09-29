@@ -92,6 +92,26 @@ test('round trip preserves zero prediction and progressive reflection draft', ()
     JSON.parse(JSON.stringify(state)),
   );
 });
+test('an old save without worry fields still loads', () => {
+  const state = saved([e('1')]);
+  assert.deepEqual(
+    parseSaved(JSON.stringify(state)),
+    JSON.parse(JSON.stringify(state)),
+  );
+});
+test('the worry check round-trips, including a later Atlas answer', () => {
+  const state = saved([
+    e('1', {
+      worry: 'they will say no',
+      worryHappened: 'unknown',
+      worryLater: 'no',
+    }),
+  ]);
+  assert.deepEqual(
+    parseSaved(JSON.stringify(state)),
+    JSON.parse(JSON.stringify(state)),
+  );
+});
 test('restore merges idempotently, keeps local collision records and preserves the active session', () => {
   const local = {
     ...saved([e('1')]),

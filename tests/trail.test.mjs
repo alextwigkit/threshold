@@ -1,7 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { candidate, discoveries } from '../lib/engine.ts';
-import { taken, trailStones, pattern, trailCaption } from '../lib/trail.ts';
+import {
+  taken,
+  trailStones,
+  pattern,
+  trailCaption,
+  worryPattern,
+} from '../lib/trail.ts';
 const step = (id, overrides = {}) => ({
   ...candidate('starting a proposal', 'understand'),
   id,
@@ -123,5 +129,54 @@ test('the Observation caption places the step on the trail', () => {
   assert.equal(
     trailCaption(skipped, [...all, skipped]),
     'Your trail grows when you start a step.',
+  );
+});
+
+test('the worry pattern stays blank below two answered worries, and excludes not-started', () => {
+  assert.equal(worryPattern([]), '');
+  assert.equal(worryPattern([step('1', { worryHappened: 'no' })]), '');
+  assert.equal(
+    worryPattern([
+      step('1', { worryHappened: 'no' }),
+      step('2', {
+        outcome: 'not_started',
+        actual: null,
+        worryHappened: 'no',
+      }),
+    ]),
+    '',
+  );
+});
+
+test('the worry pattern counts a Return answer or a later Atlas answer, but not an unanswered "can\'t tell yet"', () => {
+  assert.equal(
+    worryPattern([
+      step('1', { worryHappened: 'no' }),
+      step('2', { worryHappened: 'yes' }),
+      step('3', { worryHappened: 'unknown' }),
+    ]),
+    'Of 2 worries you followed up on, 1 didn’t happen and 1 did, at least in part.',
+  );
+  assert.equal(
+    worryPattern([
+      step('1', { worryHappened: 'no' }),
+      step('2', { worryHappened: 'unknown', worryLater: 'no' }),
+    ]),
+    'Neither worry you followed up on happened.',
+  );
+  assert.equal(
+    worryPattern([
+      step('1', { worryHappened: 'partly' }),
+      step('2', { worryHappened: 'yes' }),
+    ]),
+    'Both worries you followed up on happened, at least in part.',
+  );
+  assert.equal(
+    worryPattern([
+      step('1', { worryHappened: 'no' }),
+      step('2', { worryHappened: 'no' }),
+      step('3', { worryHappened: 'no' }),
+    ]),
+    'None of the 3 worries you followed up on happened.',
   );
 });

@@ -58,6 +58,36 @@ export function pattern(encounters: Encounter[]) {
   return `${easier} of ${all.length} felt easier than you expected.`;
 }
 
+/**
+ * How many named worries didn't happen, in words, once there are at least
+ * two answered. Counts a Return answer or a later Atlas answer; an
+ * unanswered "can't tell yet" doesn't count either way yet.
+ */
+export function worryPattern(encounters: Encounter[]) {
+  const answered = taken(encounters)
+    .map((e) => e.worryLater ?? e.worryHappened)
+    .filter(
+      (a): a is 'no' | 'partly' | 'yes' =>
+        a === 'no' || a === 'partly' || a === 'yes',
+    );
+  if (answered.length < 2) {
+    return '';
+  }
+  const n = answered.length;
+  const didnt = answered.filter((a) => a === 'no').length;
+  if (didnt === n) {
+    return n === 2
+      ? 'Neither worry you followed up on happened.'
+      : `None of the ${n} worries you followed up on happened.`;
+  }
+  if (didnt === 0) {
+    return n === 2
+      ? 'Both worries you followed up on happened, at least in part.'
+      : `All ${n} worries you followed up on happened, at least in part.`;
+  }
+  return `Of ${n} worries you followed up on, ${didnt} didn’t happen and ${n - didnt} did, at least in part.`;
+}
+
 /** The Observation caption: where this step sits on the trail. */
 export function trailCaption(last: Encounter, encounters: Encounter[]) {
   if (last.outcome === 'not_started')

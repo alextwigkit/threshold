@@ -23,6 +23,9 @@ import {
   observation,
   discoveries,
   appendEncounter,
+  updateEncounter,
+  worryLine,
+  lastPurpose,
   toggleNotice,
   validScale,
   type Resistance,
@@ -32,7 +35,13 @@ import {
   type Urge,
 } from '@/lib/engine';
 import Trail from './trail';
-import { pattern, taken, trailCaption, trailStones } from '@/lib/trail';
+import {
+  pattern,
+  taken,
+  trailCaption,
+  trailStones,
+  worryPattern,
+} from '@/lib/trail';
 import { SuggestionRequest } from '@/lib/suggestions';
 import {
   KEY,
@@ -49,6 +58,20 @@ const urgeChoices: [Urge, string][] = [
   ['returned', 'Yes, I left and came back'],
   ['stopped', 'Yes, and I stopped'],
 ];
+const worryHappenedChoices: [NonNullable<Session['worryHappened']>, string][] =
+  [
+    ['no', 'No'],
+    ['partly', 'Partly'],
+    ['yes', 'Yes'],
+    ['unknown', 'Can’t tell yet'],
+  ];
+// worryLine() always returns either '' or `“quote” status`; splitting it here
+// lets Observation show the quote in meta colour without duplicating the
+// quoting/truncation logic that already lives in that one pure helper.
+function splitWorryLine(line: string): [string, string] {
+  const match = line.match(/^(“.*”)\s*(.*)$/);
+  return match ? [match[1], match[2]] : [line, ''];
+}
 function Scale({
   id,
   label,
@@ -95,10 +118,12 @@ function Scale({
   );
 }
 function AnsweredRow({
+  id,
   label,
   value,
   onChange,
 }: {
+  id?: string;
   label: string;
   value: string;
   onChange: () => void;
@@ -108,6 +133,7 @@ function AnsweredRow({
       <span className="meta">{label}</span>
       <span className="answered-value">{value}</span>
       <button
+        id={id}
         className="text-button"
         aria-label={`Change ${label.toLowerCase()}`}
         onClick={onChange}
@@ -123,22 +149,42 @@ function Echo({
   detail,
   editLabel,
   onEdit,
+  purpose,
+  onEditPurpose,
 }: {
   text: string;
   detail?: string;
   editLabel: string;
   onEdit: () => void;
+  purpose?: string;
+  onEditPurpose?: () => void;
 }) {
   return (
-    <div className="echo">
-      <p className="meta echo-body">
-        You’re avoiding: <span className="echo-text">{text}</span>
-        {detail && <> · {detail}</>}
-      </p>
-      <button className="text-button" aria-label={editLabel} onClick={onEdit}>
-        Edit
-      </button>
-    </div>
+    <>
+      <div className="echo">
+        <p className="meta echo-body">
+          You’re avoiding: <span className="echo-text">{text}</span>
+          {detail && <> · {detail}</>}
+        </p>
+        <button className="text-button" aria-label={editLabel} onClick={onEdit}>
+          Edit
+        </button>
+      </div>
+      {purpose && onEditPurpose && (
+        <div className="echo">
+          <p className="meta echo-body">
+            For: <span className="echo-text">{purpose}</span>
+          </p>
+          <button
+            className="text-button"
+            aria-label="Edit what this is for"
+            onClick={onEditPurpose}
+          >
+            Edit
+          </button>
+        </div>
+      )}
+    </>
   );
 }
 function Primary({
@@ -198,13 +244,24 @@ export default function Home() {
   const [restoreError, setRestoreError] = useState('');
   const [restoreMessage, setRestoreMessage] = useState('');
   // Return: an answered question collapses to a summary until the person reopens it.
-  const [reopened, setReopened] = useState<'actual' | 'urge' | null>(null);
+  const [reopened, setReopened] = useState<'actual' | 'urge' | 'worry' | null>(
+    null,
+  );
   // Arrow keys select as they move, so a keyed answer stays open until focus leaves it.
   const keyed = useRef(false);
   const pendingFocus = useRef<string | null>(null);
   // Clarify: "Something else" may be preselected; its text field waits for an explicit pick.
   const [pickedOther, setPickedOther] = useState(false);
-  const [showPredictionNote, setShowPredictionNote] = useState(false);
+  // Setup's worry field. Not part of Saved: like the prediction, it's a
+  // fresh guess each time, so it never needs to survive a reload.
+  const [showWorry, setShowWorry] = useState(false);
+  const [worryDraft, setWorryDraft] = useState('');
+  // Setup's purpose input. Unlike worry, its value lives on the draft
+  // itself, so this only tracks whether the input is open.
+  const [showPurpose, setShowPurpose] = useState(false);
+  // Atlas: an unanswered worry being given a later answer.
+  const [editingWorryId, setEditingWorryId] = useState<string | null>(null);
+  const [worrySavedId, setWorrySavedId] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const rawUnreadable = useRef<string | null>(null);
 
@@ -385,7 +442,11 @@ export default function Home() {
           ),
         };
       patch({
-        draft: { ...draft, resistanceNote: s.custom },
+        draft: {
+          ...draft,
+          resistanceNote: s.custom,
+          purpose: lastPurpose(s.encounters, situation),
+        },
         resistance: draft.resistance,
         prediction: null,
         predictionNote: '',
@@ -410,6 +471,7 @@ export default function Home() {
         ...candidate(situation, confirmed ?? 'other'),
         title: 'Choose your own step',
         action: '',
+        purpose: lastPurpose(s.encounters, situation),
       };
       patch({
         draft,
@@ -431,10 +493,15 @@ export default function Home() {
   );
   async function resolve() {
     setPickedOther(false);
-    setShowPredictionNote(false);
+    setShowWorry(false);
+    setWorryDraft('');
+    setShowPurpose(false);
     if (await requestStep(null)) return;
     const guess = infer(s.situation);
-    const draft = candidate(s.situation.trim(), guess.resistance, s.encounters);
+    const draft = {
+      ...candidate(s.situation.trim(), guess.resistance, s.encounters),
+      purpose: lastPurpose(s.encounters, s.situation),
+    };
     patch({
       resistance: guess.resistance,
       draft,
@@ -444,12 +511,15 @@ export default function Home() {
     });
   }
   async function setup() {
-    setShowPredictionNote(false);
+    setShowWorry(false);
+    setWorryDraft('');
+    setShowPurpose(false);
     if (await requestStep(s.resistance)) return;
     patch({
       draft: {
         ...candidate(s.situation.trim(), s.resistance, s.encounters),
         resistanceNote: s.custom,
+        purpose: lastPurpose(s.encounters, s.situation),
       },
       prediction: null,
       predictionNote: '',
@@ -463,7 +533,6 @@ export default function Home() {
     }
     if (!s.draft?.action.trim() || !validScale(s.prediction)) return;
     setSuggestionMessage('');
-    setShowPredictionNote(false);
     setReopened(null);
     patch({
       session: {
@@ -471,6 +540,7 @@ export default function Home() {
         id: crypto.randomUUID(),
         prediction: s.prediction,
         predictionNote: s.predictionNote,
+        worry: worryDraft.trim(),
         startedAt: Date.now(),
         actual: null,
         urge: '',
@@ -480,6 +550,9 @@ export default function Home() {
       },
       screen: 'active',
     });
+    setShowWorry(false);
+    setWorryDraft('');
+    setShowPurpose(false);
   }
   function updateSession(p: Partial<Session>) {
     if (s.session) patch({ session: { ...s.session, ...p } });
@@ -499,12 +572,20 @@ export default function Home() {
   function finish(notStarted = false) {
     if (!s.session) return;
     const a = s.session;
-    if (!notStarted && (!validScale(a.actual) || !a.urge)) return;
+    if (
+      !notStarted &&
+      (!validScale(a.actual) ||
+        !a.urge ||
+        (a.worry?.trim() && !a.worryHappened))
+    ) {
+      return;
+    }
     const date = new Date();
     const e: Encounter = {
       ...a,
       actual: notStarted ? null : a.actual,
       notices: notStarted ? [] : a.notices,
+      worryHappened: notStarted ? undefined : a.worryHappened,
       outcome: notStarted
         ? 'not_started'
         : a.urge === 'stopped' || a.stopped
@@ -524,7 +605,10 @@ export default function Home() {
   const last =
     s.encounters.find((e) => e.id === s.lastId) ?? s.encounters.at(-1);
   const next = last
-    ? candidate(last.situation, last.resistance, s.encounters)
+    ? {
+        ...candidate(last.situation, last.resistance, s.encounters),
+        purpose: lastPurpose(s.encounters, last.situation),
+      }
     : null;
   const found = discoveries(s.encounters);
   const previousDiscoveryIds = new Set(
@@ -542,6 +626,21 @@ export default function Home() {
     ? discoveryEvidence.reduce((n, e) => n + (e.actual ?? 0), 0) /
       discoveryEvidence.length
     : 0;
+  // A bluff discovery is about whether the worry happened, not discomfort:
+  // the arrow pair means expected → experienced everywhere else, so it isn't reused here.
+  const bluffCounts =
+    newDiscovery?.rule === 'bluff'
+      ? {
+          no: discoveryEvidence.filter((e) => e.worryHappened === 'no').length,
+          partly: discoveryEvidence.filter((e) => e.worryHappened === 'partly')
+            .length,
+          yes: discoveryEvidence.filter((e) => e.worryHappened === 'yes')
+            .length,
+        }
+      : null;
+  const worrySplit: [string, string] = last
+    ? splitWorryLine(worryLine(last))
+    : ['', ''];
   const filteredEncounters = atlasTerritory
     ? s.encounters.filter((e) => e.territory === atlasTerritory)
     : s.encounters;
@@ -562,6 +661,23 @@ export default function Home() {
     setAtlasTerritory(null);
     setAtlasFocus(id);
     go('atlas');
+  }
+  // An unanswered worry ("can't tell yet") shows its three buttons; so does
+  // one being changed. A worry already answered, from Return or from here,
+  // shows the line and (for a later answer) a Change button instead.
+  function showWorryButtons(e: Encounter) {
+    return (
+      e.worryHappened === 'unknown' &&
+      (!e.worryLater || editingWorryId === e.id)
+    );
+  }
+  function pickWorryLater(id: string, value: 'no' | 'partly' | 'yes') {
+    patch({
+      encounters: updateEncounter(s.encounters, id, { worryLater: value }),
+    });
+    setEditingWorryId(null);
+    setWorrySavedId(id);
+    pendingFocus.current = `worry-change-${id}`;
   }
   async function stageBackup(file: File | undefined) {
     setRestoreError('');
@@ -604,32 +720,39 @@ export default function Home() {
   const active = s.session;
   const actualOpen = active?.actual === null || reopened === 'actual';
   const urgeOpen = !active?.urge || reopened === 'urge';
+  const hasWorry = !!active?.worry?.trim();
+  const worryOpen =
+    hasWorry && (!active?.worryHappened || reopened === 'worry');
   // Base UI commits a change before the click reaches the label, so a keyed
   // answer is held open here rather than in picked().
-  function answer(question: 'actual' | 'urge', p: Partial<Session>) {
+  function answer(question: 'actual' | 'urge' | 'worry', p: Partial<Session>) {
     updateSession(p);
     if (keyed.current) {
       setReopened(question);
     }
   }
   // A pointer pick closes the question, even when it repeats the same value.
-  function picked(question: 'actual' | 'urge') {
+  function picked(question: 'actual' | 'urge' | 'worry') {
     if (keyed.current) {
       return;
     }
     setReopened(null);
     pendingFocus.current =
-      question === 'actual' && !active?.urge ? 'urge-label' : 'noticing-label';
+      question === 'actual' && !active?.urge
+        ? 'urge-label'
+        : question === 'worry' || !hasWorry || active?.worryHappened
+          ? 'noticing-label'
+          : 'worry-label';
   }
   // Only a move to another control counts; leaving the window keeps it open.
-  function left(question: 'actual' | 'urge', e: React.FocusEvent) {
+  function left(question: 'actual' | 'urge' | 'worry', e: React.FocusEvent) {
     const outside =
       e.relatedTarget && !e.currentTarget.contains(e.relatedTarget as Node);
     if (keyed.current && outside && reopened === question) {
       setReopened(null);
     }
   }
-  function change(question: 'actual' | 'urge') {
+  function change(question: 'actual' | 'urge' | 'worry') {
     pendingFocus.current = `${question}-label`;
     setReopened(question);
   }
@@ -733,11 +856,13 @@ export default function Home() {
             onClick={() => {
               suggestionRequest.current.cancel();
               setBusy(false);
-              const draft = candidate(
-                s.situation.trim(),
-                s.resistance,
-                s.encounters,
-              );
+              setShowWorry(false);
+              setWorryDraft('');
+              setShowPurpose(false);
+              const draft = {
+                ...candidate(s.situation.trim(), s.resistance, s.encounters),
+                purpose: lastPurpose(s.encounters, s.situation),
+              };
               patch({
                 draft,
                 prediction: null,
@@ -842,6 +967,8 @@ export default function Home() {
             }
             editLabel="Edit what makes it hard"
             onEdit={() => go('clarify')}
+            purpose={showPurpose ? undefined : s.draft.purpose?.trim()}
+            onEditPurpose={() => setShowPurpose(true)}
           />
           {title(s.draft.title)}
           <div>
@@ -897,30 +1024,6 @@ export default function Home() {
             value={s.prediction}
             onChange={(prediction) => patch({ prediction })}
           />
-          {showPredictionNote || s.predictionNote ? (
-            <>
-              <label className="field-label" htmlFor="prediction">
-                What do you expect will happen?{' '}
-                <span className="optional">Optional</span>
-              </label>
-              <textarea
-                className="text-input"
-                id="prediction"
-                value={s.predictionNote}
-                maxLength={1000}
-                autoFocus={showPredictionNote && !s.predictionNote}
-                onFocus={() => setShowPredictionNote(true)}
-                onChange={(e) => patch({ predictionNote: e.target.value })}
-              />
-            </>
-          ) : (
-            <button
-              className="text-button note-toggle"
-              onClick={() => setShowPredictionNote(true)}
-            >
-              Add what you expect will happen
-            </button>
-          )}
           <Primary
             onClick={begin}
             disabled={!s.draft.action.trim() || s.prediction === null}
@@ -933,6 +1036,74 @@ export default function Home() {
               You'll leave the app to try this for real, then say what actually
               happened.
             </p>
+          )}
+          {(showWorry || worryDraft) && (
+            <>
+              <label className="field-label" htmlFor="worry">
+                What are you worried will happen?{' '}
+                <span className="optional">Optional</span>
+              </label>
+              <textarea
+                className="text-input"
+                id="worry"
+                value={worryDraft}
+                maxLength={1000}
+                autoFocus={showWorry && !worryDraft}
+                placeholder={
+                  s.draft.territory === 'spotlight'
+                    ? 'They’ll think it’s a silly question.'
+                    : s.draft.territory === 'fog'
+                      ? 'I’ll get it wrong and have to start over.'
+                      : s.draft.territory === 'loop'
+                        ? 'I’ll miss a mistake that matters.'
+                        : s.draft.territory === 'water'
+                          ? 'I won’t be able to stay with it.'
+                          : 'Something you could check afterwards.'
+                }
+                onFocus={() => setShowWorry(true)}
+                onChange={(e) => setWorryDraft(e.target.value)}
+              />
+            </>
+          )}
+          {showPurpose && (
+            <>
+              <label className="field-label" htmlFor="purpose">
+                What is this for? <span className="optional">Optional</span>
+              </label>
+              <input
+                className="text-input"
+                id="purpose"
+                type="text"
+                value={s.draft.purpose ?? ''}
+                maxLength={300}
+                autoFocus
+                placeholder="Who it helps, or what it makes possible."
+                onChange={(e) =>
+                  patch({ draft: { ...s.draft!, purpose: e.target.value } })
+                }
+              />
+            </>
+          )}
+          {(!(showWorry || worryDraft) ||
+            (!s.draft.purpose?.trim() && !showPurpose)) && (
+            <div className="setup-links">
+              {!(showWorry || worryDraft) && (
+                <button
+                  className="text-button note-toggle"
+                  onClick={() => setShowWorry(true)}
+                >
+                  Name a worry
+                </button>
+              )}
+              {!s.draft.purpose?.trim() && !showPurpose && (
+                <button
+                  className="text-button note-toggle"
+                  onClick={() => setShowPurpose(true)}
+                >
+                  Name what it’s for
+                </button>
+              )}
+            </div>
           )}
           {suggestionMessage && (
             <p className="notice" role="status">
@@ -958,6 +1129,9 @@ export default function Home() {
             <p className="meta">Your step</p>
             <p className="lead">{active.action}</p>
           </div>
+          {active.purpose?.trim() && (
+            <p className="meta purpose-block">For: {active.purpose}</p>
+          )}
           <p className="invitation">
             Go do it. Come back when you're done, or when something interesting
             happens.
@@ -994,7 +1168,7 @@ export default function Home() {
             />
           )}
           {/* Answers already given share one surface, apart from the open question. */}
-          {(!actualOpen || !urgeOpen) && (
+          {(!actualOpen || !urgeOpen || (hasWorry && !worryOpen)) && (
             <div className="summary">
               {!actualOpen && (
                 <AnsweredRow
@@ -1010,6 +1184,17 @@ export default function Home() {
                     urgeChoices.find(([v]) => v === active.urge)?.[1] ?? ''
                   }
                   onChange={() => change('urge')}
+                />
+              )}
+              {hasWorry && !worryOpen && (
+                <AnsweredRow
+                  label="Worry"
+                  value={
+                    worryHappenedChoices.find(
+                      ([v]) => v === active.worryHappened,
+                    )?.[1] ?? ''
+                  }
+                  onChange={() => change('worry')}
                 />
               )}
             </div>
@@ -1038,58 +1223,95 @@ export default function Home() {
               </RadioGroup>
             </section>
           )}
-          {active.actual !== null && active.urge && (
-            <section className="reveal">
-              <h2 id="noticing-label" tabIndex={-1}>
-                What did you notice?
+          {active.actual !== null && active.urge && hasWorry && worryOpen && (
+            <section className="reveal" onBlur={(e) => left('worry', e)}>
+              <h2 id="worry-label" tabIndex={-1}>
+                Did what you were worried about happen?
               </h2>
-              <p className="meta question-hint" id="noticing-hint">
-                Choose any that fit.
+              <p className="meta question-hint" id="worry-hint">
+                “{active.worry}”
               </p>
-              <fieldset
+              <RadioGroup
                 className="choices"
-                aria-labelledby="noticing-label"
-                aria-describedby="noticing-hint"
+                value={active.worryHappened ?? ''}
+                onValueChange={(v) =>
+                  answer('worry', {
+                    worryHappened: v as Session['worryHappened'],
+                  })
+                }
+                aria-labelledby="worry-label"
+                aria-describedby="worry-hint"
               >
-                {noticingChoices.map(([v, l]) => (
+                {worryHappenedChoices.map(([v, l]) => (
                   <label
+                    className={`choice ${active.worryHappened === v ? 'selected' : ''}`}
                     key={v}
-                    className={`choice ${active.notices.includes(v) ? 'selected' : ''}`}
+                    onClick={() => picked('worry')}
                   >
                     <span>{l}</span>
-                    <Checkbox
-                      checked={active.notices.includes(v)}
-                      onCheckedChange={() =>
-                        updateSession({
-                          notices: toggleNotice(active.notices, v),
-                        })
-                      }
-                    />
+                    <RadioGroupItem value={v} />
                   </label>
                 ))}
-              </fieldset>
-              {active.notices.includes('other') && (
-                <label className="field-label panel-extension">
-                  What else did you notice?{' '}
-                  <span className="optional">Optional</span>
-                  <textarea
-                    className="text-input"
-                    value={active.note}
-                    maxLength={1000}
-                    onChange={(e) => updateSession({ note: e.target.value })}
-                  />
-                </label>
-              )}
-              {/* Optional: a quiet Skip until something is chosen. */}
-              {active.notices.length ? (
-                <Primary onClick={() => finish()}>Continue</Primary>
-              ) : (
-                <button className="secondary continue" onClick={() => finish()}>
-                  Skip
-                </button>
-              )}
+              </RadioGroup>
             </section>
           )}
+          {active.actual !== null &&
+            active.urge &&
+            (!hasWorry || active.worryHappened) && (
+              <section className="reveal">
+                <h2 id="noticing-label" tabIndex={-1}>
+                  What did you notice?
+                </h2>
+                <p className="meta question-hint" id="noticing-hint">
+                  Choose any that fit.
+                </p>
+                <fieldset
+                  className="choices"
+                  aria-labelledby="noticing-label"
+                  aria-describedby="noticing-hint"
+                >
+                  {noticingChoices.map(([v, l]) => (
+                    <label
+                      key={v}
+                      className={`choice ${active.notices.includes(v) ? 'selected' : ''}`}
+                    >
+                      <span>{l}</span>
+                      <Checkbox
+                        checked={active.notices.includes(v)}
+                        onCheckedChange={() =>
+                          updateSession({
+                            notices: toggleNotice(active.notices, v),
+                          })
+                        }
+                      />
+                    </label>
+                  ))}
+                </fieldset>
+                {active.notices.includes('other') && (
+                  <label className="field-label panel-extension">
+                    What else did you notice?{' '}
+                    <span className="optional">Optional</span>
+                    <textarea
+                      className="text-input"
+                      value={active.note}
+                      maxLength={1000}
+                      onChange={(e) => updateSession({ note: e.target.value })}
+                    />
+                  </label>
+                )}
+                {/* Optional: a quiet Skip until something is chosen. */}
+                {active.notices.length ? (
+                  <Primary onClick={() => finish()}>Continue</Primary>
+                ) : (
+                  <button
+                    className="secondary continue"
+                    onClick={() => finish()}
+                  >
+                    Skip
+                  </button>
+                )}
+              </section>
+            )}
           <button className="text-button exit" onClick={() => finish(true)}>
             I didn't start
           </button>
@@ -1105,6 +1327,7 @@ export default function Home() {
           />
           <p className="meta trail-key">
             {trailCaption(last, s.encounters)}
+            {bluffCounts && ' Stones show expected → felt.'}
             {stoppedShown && ' Half-filled means you stopped early.'}
           </p>
           <div className={newDiscovery ? 'discovery-reveal' : undefined}>
@@ -1119,32 +1342,55 @@ export default function Home() {
                     : 'Observation'}
             </p>
             {title(newDiscovery?.title ?? observation(last).title)}
-            {last.actual !== null && (
-              <div className="evidence">
-                <div>
-                  <span className="meta">Expected</span>
-                  <strong>
-                    {newDiscovery ? expectedMean.toFixed(1) : last.prediction}
-                  </strong>
+            {last.actual !== null &&
+              (bluffCounts ? (
+                <>
+                  <div className="evidence">
+                    <div>
+                      <span className="meta">Worries that didn’t happen</span>
+                      <strong>
+                        {bluffCounts.no} of {discoveryEvidence.length}
+                      </strong>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="evidence">
+                  <div>
+                    <span className="meta">Expected</span>
+                    <strong>
+                      {newDiscovery ? expectedMean.toFixed(1) : last.prediction}
+                    </strong>
+                  </div>
+                  <span className="arrow" aria-hidden="true">
+                    →
+                  </span>
+                  <div>
+                    <span className="meta">Experienced</span>
+                    <strong>
+                      {newDiscovery ? experiencedMean.toFixed(1) : last.actual}
+                    </strong>
+                  </div>
                 </div>
-                <span className="arrow" aria-hidden="true">
-                  →
-                </span>
-                <div>
-                  <span className="meta">Experienced</span>
-                  <strong>
-                    {newDiscovery ? experiencedMean.toFixed(1) : last.actual}
-                  </strong>
-                </div>
-              </div>
+              ))}
+            {newDiscovery && (
+              <p className="optional evidence-scope">
+                Across {discoveryEvidence.length} encounters with{' '}
+                {territories[newDiscovery.territory].name}.
+                {bluffCounts &&
+                  bluffCounts.partly + bluffCounts.yes > 0 &&
+                  ` ${bluffCounts.partly} partly happened, ${bluffCounts.yes} happened.`}
+              </p>
             )}
             <p className="observation-copy">
               {newDiscovery?.body ?? observation(last).body}
             </p>
-            {newDiscovery && (
-              <p className="optional">
-                Across {discoveryEvidence.length} encounters with{' '}
-                {territories[newDiscovery.territory].name}.
+            {worrySplit[0] && (
+              <p className="observation-copy">
+                <span className="meta">{worrySplit[0]}</span> {worrySplit[1]}
+                {last.worryHappened === 'unknown' &&
+                  !last.worryLater &&
+                  ' You can answer later from the Atlas.'}
               </p>
             )}
           </div>
@@ -1166,7 +1412,8 @@ export default function Home() {
                 onEarlier={() => openEntry(null)}
               />
               <p className="meta trail-key">
-                {pattern(s.encounters)} Stones show expected → felt
+                {pattern(s.encounters)} {worryPattern(s.encounters)} Stones show
+                expected → felt
                 {stoppedShown && '; half-filled means you stopped early'}. Tap
                 one to open it.
               </p>
@@ -1200,8 +1447,14 @@ export default function Home() {
                 {next.action ||
                   'Choose a small step toward the situation you last brought here.'}
               </p>
+              {next.purpose?.trim() && (
+                <p className="meta">For: {next.purpose}</p>
+              )}
               <Primary
-                onClick={() =>
+                onClick={() => {
+                  setShowWorry(false);
+                  setWorryDraft('');
+                  setShowPurpose(false);
                   patch({
                     draft: next,
                     situation: next.situation,
@@ -1209,8 +1462,8 @@ export default function Home() {
                     prediction: null,
                     predictionNote: '',
                     screen: 'setup',
-                  })
-                }
+                  });
+                }}
               >
                 Explore
               </Primary>
@@ -1277,7 +1530,7 @@ export default function Home() {
                   .map((e) => (
                     <p key={e.id}>
                       {new Date(e.createdAt).toLocaleDateString()}:{' '}
-                      {observation(e).body}
+                      {d.rule === 'bluff' ? worryLine(e) : observation(e).body}
                     </p>
                   ))}
                 <p>
@@ -1314,6 +1567,52 @@ export default function Home() {
               </p>
               <h2>{observation(e).title}</h2>
               <p>{observation(e).body}</p>
+              {e.worry?.trim() && (
+                <>
+                  <p className="observation-copy">
+                    {worryLine(e)}
+                    {!showWorryButtons(e) && e.worryHappened === 'unknown' && (
+                      <>
+                        {' '}
+                        <button
+                          id={`worry-change-${e.id}`}
+                          className="text-button inline-change"
+                          aria-label="Change worry answer"
+                          onClick={() => setEditingWorryId(e.id)}
+                        >
+                          Change
+                        </button>
+                      </>
+                    )}
+                  </p>
+                  {showWorryButtons(e) && (
+                    <div
+                      className="choices"
+                      role="group"
+                      aria-label="Did what you were worried about happen?"
+                    >
+                      {(['no', 'partly', 'yes'] as const).map((v) => (
+                        <button
+                          key={v}
+                          className="secondary"
+                          onClick={() => pickWorryLater(e.id, v)}
+                        >
+                          {v === 'no'
+                            ? 'No'
+                            : v === 'partly'
+                              ? 'Partly'
+                              : 'Yes'}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {worrySavedId === e.id && (
+                    <p role="status" className="sr-only">
+                      Saved.
+                    </p>
+                  )}
+                </>
+              )}
               <details>
                 <summary>The encounter</summary>
                 <dl className="facts panel">
@@ -1321,6 +1620,12 @@ export default function Home() {
                   <dd>{e.situation}</dd>
                   <dt className="meta">Step</dt>
                   <dd>{e.action}</dd>
+                  {e.purpose && (
+                    <>
+                      <dt className="meta">What it's for</dt>
+                      <dd>{e.purpose}</dd>
+                    </>
+                  )}
                   {e.resistanceNote && (
                     <>
                       <dt className="meta">What made it hard</dt>
