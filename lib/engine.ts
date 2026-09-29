@@ -588,11 +588,14 @@ export const patternMeaning: Record<Discovery['rule'], string> = {
 export function patternEvidence(d: Discovery, evidence: Encounter[]): string {
   const total = d.evidence.length;
   const support = d.support.length;
-  const where = territories[d.territory].where;
+  // A worry pattern counts only answered worries, so its scope says so rather
+  // than reusing the difficulty, which a sibling pattern may count differently.
+  const where =
+    d.rule === 'bluff' ? 'found out' : territories[d.territory].where;
   const scope =
     support === total && total >= 4
       ? `all ${total} steps where you ${where}`
-      : `${support} of your ${total} steps where you ${where}`;
+      : `${support} of the ${total} steps where you ${where}`;
   if (d.rule !== 'bluff') {
     return `You said so in ${scope}.`;
   }

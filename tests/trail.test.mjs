@@ -1,7 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { candidate, discoveries } from '../lib/engine.ts';
-import { taken, trailStones, pattern, worryPattern } from '../lib/trail.ts';
+import {
+  taken,
+  trailStones,
+  pattern,
+  worryPattern,
+  groupBySituation,
+  recentSituations,
+} from '../lib/trail.ts';
 const step = (id, overrides = {}) => ({
   ...candidate('starting a proposal', 'understand'),
   id,
@@ -125,6 +132,63 @@ test('the worry pattern stays blank below two answered worries, and excludes not
     ]),
     '',
   );
+});
+
+test('groupBySituation groups by trimmed situation and keeps the newest entry’s display text', () => {
+  const groups = groupBySituation([
+    step('1', { situation: 'Email boss', createdAt: Date.UTC(2026, 8, 1) }),
+    step('2', { situation: 'Email boss  ', createdAt: Date.UTC(2026, 8, 3) }),
+  ]);
+  assert.equal(groups.length, 1);
+  assert.equal(groups[0].situation, 'Email boss  ');
+  assert.deepEqual(
+    groups[0].entries.map((e) => e.id),
+    ['2', '1'],
+  );
+});
+
+test('groupBySituation breaks createdAt ties by id, descending', () => {
+  const at = Date.UTC(2026, 8, 5);
+  const groups = groupBySituation([
+    step('a', { situation: 'A', createdAt: at }),
+    step('b', { situation: 'A', createdAt: at }),
+  ]);
+  assert.deepEqual(
+    groups[0].entries.map((e) => e.id),
+    ['b', 'a'],
+  );
+});
+
+test('groupBySituation orders groups by their newest entry, newest group first', () => {
+  const groups = groupBySituation([
+    step('1', { situation: 'A', createdAt: Date.UTC(2026, 8, 1) }),
+    step('2', { situation: 'B', createdAt: Date.UTC(2026, 8, 5) }),
+    step('3', { situation: 'A', createdAt: Date.UTC(2026, 8, 3) }),
+  ]);
+  assert.deepEqual(
+    groups.map((g) => g.situation),
+    ['B', 'A'],
+  );
+});
+
+test('groupBySituation includes not-started entries', () => {
+  const groups = groupBySituation([
+    step('1', { situation: 'A', outcome: 'not_started', actual: null }),
+  ]);
+  assert.equal(groups.length, 1);
+  assert.equal(groups[0].entries.length, 1);
+});
+
+test('recentSituations returns distinct trimmed situations, newest first, capped at the limit', () => {
+  const encounters = [
+    step('1', { situation: 'A', createdAt: Date.UTC(2026, 8, 1) }),
+    step('2', { situation: 'B', createdAt: Date.UTC(2026, 8, 2) }),
+    step('3', { situation: 'A ', createdAt: Date.UTC(2026, 8, 3) }),
+    step('4', { situation: 'C', createdAt: Date.UTC(2026, 8, 4) }),
+    step('5', { situation: 'D', createdAt: Date.UTC(2026, 8, 5) }),
+  ];
+  assert.deepEqual(recentSituations(encounters), ['D', 'C', 'A']);
+  assert.deepEqual(recentSituations(encounters, 2), ['D', 'C']);
 });
 
 test('the worry pattern counts a Return answer or a later Atlas answer, but not an unanswered "can\'t tell yet"', () => {

@@ -16,7 +16,6 @@ import {
 import {
   candidate,
   infer,
-  territories,
   resistanceChoices,
   noticingChoices,
   noticeLabels,
@@ -44,7 +43,14 @@ import {
   type Urge,
 } from '@/lib/engine';
 import Trail from './trail';
-import { pattern, taken, trailStones, worryPattern } from '@/lib/trail';
+import {
+  pattern,
+  taken,
+  trailStones,
+  worryPattern,
+  groupBySituation,
+  recentSituations,
+} from '@/lib/trail';
 import { SuggestionRequest } from '@/lib/suggestions';
 import {
   KEY,
@@ -214,13 +220,15 @@ function Primary({
   children,
   onClick,
   disabled = false,
+  id,
 }: {
   children: React.ReactNode;
   onClick: () => void;
   disabled?: boolean;
+  id?: string;
 }) {
   return (
-    <button className="primary" onClick={onClick} disabled={disabled}>
+    <button id={id} className="primary" onClick={onClick} disabled={disabled}>
       {children}
       <span className="arrow" aria-hidden="true">
         →
@@ -262,6 +270,9 @@ export default function Home() {
   const [now, setNow] = useState(0);
   // The encounter a trail stone opened, scrolled to and expanded in Atlas.
   const [atlasFocus, setAtlasFocus] = useState<string | null>(null);
+  // History: which step groups (by situation) are expanded.
+  // History groups the person opened or closed; the rest use the default.
+  const [groupOpen, setGroupOpen] = useState<Record<string, boolean>>({});
   const [backup, setBackup] = useState<Saved | null>(null);
   const [restoreError, setRestoreError] = useState('');
   const [restoreMessage, setRestoreMessage] = useState('');
@@ -659,6 +670,11 @@ export default function Home() {
   );
   function openEntry(id: string | null) {
     setAtlasFocus(id);
+    const entry = id && s.encounters.find((e) => e.id === id);
+    if (entry) {
+      const key = entry.situation.trim();
+      setGroupOpen((prev) => ({ ...prev, [key]: true }));
+    }
     go('atlas');
   }
   // An unanswered worry ("can't tell yet") shows its three buttons; so does
@@ -896,7 +912,9 @@ export default function Home() {
         </div>
       )}
       {s.screen === 'name' && !busy && (
-        <section className="opening screen-fade-in">
+        <section
+          className={`opening screen-fade-in${s.encounters.length > 0 ? ' returning' : ''}`}
+        >
           {title('What have you been avoiding?')}
           {s.encounters.length === 0 && (
             <p className="premise">
@@ -924,9 +942,40 @@ export default function Home() {
               </p>
             )}
           </div>
-          <Primary disabled={!s.situation.trim() || busy} onClick={resolve}>
+          <Primary
+            id="continue-button"
+            disabled={!s.situation.trim() || busy}
+            onClick={resolve}
+          >
             Continue
           </Primary>
+          {s.encounters.length > 0 &&
+            (() => {
+              const current = s.situation.trim();
+              const suggestions = recentSituations(s.encounters).filter(
+                (t) => t !== current,
+              );
+              if (!suggestions.length) {
+                return null;
+              }
+              return (
+                <div className="recent-situations">
+                  <p className="meta">Or take another step on</p>
+                  {suggestions.map((t) => (
+                    <button
+                      key={t}
+                      className="text-button recent-situation"
+                      onClick={() => {
+                        patch({ situation: t });
+                        pendingFocus.current = 'continue-button';
+                      }}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              );
+            })()}
         </section>
       )}
       {s.screen === 'clarify' && !busy && (
@@ -1571,8 +1620,7 @@ export default function Home() {
                 Each step you take shows up here: what you expected, how it
                 felt, and whether your worry came true.
               </p>
-              <button
-                className="secondary avoid-row"
+              <Primary
                 onClick={() =>
                   patch({
                     situation: '',
@@ -1583,164 +1631,234 @@ export default function Home() {
                 }
               >
                 Start with something you’re avoiding
-              </button>
+              </Primary>
             </>
           )}
-          {found.map((d) => (
-            <article className="atlas-entry discovery-entry panel" key={d.id}>
-              <p className="eyebrow accent">Pattern</p>
-              <h2>{d.title}</h2>
-              <p>{d.body}</p>
-              <p className="meta">
-                In {d.evidence.length} steps where you{' '}
-                {territories[d.territory].where}.
-              </p>
-              <details>
-                <summary>See the evidence</summary>
-                {s.encounters
-                  .filter((e) => d.evidence.includes(e.id))
-                  .map((e) => (
-                    <p key={e.id}>
-                      {new Date(e.createdAt).toLocaleDateString()}:{' '}
-                      {d.rule === 'bluff' ? worryLine(e) : observation(e).body}
-                    </p>
-                  ))}
-                <p>
-                  {d.support.length} fit this pattern; {d.contrary.length}{' '}
-                  didn’t.
-                </p>
-              </details>
-            </article>
-          ))}
-          {[...s.encounters].reverse().map((e) => (
-            <article
-              className="atlas-entry"
-              key={e.id}
-              id={`entry-${e.id}`}
-              tabIndex={-1}
-            >
-              <p className="eyebrow">
-                {new Date(e.createdAt).toLocaleDateString(undefined, {
-                  month: 'short',
-                  day: 'numeric',
-                })}
-              </p>
-              <h2>{observation(e).title}</h2>
-              <p>{observation(e).body}</p>
-              {e.worry?.trim() && (
-                <>
-                  <p className="observation-copy">
-                    {worryLine(e)}
-                    {!showWorryButtons(e) && e.worryHappened === 'unknown' && (
-                      <>
-                        {' '}
-                        <button
-                          id={`worry-change-${e.id}`}
-                          className="text-button inline-change"
-                          aria-label="Change worry answer"
-                          onClick={() => setEditingWorryId(e.id)}
-                        >
-                          Change
-                        </button>
-                      </>
-                    )}
-                  </p>
-                  {showWorryButtons(e) && (
-                    <div
-                      className="choices"
-                      role="group"
-                      aria-label="Did what you were worried about happen?"
-                    >
-                      {(['no', 'partly', 'yes'] as const).map((v) => (
-                        <button
-                          key={v}
-                          className="secondary"
-                          onClick={() => pickWorryLater(e.id, v)}
-                        >
-                          {v === 'no'
-                            ? 'No'
-                            : v === 'partly'
-                              ? 'Partly'
-                              : 'Yes'}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {worrySavedId === e.id && (
-                    <p role="status" className="sr-only">
-                      Saved.
-                    </p>
-                  )}
-                </>
-              )}
-              <details>
-                <summary>Details</summary>
-                <dl className="facts panel">
-                  <dt className="meta">Avoiding</dt>
-                  <dd>{e.situation}</dd>
-                  <dt className="meta">Step</dt>
-                  <dd>{e.action}</dd>
-                  {e.purpose && (
-                    <>
-                      <dt className="meta">What it's for</dt>
-                      <dd>{e.purpose}</dd>
-                    </>
-                  )}
-                  {e.resistanceNote && (
-                    <>
-                      <dt className="meta">What made it hard</dt>
-                      <dd>{e.resistanceNote}</dd>
-                    </>
-                  )}
-                  {e.actual !== null && (
-                    <>
-                      <dt className="meta">Discomfort</dt>
-                      <dd>
-                        Expected {e.prediction} → Experienced {e.actual}
-                      </dd>
-                    </>
-                  )}
-                  {e.predictionNote && (
-                    <>
-                      <dt className="meta">Expected</dt>
-                      <dd>{e.predictionNote}</dd>
-                    </>
-                  )}
-                  <dt className="meta">Wanted to stop</dt>
-                  <dd>
-                    {e.outcome === 'not_started'
-                      ? 'Not started'
-                      : urgeLabels[e.urge]}
-                  </dd>
-                  {e.notices.length > 0 && (
-                    <>
-                      <dt className="meta">Noticed</dt>
-                      <dd>
-                        {e.notices
-                          .map(
-                            (n) => (noticeLabels as Record<string, string>)[n],
-                          )
-                          .join('; ')}
-                      </dd>
-                    </>
-                  )}
-                  {e.note && (
-                    <>
-                      <dt className="meta">Note</dt>
-                      <dd>{e.note}</dd>
-                    </>
-                  )}
-                </dl>
-              </details>
-            </article>
-          ))}
-          {s.encounters.length > 0 && s.encounters.length < 4 && (
-            <p className="optional">
-              Patterns can show up after at least 4 steps with the same kind of
-              difficulty, over 3 or more days. For example, if what you worry
-              about keeps not happening.
+          {found.length > 0 && (
+            <>
+              <h2 className="section-label">Patterns</h2>
+              {found.map((d) => {
+                const evidenceEncounters = s.encounters.filter((e) =>
+                  d.evidence.includes(e.id),
+                );
+                const ordered = [...evidenceEncounters].sort(
+                  (a, b) =>
+                    a.createdAt - b.createdAt || a.id.localeCompare(b.id),
+                );
+                return (
+                  <article className="discovery-entry panel" key={d.id}>
+                    <h3>{d.title}</h3>
+                    <p>{patternEvidence(d, evidenceEncounters)}</p>
+                    <p className="meta">{patternMeaning[d.rule]}</p>
+                    <details>
+                      <summary>See the steps</summary>
+                      {ordered.map((e) => {
+                        const fits = d.support.includes(e.id)
+                          ? 'Fits'
+                          : 'Doesn’t fit';
+                        const what =
+                          d.rule === 'bluff'
+                            ? worryLine(e)
+                            : compare(e)?.numbers;
+                        return (
+                          <p key={e.id}>
+                            {new Date(e.createdAt).toLocaleDateString(
+                              undefined,
+                              { month: 'short', day: 'numeric' },
+                            )}
+                            : {fits}. {what}
+                          </p>
+                        );
+                      })}
+                    </details>
+                  </article>
+                );
+              })}
+              <h2 className="section-label">Your steps</h2>
+            </>
+          )}
+          {s.encounters.length > 0 && found.length === 0 && (
+            <p className="meta pattern-hint">
+              A pattern can show up once you’ve taken 4 or more steps where the
+              same thing made it hard, on at least 3 different days.
             </p>
           )}
+          {groupBySituation(s.encounters).map((group, index) => {
+            const key = group.situation.trim();
+            // The newest group starts open.
+            const isOpen = groupOpen[key] ?? index === 0;
+            const GroupHeading: 'h2' | 'h3' = found.length > 0 ? 'h3' : 'h2';
+            const EntryHeading: 'h3' | 'h4' = found.length > 0 ? 'h4' : 'h3';
+            return (
+              <details
+                className="atlas-group"
+                key={key}
+                open={isOpen}
+                onToggle={(ev) => {
+                  const nowOpen = ev.currentTarget.open;
+                  setGroupOpen((prev) => ({ ...prev, [key]: nowOpen }));
+                }}
+              >
+                <summary className="group-summary">
+                  <GroupHeading>{group.situation}</GroupHeading>
+                  <span className="meta">
+                    {group.entries.length} step
+                    {group.entries.length === 1 ? '' : 's'}
+                  </span>
+                </summary>
+                <button
+                  className="text-button"
+                  onClick={() =>
+                    patch({
+                      situation: group.situation,
+                      custom: '',
+                      draft: null,
+                      screen: 'name',
+                    })
+                  }
+                >
+                  Take another step on this
+                </button>
+                {group.entries.map((e) => {
+                  const result =
+                    e.outcome === 'not_started'
+                      ? 'Didn’t start'
+                      : e.outcome === 'stopped' || e.urge === 'stopped'
+                        ? `Stopped partway · ${compare(e)?.numbers}`
+                        : `${compare(e)?.heading} · ${compare(e)?.numbers}`;
+                  // The result line already says when a step stopped or never started.
+                  const showUrge =
+                    e.outcome === 'attempted' && e.urge !== 'stopped';
+                  const hasDetails =
+                    e.purpose ||
+                    e.resistanceNote ||
+                    e.predictionNote ||
+                    showUrge ||
+                    e.notices.length > 0 ||
+                    e.note;
+                  return (
+                    <article
+                      className="atlas-entry"
+                      key={e.id}
+                      id={`entry-${e.id}`}
+                      tabIndex={-1}
+                    >
+                      <EntryHeading>
+                        {new Date(e.createdAt).toLocaleDateString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </EntryHeading>
+                      <p>{e.action}</p>
+                      <p className="meta">{result}</p>
+                      {e.worry?.trim() && (
+                        <>
+                          <p className="observation-copy">
+                            {worryLine(e)}
+                            {!showWorryButtons(e) &&
+                              e.worryHappened === 'unknown' && (
+                                <>
+                                  {' '}
+                                  <button
+                                    id={`worry-change-${e.id}`}
+                                    className="text-button inline-change"
+                                    aria-label="Change worry answer"
+                                    onClick={() => setEditingWorryId(e.id)}
+                                  >
+                                    Change
+                                  </button>
+                                </>
+                              )}
+                          </p>
+                          {showWorryButtons(e) && (
+                            <div
+                              className="worry-later"
+                              role="group"
+                              aria-labelledby={`worry-q-${e.id}`}
+                            >
+                              <p className="meta" id={`worry-q-${e.id}`}>
+                                Did it happen?
+                              </p>
+                              {(['no', 'partly', 'yes'] as const).map((v) => (
+                                <button
+                                  key={v}
+                                  className="secondary"
+                                  onClick={() => pickWorryLater(e.id, v)}
+                                >
+                                  {v === 'no'
+                                    ? 'No'
+                                    : v === 'partly'
+                                      ? 'Partly'
+                                      : 'Yes'}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          {worrySavedId === e.id && (
+                            <p role="status" className="sr-only">
+                              Saved.
+                            </p>
+                          )}
+                        </>
+                      )}
+                      {hasDetails && (
+                        <details>
+                          <summary>Details</summary>
+                          <dl className="facts panel">
+                            {e.purpose && (
+                              <>
+                                <dt className="meta">What it's for</dt>
+                                <dd>{e.purpose}</dd>
+                              </>
+                            )}
+                            {e.resistanceNote && (
+                              <>
+                                <dt className="meta">What made it hard</dt>
+                                <dd>{e.resistanceNote}</dd>
+                              </>
+                            )}
+                            {e.predictionNote && (
+                              <>
+                                <dt className="meta">Expected</dt>
+                                <dd>{e.predictionNote}</dd>
+                              </>
+                            )}
+                            {showUrge && (
+                              <>
+                                <dt className="meta">Wanted to stop</dt>
+                                <dd>{urgeLabels[e.urge]}</dd>
+                              </>
+                            )}
+                            {e.notices.length > 0 && (
+                              <>
+                                <dt className="meta">Noticed</dt>
+                                <dd>
+                                  {e.notices
+                                    .map(
+                                      (n) =>
+                                        (
+                                          noticeLabels as Record<string, string>
+                                        )[n],
+                                    )
+                                    .join('; ')}
+                                </dd>
+                              </>
+                            )}
+                            {e.note && (
+                              <>
+                                <dt className="meta">Note</dt>
+                                <dd>{e.note}</dd>
+                              </>
+                            )}
+                          </dl>
+                        </details>
+                      )}
+                    </article>
+                  );
+                })}
+              </details>
+            );
+          })}
         </section>
       )}
       {s.screen === 'me' && (

@@ -57,6 +57,52 @@ export function pattern(encounters: Encounter[]) {
   return `${easier} of your ${all.length} steps felt easier than you expected.`;
 }
 
+/** Steps grouped by situation, newest group and newest entry within it first. */
+export function groupBySituation(
+  encounters: Encounter[],
+): { situation: string; entries: Encounter[] }[] {
+  const unique = [...new Map(encounters.map((e) => [e.id, e])).values()];
+  const byKey = new Map<string, Encounter[]>();
+  for (const e of unique) {
+    const key = e.situation.trim();
+    const list = byKey.get(key) ?? [];
+    list.push(e);
+    byKey.set(key, list);
+  }
+  const groups = [...byKey.values()].map((entries) => {
+    const sorted = [...entries].sort(
+      (a, b) => b.createdAt - a.createdAt || b.id.localeCompare(a.id),
+    );
+    return { situation: sorted[0].situation, entries: sorted };
+  });
+  return groups.sort(
+    (a, b) =>
+      b.entries[0].createdAt - a.entries[0].createdAt ||
+      b.entries[0].id.localeCompare(a.entries[0].id),
+  );
+}
+
+/** Distinct trimmed situations, newest first, capped at `limit`. */
+export function recentSituations(encounters: Encounter[], limit = 3): string[] {
+  const unique = [...new Map(encounters.map((e) => [e.id, e])).values()].sort(
+    (a, b) => b.createdAt - a.createdAt || b.id.localeCompare(a.id),
+  );
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const e of unique) {
+    const key = e.situation.trim();
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    result.push(key);
+    if (result.length >= limit) {
+      break;
+    }
+  }
+  return result;
+}
+
 /**
  * How many named worries didn't happen, in words, once there are at least
  * two answered. Counts a Return answer or a later Atlas answer; an

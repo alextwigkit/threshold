@@ -260,7 +260,7 @@ test('patternEvidence merges the count with what the steps were about', () => {
   };
   assert.equal(
     patternEvidence(discovery, []),
-    'You said so in 3 of your 4 steps where you weren’t sure how to begin.',
+    'You said so in 3 of the 4 steps where you weren’t sure how to begin.',
   );
 });
 test('patternEvidence says "all" once every step in the sample supports it', () => {
@@ -300,7 +300,7 @@ test('patternEvidence appends the partly/yes split for a bluff pattern', () => {
   ];
   assert.equal(
     patternEvidence(discovery, evidence),
-    'In 3 of your 4 steps where you were worried how someone would react, your worry didn’t happen. In 1 it partly did.',
+    'In 3 of the 4 steps where you found out, your worry didn’t happen. In 1 it partly did.',
   );
   const both = {
     ...discovery,
@@ -312,7 +312,7 @@ test('patternEvidence appends the partly/yes split for a bluff pattern', () => {
       ...evidence,
       encounter('5', { worryHappened: 'yes' }),
     ]),
-    'In 3 of your 5 steps where you were worried how someone would react, your worry didn’t happen. In 1 it partly did, and in 1 it did.',
+    'In 3 of the 5 steps where you found out, your worry didn’t happen. In 1 it partly did, and in 1 it did.',
   );
 });
 test('noticing is multi-select; nothing is exclusive', () => {

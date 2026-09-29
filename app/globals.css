@@ -308,6 +308,32 @@ textarea::placeholder {
 section > .text-button {
   display: block;
 }
+/* Below the fold, quieter than Continue: a shortcut back into recent situations. */
+/* Returning: Continue stays with the field, and the recents sit a group below. */
+.opening.returning {
+  min-height: 0;
+}
+.opening.returning .entry {
+  margin-bottom: var(--space-block);
+}
+.opening.returning .entry textarea {
+  min-height: 6.5rem;
+}
+.recent-situations {
+  margin-top: var(--space-group);
+}
+.recent-situations > .meta {
+  margin-bottom: var(--space-in);
+}
+.recent-situation {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  width: 100%;
+  text-align: left;
+  font-size: 0.875rem;
+}
 .primary + .text-button {
   margin-top: var(--space-in);
 }
@@ -966,7 +992,7 @@ h2:focus {
   font-weight: 600;
 }
 .atlas-entry {
-  padding: 24px 0;
+  padding: var(--space-block) 0;
   border-bottom: 1px solid var(--border);
 }
 .atlas-entry ~ .optional {
@@ -977,12 +1003,86 @@ h2:focus {
 }
 /* A tab's name orients; its content is what the eye should land on. */
 h1.tab-title {
-  font-size: 1.375rem;
+  font-size: 1.75rem;
   margin-bottom: var(--space-pair);
 }
-.atlas-entry h2 {
-  font-size: 1.75rem;
+/* Section names only label what follows; the patterns and groups carry the weight. */
+.section-label {
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: normal;
+  color: var(--meta-foreground);
+  margin: var(--space-group) 0 0;
+}
+.section-label:first-of-type {
+  margin-top: var(--space-block);
+}
+.atlas-entry .observation-copy {
   margin-bottom: var(--space-in);
+}
+.worry-later {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-in);
+  margin: var(--space-pair) 0;
+}
+.worry-later > .meta {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+.worry-later .secondary {
+  min-height: 44px;
+  padding: 8px 12px;
+}
+.pattern-hint {
+  margin: 0 0 var(--space-block);
+}
+/* The date only labels an entry; the result line is what the eye should read. */
+.atlas-entry h3,
+.atlas-entry h4 {
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: normal;
+  line-height: 1.2;
+  color: var(--meta-foreground);
+  margin: 0 0 var(--space-in);
+}
+/* Groups of steps by situation: --space-group between groups. */
+.atlas-group {
+  margin-top: var(--space-group);
+}
+.atlas-group:first-of-type {
+  margin-top: var(--space-block);
+}
+/* A label attaches to what it introduces. */
+.section-label + .atlas-group {
+  margin-top: var(--space-pair);
+}
+/* Only entries inside a group get rules, so the gap alone separates groups. */
+.atlas-group .atlas-entry:last-child {
+  border-bottom: 0;
+}
+.group-summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-pair);
+  text-decoration: none;
+}
+.group-summary > .meta {
+  white-space: nowrap;
+}
+.group-summary h2,
+.group-summary h3 {
+  font-family: inherit;
+  font-size: 1.0625rem;
+  font-weight: 500;
+  letter-spacing: normal;
+  line-height: 1.3;
+  color: var(--foreground);
+  margin: 0;
 }
 /* The comparison or pattern is the finding, so it leads the screen. */
 .observation h1 {
@@ -1188,6 +1288,11 @@ h1.tab-title {
 }
 .discovery-entry p:last-of-type {
   margin-bottom: 0;
+}
+/* The finding outranks the group headings below it, in size and in step from its body. */
+.discovery-entry h3 {
+  font-size: 1.375rem;
+  margin: 0 0 var(--space-in);
 }
 /* Labelled facts: Meta label, ink value, so each line says what it is. */
 .facts {
