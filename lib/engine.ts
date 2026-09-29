@@ -17,6 +17,38 @@ export const resistanceChoices: [Resistance, string][] = [
   ['unpleasant', 'I’m trying to avoid the feeling it brings up.'],
   ['other', 'Something else—or I’m not sure yet.'],
 ];
+// The why line under the step on Your step, keyed by the Clarify answer.
+export const stepReasons: Record<Resistance, string> = {
+  start:
+    'Starting is often the hardest part. A rough few minutes is enough to get going, and it doesn’t need to be good.',
+  understand:
+    'Waiting until you feel sure can take a long time. Doing a little while unsure often tells you more than more thinking would.',
+  judged:
+    'You can’t know how they’ll react until they see or hear it. A small, real try lets you find out instead of guessing.',
+  checking:
+    'Each extra check eases the worry briefly, so the next one feels needed too. Stopping after the check that matters lets you find out whether it was enough.',
+  unpleasant:
+    'Getting away from a feeling brings quick relief, so it’s easy to keep doing. Staying with it for a minute lets you see whether it grows, settles or passes. You can stop any time.',
+  other:
+    'A step you can start right now is easier to begin, and it still shows you how this really feels.',
+};
+// Shown above a blank step field, one per Clarify answer.
+export const blankStepHints: Record<Resistance, string> = {
+  judged:
+    'Something someone else will see or hear. For example: say one thing in the meeting, or show someone what you have so far.',
+  start:
+    'The very first physical action. For example: open it, lay it out, or write one line.',
+  understand:
+    'Something you can do before you’re sure. For example: pick one option to try, or write down your best guess.',
+  checking:
+    'The one check that’s needed, then stop. For example: look it over once, then close it.',
+  unpleasant:
+    'Start and let the feeling be there. For example: do the first two minutes and notice how it feels.',
+  other:
+    'Something small enough to start now. For example: open the file, or write the first line.',
+};
+export const careHint =
+  'Choose a step that feels safe and manageable. It’s fine to get advice or support first.';
 export const noticingChoices = [
   ['doorway', 'Starting was harder than continuing'],
   ['easier', 'It was easier than I expected'],

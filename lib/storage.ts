@@ -30,6 +30,12 @@ export type Saved = {
   session: Session | null;
   encounters: Encounter[];
   lastId: string | null;
+  // Which half of Setup is showing. Absent means the first half, "Your step".
+  setupPart?: 'prepare';
+  // Where the current setup flow started, for Back and for Home's Start.
+  setupFrom?: 'home' | 'clarify';
+  // Setup's worry field, kept in Saved so it survives an app switch.
+  worryDraft?: string;
 };
 export const initial: Saved = {
   version: 1,
@@ -89,7 +95,10 @@ export function parseSaved(raw: string): Saved {
     !x.encounters.every(isEncounter) ||
     (x.session !== null && !isSession(x.session)) ||
     (x.draft !== null && !isCandidate(x.draft)) ||
-    (x.lastId !== null && !text(x.lastId, 200))
+    (x.lastId !== null && !text(x.lastId, 200)) ||
+    (x.setupPart !== undefined && x.setupPart !== 'prepare') ||
+    (x.setupFrom !== undefined && !['home', 'clarify'].includes(x.setupFrom)) ||
+    (x.worryDraft !== undefined && !text(x.worryDraft, 1000))
   )
     throw Error(
       'This backup contains incomplete or unsupported Threshold data. Your data has not changed.',
@@ -117,6 +126,9 @@ export function parseSaved(raw: string): Saved {
     session: x.session,
     encounters: unique,
     lastId: x.lastId,
+    ...(x.setupPart !== undefined ? { setupPart: x.setupPart } : {}),
+    ...(x.setupFrom !== undefined ? { setupFrom: x.setupFrom } : {}),
+    ...(x.worryDraft !== undefined ? { worryDraft: x.worryDraft } : {}),
   };
 }
 export function restoreSummary(current: Saved, backup: Saved) {

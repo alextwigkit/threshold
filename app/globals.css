@@ -100,11 +100,12 @@ button:disabled {
   cursor: default;
   opacity: 0.4;
 }
-/* Disabled primary is an outline, so it doesn't outweigh the field it waits on. */
+/* Disabled primary is an outline, so it doesn't outweigh the field it waits on,
+ * but stays legible enough to show where the next action will be. */
 .primary:disabled {
   opacity: 1;
   background: none;
-  border: 1px solid var(--border);
+  border: 1px solid var(--field-border);
   color: var(--meta-foreground);
 }
 button:focus-visible,
@@ -147,6 +148,7 @@ h3 {
 }
 h1 {
   font-size: clamp(1.875rem, 6vw, 2rem);
+  text-wrap: balance;
   margin: 0 0 var(--space-pair);
 }
 h2 {
@@ -573,18 +575,23 @@ fieldset.choices {
 }
 .action-input {
   min-height: 5.625rem;
-  font-size: 1.125rem;
+  font-size: 1.375rem;
+  line-height: 1.35;
   /* Tier 1 on Setup: a firmer edge than the scale beneath it. */
   border: 1.5px solid var(--foreground);
 }
 .action-input::placeholder {
   color: var(--muted-foreground);
 }
-/* Setup's scale is second to the step: hairline cells, grey numbers until picked. */
-.setup .scale-choice:not(.selected) {
-  border-color: var(--border);
-  color: var(--meta-foreground);
-  font-weight: 400;
+/* The scale is what Before you start asks for, so its cells get a firmer target. */
+.setup .scale-choice {
+  min-height: 48px;
+  font-size: 1.0625rem;
+}
+/* A label, not a heading: the step text in the field is the largest type. */
+.step-eyebrow {
+  font-family: inherit;
+  line-height: 1.45;
 }
 /* A question's hint belongs to it; the answers start a new block. */
 h1:has(+ .question-hint),
@@ -603,12 +610,45 @@ h2:has(+ .question-hint) {
   flex-wrap: wrap;
   gap: 8px 24px;
 }
-/* Optional extras sit under Begin, so opening one never pushes it down. */
-.setup .primary ~ .setup-links {
+/* Optional extras keep their own breathing room from the field above. */
+.setup .setup-links {
   margin-top: var(--space-in);
 }
-.setup .primary ~ .field-label {
+/* Setup's labelled fields are optional, so they stay regular weight. */
+.setup .field-label {
   margin-top: var(--space-block);
+  font-weight: 400;
+}
+/* The why: body colour a size below the step, bound to the field above. */
+.step-reason {
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  margin: var(--space-in) 0 0;
+}
+/* The step and its length read as one group, set well apart from the question. */
+.echo.setup-context {
+  margin-bottom: var(--space-group);
+}
+/* Optional, so a hairline edge: the scale above stays the thing to answer. */
+#worry {
+  min-height: 4.75rem;
+  border-color: var(--border);
+  background: transparent;
+}
+/* One line: a reminder of the step, not the step itself; Change shows it all. */
+.setup-step {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+}
+/* The question labels the scale, so the two sit together. */
+.setup h1 + .scale-field {
+  margin-top: 0;
+}
+/* Progress is a separate topic, so it sits a step further off than any group gap. */
+.progress {
+  margin-top: calc(var(--space-group) + var(--space-pair));
 }
 /* Two related lines about the same situation: group them tighter than the
  * usual gap before the step title. */
@@ -653,10 +693,18 @@ h1.sr-only + .scale-field {
 h2:focus {
   outline: none;
 }
+/* Two full-width rows, 0 to 5 then 6 to 10, so each end sits under its label
+ * and every cell stays a comfortable touch target. */
 .scale {
-  display: grid !important;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 4px !important;
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 6px !important;
+}
+.scale > .scale-choice {
+  flex: 0 0 calc((100% - 5 * 6px) / 6);
+}
+.scale > .scale-choice:nth-child(n + 7) {
+  flex-basis: calc((100% - 4 * 6px) / 5);
 }
 .scale-choice {
   position: relative;
@@ -725,12 +773,9 @@ h2:focus {
   color: var(--meta-foreground);
   margin-right: auto;
 }
-/* Home's inline context line under the eyebrow. */
+/* Home's situation, bound to the label above and the step below. */
 .situation-context {
-  margin: 0 0 var(--space-block);
-}
-.eyebrow:has(+ .situation-context) {
-  margin-bottom: 4px;
+  margin: 0 0 var(--space-in);
 }
 /* Context, not a box: the person's words sit quietly above the question. */
 .echo {
@@ -1065,9 +1110,19 @@ h1.tab-title {
     column-gap: 6px;
   }
 }
+/* A label, not a heading to read: the step text below is the largest type. */
 .home-step {
-  font-size: 2rem;
-  margin-bottom: var(--space-in);
+  font-family: inherit;
+  line-height: 1.45;
+  margin-top: var(--space-block);
+}
+.home-action {
+  font-size: 1.5rem;
+  line-height: 1.35;
+  margin-bottom: var(--space-block);
+}
+.home-links {
+  margin-top: var(--space-in);
 }
 /* The rarest finding stands apart from ordinary observations. */
 .discovery-entry {
@@ -1135,20 +1190,16 @@ details p {
   }
 }
 /*
- * In `em` because whether eleven numbers fit on one row depends on the text
- * size, not the viewport alone. Enlarged text keeps the six-column layout.
- *
- * Raised from 500px to the same 700px point .shell switches to its desktop
- * layout: below that, this is a touch-primary width (phones, tablets) where
- * 11 columns inside .shell's column would land under the 44px comfort
- * target (WCAG 2.5.8 only requires 24px, but 44px is the platform norm for
- * touch). At 560px .shell max-width even the desktop 11-column layout still
- * lands around 40px per cell — narrower than ideal, wider than the 500px
- * case, and in a pointer context where sub-44px targets are a smaller risk.
+ * One row once eleven cells fit at a comfortable width. In `em` so enlarged
+ * text keeps two rows.
  */
 @media (min-width: 43.75em) {
   .scale {
-    grid-template-columns: repeat(11, minmax(0, 1fr));
+    flex-wrap: nowrap;
+  }
+  .scale > .scale-choice,
+  .scale > .scale-choice:nth-child(n + 7) {
+    flex: 1 1 0;
   }
 }
 @media (max-width: 350px) {

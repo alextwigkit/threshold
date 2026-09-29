@@ -28,6 +28,9 @@ import {
   lastPurpose,
   toggleNotice,
   validScale,
+  stepReasons,
+  blankStepHints,
+  careHint,
   type Resistance,
   type Session,
   type Encounter,
@@ -74,6 +77,7 @@ function splitWorryLine(line: string): [string, string] {
 function Scale({
   id,
   label,
+  labelledBy,
   value,
   onChange,
   onPick,
@@ -81,6 +85,9 @@ function Scale({
 }: {
   id: string;
   label: string;
+  // When set, an outside heading already names the scale, so no visible
+  // label is printed here and the radio group points at it instead.
+  labelledBy?: string;
   value: number | null;
   onChange: (n: number) => void;
   onPick?: () => void;
@@ -88,14 +95,16 @@ function Scale({
 }) {
   return (
     <div className="scale-field" onBlur={onLeave}>
-      <div className="scale-legend" id={`${id}-label`} tabIndex={-1}>
-        {label}
-      </div>
+      {labelledBy === undefined && (
+        <div className="scale-legend" id={`${id}-label`} tabIndex={-1}>
+          {label}
+        </div>
+      )}
       <RadioGroup
         className="scale"
         value={value === null ? '' : String(value)}
         onValueChange={(v) => onChange(Number(v))}
-        aria-labelledby={`${id}-label`}
+        aria-labelledby={labelledBy ?? `${id}-label`}
         aria-describedby={`${id}-ends`}
       >
         {Array.from({ length: 11 }, (_, n) => (
@@ -250,13 +259,12 @@ export default function Home() {
   const pendingFocus = useRef<string | null>(null);
   // Clarify: "Something else" may be preselected; its text field waits for an explicit pick.
   const [pickedOther, setPickedOther] = useState(false);
-  // Setup's worry field. Not part of Saved: like the prediction, it's a
-  // fresh guess each time, so it never needs to survive a reload.
-  const [showWorry, setShowWorry] = useState(false);
-  const [worryDraft, setWorryDraft] = useState('');
   // Setup's purpose input. Unlike worry, its value lives on the draft
   // itself, so this only tracks whether the input is open.
   const [showPurpose, setShowPurpose] = useState(false);
+  // Your step: whether the field was empty when the person arrived on this
+  // half, so the heading and hint don't flip while they type.
+  const [blankAtArrival, setBlankAtArrival] = useState(false);
   // Atlas: an unanswered worry being given a later answer.
   const [editingWorryId, setEditingWorryId] = useState<string | null>(null);
   const [worrySavedId, setWorrySavedId] = useState<string | null>(null);
@@ -409,6 +417,9 @@ export default function Home() {
     suggestionRequest.current.cancel();
     setBusy(false);
   }, [s.situation, s.resistance, s.custom, s.screen]);
+  useEffect(() => {
+    setBlankAtArrival(!s.draft?.action.trim());
+  }, [s.screen, s.setupPart, s.draft?.situation]);
   useEffect(() => () => suggestionRequest.current.cancel(), []);
   const go = (screen: Screen) => {
     suggestionRequest.current.cancel();
@@ -432,6 +443,9 @@ export default function Home() {
       prediction: null,
       predictionNote: '',
       screen: guess.confident ? 'setup' : 'clarify',
+      setupPart: undefined,
+      setupFrom: 'clarify',
+      worryDraft: undefined,
     });
   }
   async function requestStep(confirmed: Resistance | null) {
@@ -481,6 +495,9 @@ export default function Home() {
           : result.needsClarification
             ? 'clarify'
             : 'setup',
+        setupPart: undefined,
+        setupFrom: 'clarify',
+        worryDraft: undefined,
       });
       return true;
     } catch (e) {
@@ -503,8 +520,6 @@ export default function Home() {
   );
   async function resolve() {
     setPickedOther(false);
-    setShowWorry(false);
-    setWorryDraft('');
     setShowPurpose(false);
     if (await requestStep(null)) {
       return;
@@ -512,8 +527,6 @@ export default function Home() {
     builtInStep(null);
   }
   async function setup() {
-    setShowWorry(false);
-    setWorryDraft('');
     setShowPurpose(false);
     if (await requestStep(s.resistance)) {
       return;
@@ -534,7 +547,7 @@ export default function Home() {
         id: crypto.randomUUID(),
         prediction: s.prediction,
         predictionNote: s.predictionNote,
-        worry: worryDraft.trim(),
+        worry: (s.worryDraft ?? '').trim(),
         startedAt: Date.now(),
         actual: null,
         urge: '',
@@ -543,9 +556,10 @@ export default function Home() {
         stopped: false,
       },
       screen: 'active',
+      setupPart: undefined,
+      setupFrom: undefined,
+      worryDraft: undefined,
     });
-    setShowWorry(false);
-    setWorryDraft('');
     setShowPurpose(false);
   }
   function updateSession(p: Partial<Session>) {
@@ -791,17 +805,25 @@ export default function Home() {
           <button
             className="back"
             aria-label="Go back"
-            onClick={() =>
-              go(
-                s.screen === 'clarify'
-                  ? 'name'
-                  : s.screen === 'setup'
-                    ? 'clarify'
-                    : s.screen === 'return'
-                      ? 'active'
-                      : 'setup',
-              )
-            }
+            onClick={() => {
+              if (s.screen === 'clarify') {
+                go('name');
+                return;
+              }
+              if (s.screen === 'setup' && s.setupPart === 'prepare') {
+                if (s.setupFrom === 'home') {
+                  go('map');
+                  return;
+                }
+                patch({ setupPart: undefined });
+                return;
+              }
+              if (s.screen === 'setup') {
+                go(s.setupFrom === 'home' ? 'map' : 'clarify');
+                return;
+              }
+              go(s.screen === 'return' ? 'active' : 'setup');
+            }}
           >
             ←
           </button>
@@ -845,8 +867,6 @@ export default function Home() {
             onClick={() => {
               suggestionRequest.current.cancel();
               setBusy(false);
-              setShowWorry(false);
-              setWorryDraft('');
               setShowPurpose(false);
               builtInStep(s.screen === 'clarify' ? s.resistance : null);
             }}
@@ -940,7 +960,7 @@ export default function Home() {
           </Primary>
         </section>
       )}
-      {s.screen === 'setup' && s.draft && (
+      {s.screen === 'setup' && s.draft && s.setupPart !== 'prepare' && (
         <section className="setup">
           {/*
            * No map preview here: on a first situation there is no history yet
@@ -959,35 +979,42 @@ export default function Home() {
             purpose={showPurpose ? undefined : s.draft.purpose?.trim()}
             onEditPurpose={() => setShowPurpose(true)}
           />
-          {title(s.draft.title)}
-          <div>
-            <textarea
-              id="action"
-              aria-label="Your step"
-              className="text-input action-input lead"
-              maxLength={1000}
-              value={s.draft.action}
-              placeholder={
-                s.draft.territory === 'spotlight'
-                  ? 'Name one question, message, or small thing you could let someone see.'
-                  : s.draft.territory === 'loop'
-                    ? 'Name one necessary check, and the extra polishing pass you could leave undone.'
-                    : s.draft.territory === 'water'
-                      ? 'Name a feeling you could notice briefly before opening a distraction.'
-                      : 'Name one small, concrete thing you can do toward this situation.'
-              }
-              onChange={(e) =>
-                patch({
-                  draft: {
-                    ...s.draft!,
-                    action: e.target.value,
-                    userAction: e.target.value,
-                  },
-                })
-              }
-            />
+          {suggestionMessage && (
+            <p className="notice" role="status">
+              {suggestionMessage}
+            </p>
+          )}
+          {blankAtArrival
+            ? title('What’s one small step you could take?')
+            : title('Your step', 'eyebrow step-eyebrow')}
+          {blankAtArrival && (
+            <p className="meta question-hint" id="action-hint">
+              {s.draft.careful ? careHint : blankStepHints[s.resistance]}
+            </p>
+          )}
+          <textarea
+            id="action"
+            aria-labelledby="screen-title"
+            aria-describedby={blankAtArrival ? 'action-hint' : undefined}
+            className="text-input action-input lead"
+            maxLength={1000}
+            value={s.draft.action}
+            onChange={(e) =>
+              patch({
+                draft: {
+                  ...s.draft!,
+                  action: e.target.value,
+                  userAction: e.target.value,
+                },
+              })
+            }
+          />
+          {!blankAtArrival && !s.draft.careful && (
+            <p className="step-reason">{stepReasons[s.resistance]}</p>
+          )}
+          {s.draft.action.trim() && (
             <div className="duration">
-              <span className="duration-label">{s.draft!.minutes} min</span>
+              <span className="duration-label">{s.draft.minutes} min</span>
               <button
                 className="text-button"
                 onClick={() =>
@@ -1003,57 +1030,16 @@ export default function Home() {
                   })
                 }
               >
-                {s.draft!.minutes === 1 ? 'Use 3 minutes' : 'Make it smaller'}
+                {s.draft.minutes === 1 ? 'Use 3 minutes' : 'Make it 1 minute'}
               </button>
             </div>
-          </div>
-          <Scale
-            id="expected"
-            label="How uncomfortable do you expect this to be?"
-            value={s.prediction}
-            onChange={(prediction) => patch({ prediction })}
-          />
+          )}
           <Primary
-            onClick={begin}
-            disabled={!s.draft.action.trim() || s.prediction === null}
+            onClick={() => patch({ setupPart: 'prepare' })}
+            disabled={!s.draft.action.trim()}
           >
-            Begin
+            Next
           </Primary>
-          {/* Explains the loop once; after a first encounter it is known. */}
-          {s.encounters.length === 0 && (
-            <p className="meta mechanic-note">
-              You'll leave the app to try this for real, then say what actually
-              happened.
-            </p>
-          )}
-          {(showWorry || worryDraft) && (
-            <>
-              <label className="field-label" htmlFor="worry">
-                What are you worried will happen?{' '}
-                <span className="optional">Optional</span>
-              </label>
-              <textarea
-                className="text-input"
-                id="worry"
-                value={worryDraft}
-                maxLength={1000}
-                autoFocus={showWorry && !worryDraft}
-                placeholder={
-                  s.draft.territory === 'spotlight'
-                    ? 'They’ll think it’s a silly question.'
-                    : s.draft.territory === 'fog'
-                      ? 'I’ll get it wrong and have to start over.'
-                      : s.draft.territory === 'loop'
-                        ? 'I’ll miss a mistake that matters.'
-                        : s.draft.territory === 'water'
-                          ? 'I won’t be able to stay with it.'
-                          : 'Something you could check afterwards.'
-                }
-                onFocus={() => setShowWorry(true)}
-                onChange={(e) => setWorryDraft(e.target.value)}
-              />
-            </>
-          )}
           {showPurpose && (
             <>
               <label className="field-label" htmlFor="purpose">
@@ -1066,39 +1052,80 @@ export default function Home() {
                 value={s.draft.purpose ?? ''}
                 maxLength={300}
                 autoFocus
-                placeholder="Who it helps, or what it makes possible."
+                placeholder="For example: So the team can move forward."
                 onChange={(e) =>
                   patch({ draft: { ...s.draft!, purpose: e.target.value } })
                 }
               />
             </>
           )}
-          {(!(showWorry || worryDraft) ||
-            (!s.draft.purpose?.trim() && !showPurpose)) && (
+          {!s.draft.purpose?.trim() && !showPurpose && (
             <div className="setup-links">
-              {!(showWorry || worryDraft) && (
-                <button
-                  className="text-button note-toggle"
-                  onClick={() => setShowWorry(true)}
-                >
-                  Name a worry
-                </button>
-              )}
-              {!s.draft.purpose?.trim() && !showPurpose && (
-                <button
-                  className="text-button note-toggle"
-                  onClick={() => setShowPurpose(true)}
-                >
-                  Name what it’s for
-                </button>
-              )}
+              <button
+                className="text-button note-toggle"
+                onClick={() => setShowPurpose(true)}
+              >
+                Name what it’s for
+              </button>
             </div>
           )}
-          {suggestionMessage && (
-            <p className="notice" role="status">
-              {suggestionMessage}
+        </section>
+      )}
+      {s.screen === 'setup' && s.draft && s.setupPart === 'prepare' && (
+        <section className="setup">
+          <div className="echo setup-context">
+            <p className="meta echo-body setup-step">
+              Your step ({s.draft.minutes} min):{' '}
+              <span className="echo-text">{s.draft.action}</span>
             </p>
-          )}
+            <button
+              className="text-button"
+              aria-label="Change step"
+              onClick={() => patch({ setupPart: undefined })}
+            >
+              Change
+            </button>
+          </div>
+          {title('How uncomfortable will it be?')}
+          <Scale
+            id="expected"
+            label="How uncomfortable do you expect this to be?"
+            labelledBy="screen-title"
+            value={s.prediction}
+            onChange={(prediction) => patch({ prediction })}
+          />
+          <label className="field-label" htmlFor="worry">
+            What are you worried will happen?{' '}
+            <span className="optional">Optional</span>
+          </label>
+          <p className="meta" id="worry-hint">
+            You’ll check afterwards whether it happened.
+          </p>
+          <textarea
+            className="text-input"
+            id="worry"
+            value={s.worryDraft ?? ''}
+            maxLength={1000}
+            aria-describedby="worry-hint"
+            placeholder={
+              s.draft.territory === 'spotlight'
+                ? 'For example: They’ll think it’s a silly question.'
+                : s.draft.territory === 'fog'
+                  ? 'For example: I’ll get it wrong and have to start over.'
+                  : s.draft.territory === 'loop'
+                    ? 'For example: I’ll miss a mistake that matters.'
+                    : s.draft.territory === 'water'
+                      ? 'For example: I won’t be able to stay with it.'
+                      : 'For example: They’ll say no.'
+            }
+            onChange={(e) => patch({ worryDraft: e.target.value })}
+          />
+          <Primary
+            onClick={begin}
+            disabled={!s.draft.action.trim() || s.prediction === null}
+          >
+            Start timer
+          </Primary>
         </section>
       )}
       {s.screen === 'active' && active && (
@@ -1379,11 +1406,127 @@ export default function Home() {
       )}
       {s.screen === 'map' && (
         <section>
-          {steps.length ? (
+          {next || steps.length > 0 ? (
+            <h1 className="sr-only" ref={heading} tabIndex={-1}>
+              Home
+            </h1>
+          ) : (
+            title('Your progress starts with one real step.')
+          )}
+          {next && (
             <>
-              <h1 className="sr-only" ref={heading} tabIndex={-1}>
-                Home
-              </h1>
+              <h2 className="eyebrow home-step">
+                {next.action ? `Next step · ${next.minutes} min` : 'Next step'}
+              </h2>
+              <p className="meta situation-context">{next.situation}</p>
+              {next.action ? (
+                <>
+                  <p className="lead home-action">{next.action}</p>
+                  {next.purpose?.trim() && (
+                    <p className="meta">For: {next.purpose}</p>
+                  )}
+                  <Primary
+                    onClick={() => {
+                      setShowPurpose(false);
+                      patch({
+                        draft: next,
+                        situation: next.situation,
+                        resistance: next.resistance,
+                        prediction: null,
+                        predictionNote: '',
+                        worryDraft: undefined,
+                        setupPart: 'prepare',
+                        setupFrom: 'home',
+                        screen: 'setup',
+                      });
+                    }}
+                  >
+                    Start
+                  </Primary>
+                  <div className="setup-links home-links">
+                    <button
+                      className="text-button"
+                      onClick={() => {
+                        setShowPurpose(false);
+                        patch({
+                          draft: next,
+                          situation: next.situation,
+                          resistance: next.resistance,
+                          prediction: null,
+                          predictionNote: '',
+                          worryDraft: undefined,
+                          setupPart: undefined,
+                          setupFrom: 'home',
+                          screen: 'setup',
+                        });
+                      }}
+                    >
+                      Change step
+                    </button>
+                    <button
+                      className="text-button"
+                      onClick={() =>
+                        patch({
+                          situation: '',
+                          custom: '',
+                          draft: null,
+                          screen: 'name',
+                        })
+                      }
+                    >
+                      Work on something else
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p>You haven’t chosen a step yet.</p>
+                  <Primary
+                    onClick={() => {
+                      setShowPurpose(false);
+                      patch({
+                        draft: next,
+                        situation: next.situation,
+                        resistance: next.resistance,
+                        prediction: null,
+                        predictionNote: '',
+                        worryDraft: undefined,
+                        setupPart: undefined,
+                        setupFrom: 'home',
+                        screen: 'setup',
+                      });
+                    }}
+                  >
+                    Choose a step
+                  </Primary>
+                </>
+              )}
+            </>
+          )}
+          {!next?.action && (
+            <button
+              className="secondary avoid-row"
+              onClick={() =>
+                patch({
+                  situation: '',
+                  custom: '',
+                  draft: null,
+                  screen: 'name',
+                })
+              }
+            >
+              {/* With a situation already here, this starts a different one. */}
+              {next ? 'Work on something else' : "I'm avoiding something"}
+            </button>
+          )}
+          {steps.length > 0 && (
+            <section className="progress" aria-labelledby="progress-title">
+              <h2 id="progress-title">Your progress</h2>
+              {(pattern(s.encounters) || worryPattern(s.encounters)) && (
+                <p>
+                  {pattern(s.encounters)} {worryPattern(s.encounters)}
+                </p>
+              )}
               <Trail
                 encounters={s.encounters}
                 found={found}
@@ -1392,72 +1535,12 @@ export default function Home() {
                 onEarlier={() => openEntry(null)}
               />
               <p className="meta trail-key">
-                {pattern(s.encounters)} {worryPattern(s.encounters)} Expected →
-                felt, out of 10
+                Expected → felt, out of 10
                 {stoppedShown && '; half-filled means you stopped early'}. Tap a
                 step for details.
               </p>
-            </>
-          ) : (
-            <>
-              {/* With a step waiting, the step leads and this line joins the trail's key. */}
-              {next ? (
-                <h1 className="sr-only" ref={heading} tabIndex={-1}>
-                  Home
-                </h1>
-              ) : (
-                title('Your progress starts with one real step.')
-              )}
-              {next && <Trail encounters={[]} next={next} />}
-              <p className="meta trail-key">
-                {next && 'Your progress starts with one real step. '}Each step
-                you take shows up here.
-              </p>
-            </>
+            </section>
           )}
-          {next && (
-            <>
-              <p className="eyebrow">Next step · {next.minutes} min</p>
-              {/* Which situation this reflects, not just the resulting step — this is
-               * always the most recent one, and without it there is no way to tell
-               * whether it's still the thing worth continuing before committing to it. */}
-              <p className="meta situation-context">{next.situation}</p>
-              <h2 className="home-step">{next.title}</h2>
-              <p>
-                {next.action ||
-                  'Choose a small step toward the situation you last brought here.'}
-              </p>
-              {next.purpose?.trim() && (
-                <p className="meta">For: {next.purpose}</p>
-              )}
-              <Primary
-                onClick={() => {
-                  setShowWorry(false);
-                  setWorryDraft('');
-                  setShowPurpose(false);
-                  patch({
-                    draft: next,
-                    situation: next.situation,
-                    resistance: next.resistance,
-                    prediction: null,
-                    predictionNote: '',
-                    screen: 'setup',
-                  });
-                }}
-              >
-                Start
-              </Primary>
-            </>
-          )}
-          <button
-            className="secondary avoid-row"
-            onClick={() =>
-              patch({ situation: '', custom: '', draft: null, screen: 'name' })
-            }
-          >
-            {/* With a step already here, this starts a different situation. */}
-            {next ? 'Work on something else' : "I'm avoiding something"}
-          </button>
         </section>
       )}
       {s.screen === 'atlas' && (

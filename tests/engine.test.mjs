@@ -16,6 +16,9 @@ import {
   isSession,
   isCandidate,
   needsCare,
+  resistanceChoices,
+  stepReasons,
+  blankStepHints,
 } from '../lib/engine.ts';
 const encounter = (id, overrides = {}) => ({
   ...candidate('starting a proposal', 'understand'),
@@ -606,4 +609,16 @@ test('isCandidate accepts a purpose up to 300 characters and rejects longer', ()
   assert.equal(isCandidate({ ...base, careful: 'yes' }), false);
   assert.equal(isCandidate({ ...base, purpose: 'x'.repeat(300) }), true);
   assert.equal(isCandidate({ ...base, purpose: 'x'.repeat(301) }), false);
+});
+test('stepReasons and blankStepHints cover every resistance with real copy', () => {
+  for (const [resistance] of resistanceChoices) {
+    assert.equal(typeof stepReasons[resistance], 'string');
+    assert.ok(stepReasons[resistance].trim().length > 0);
+    assert.ok(!stepReasons[resistance].includes('—'));
+    assert.ok(!stepReasons[resistance].includes('--'));
+    assert.equal(typeof blankStepHints[resistance], 'string');
+    assert.ok(blankStepHints[resistance].trim().length > 0);
+    assert.ok(!blankStepHints[resistance].includes('—'));
+    assert.ok(!blankStepHints[resistance].includes('--'));
+  }
 });

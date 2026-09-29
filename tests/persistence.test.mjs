@@ -161,6 +161,36 @@ test('the trail deduplicates history and remains deterministic', () => {
     trailStones([e('1'), e('2')]),
   );
 });
+test('setupPart, setupFrom and worryDraft round-trip when valid', () => {
+  const state = {
+    ...saved([e('1')]),
+    setupPart: 'prepare',
+    setupFrom: 'home',
+    worryDraft: 'they will say no',
+  };
+  assert.deepEqual(
+    parseSaved(JSON.stringify(state)),
+    JSON.parse(JSON.stringify(state)),
+  );
+});
+test('setupPart, setupFrom and worryDraft stay absent when not saved', () => {
+  const parsed = parseSaved(JSON.stringify(saved([e('1')])));
+  assert.equal('setupPart' in parsed, false);
+  assert.equal('setupFrom' in parsed, false);
+  assert.equal('worryDraft' in parsed, false);
+});
+test('an invalid setupPart, setupFrom or worryDraft is rejected', () => {
+  const local = saved([e('1')]);
+  const before = JSON.stringify(local);
+  for (const bad of [
+    JSON.stringify({ ...local, setupPart: 'other' }),
+    JSON.stringify({ ...local, setupFrom: 'somewhere' }),
+    JSON.stringify({ ...local, worryDraft: 7 }),
+    JSON.stringify({ ...local, worryDraft: 'x'.repeat(1001) }),
+  ])
+    assert.throws(() => parseSaved(bad));
+  assert.equal(JSON.stringify(local), before);
+});
 test('a backup cannot preempt the current active encounter using the same id', () => {
   const local = { ...saved(), screen: 'active', session: e('1') };
   const backup = saved([e('1')]);
