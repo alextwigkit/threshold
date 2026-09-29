@@ -116,7 +116,7 @@ test('the Observation caption places the step on the trail', () => {
     step('2', { prediction: 7, actual: 7 }),
     step('3', { prediction: 4, actual: 2 }),
   ];
-  assert.equal(trailCaption(all[0], all), 'The first stone on your trail.');
+  assert.equal(trailCaption(all[0], all), 'Your first step.');
   assert.equal(
     trailCaption(all[1], all),
     'Your 2nd step. 1 of 2 felt easier than you expected.',
@@ -128,7 +128,7 @@ test('the Observation caption places the step on the trail', () => {
   const skipped = step('4', { outcome: 'not_started', actual: null });
   assert.equal(
     trailCaption(skipped, [...all, skipped]),
-    'Your trail grows when you start a step.',
+    'Only steps you start are counted.',
   );
 });
 

@@ -2,37 +2,12 @@ export type Territory = 'fog' | 'spotlight' | 'loop' | 'water' | 'unknown';
 export type Resistance =
   'understand' | 'start' | 'judged' | 'unpleasant' | 'other' | 'checking';
 export type Urge = 'no' | 'stayed' | 'returned' | 'stopped' | '';
-export const territories: Record<
-  Territory,
-  { name: string; short: string; description: string }
-> = {
-  fog: {
-    name: 'The Fog',
-    short: 'Unclear',
-    description: 'When action has to happen before everything is clear.',
-  },
-  spotlight: {
-    name: 'The Spotlight',
-    short: 'Visible',
-    description: 'When being seen or heard is part of the hard thing.',
-  },
-  loop: {
-    name: 'The Open Loop',
-    short: 'Checking',
-    description: 'When stopping means leaving some uncertainty unresolved.',
-  },
-  water: {
-    name: 'Still Water',
-    short: 'Feeling',
-    description:
-      'When an unpleasant feeling is here, without needing to fix it first.',
-  },
-  unknown: {
-    name: 'Somewhere new',
-    short: '',
-    description:
-      'Start with the situation. The shape of this territory can come later.',
-  },
+export const territories: Record<Territory, { where: string }> = {
+  fog: { where: 'weren’t sure how to start or what to do' },
+  spotlight: { where: 'were worried how someone would react' },
+  loop: { where: 'kept checking or preparing' },
+  water: { where: 'were avoiding a feeling' },
+  unknown: { where: 'found it hard for another reason' },
 };
 export const resistanceChoices: [Resistance, string][] = [
   ['start', 'I don’t know where to start.'],
@@ -406,15 +381,15 @@ const discoveryRules: DiscoveryRule[] = [
     rule: 'doorway',
     eligible: (e) => e.outcome !== 'not_started',
     supports: (e) => supports(e, 'doorway'),
-    title: 'The Doorway Is Worse Than the Room',
-    body: 'Across these encounters, starting often felt harder than continuing.',
+    title: 'Starting is the hardest part',
+    body: 'In most of these steps, starting felt harder than keeping going.',
   },
   {
     rule: 'carried',
     eligible: (e) => e.outcome !== 'not_started',
     supports: (e) => supports(e, 'carried'),
-    title: 'You Can Act While Uncomfortable',
-    body: 'Across these encounters, you acted while discomfort was still present.',
+    title: 'You can act while uncomfortable',
+    body: 'In most of these steps, you kept going while discomfort was still there.',
   },
   {
     rule: 'bluff',
@@ -424,11 +399,11 @@ const discoveryRules: DiscoveryRule[] = [
       e.outcome !== 'not_started' &&
       ['no', 'partly', 'yes'].includes(e.worryHappened ?? ''),
     supports: (e) => e.worryHappened === 'no',
-    title: 'What You Worried About Mostly Didn’t Happen',
-    body: 'Across these encounters, what you were worried about usually didn’t happen.',
+    title: 'What you worried about mostly didn’t happen',
+    body: 'In most of these steps, what you were worried about didn’t happen.',
     unanimous: {
-      title: 'What You Worried About Didn’t Happen',
-      body: 'In each of these encounters, what you were worried about didn’t happen.',
+      title: 'What you worried about didn’t happen',
+      body: 'In each of these steps, what you were worried about didn’t happen.',
     },
   },
 ];
@@ -467,7 +442,7 @@ export function discoveries(all: Encounter[]): Discovery[] {
               rule,
               title: copy.title,
               body: mixed
-                ? 'This pattern appeared in earlier encounters. More recent evidence is mixed.'
+                ? 'This pattern showed up in earlier steps. More recent steps are mixed.'
                 : copy.body,
               evidence: evidence.map((e) => e.id),
               support: support.map((e) => e.id),

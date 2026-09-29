@@ -88,12 +88,12 @@ export function worryPattern(encounters: Encounter[]) {
   return `Of ${n} worries you followed up on, ${didnt} didn’t happen and ${n - didnt} did, at least in part.`;
 }
 
-/** The Observation caption: where this step sits on the trail. */
+/** The Observation caption: which step this is. */
 export function trailCaption(last: Encounter, encounters: Encounter[]) {
   if (last.outcome === 'not_started')
-    return 'Your trail grows when you start a step.';
+    return 'Only steps you start are counted.';
   const all = taken(encounters);
   const step = all.findIndex((e) => e.id === last.id) + 1;
-  if (step === 1) return 'The first stone on your trail.';
+  if (step === 1) return 'Your first step.';
   return `Your ${ordinal(step)} step. ${pattern(all.slice(0, step))}`;
 }

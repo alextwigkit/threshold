@@ -29,7 +29,6 @@ import {
   toggleNotice,
   validScale,
   type Resistance,
-  type Territory,
   type Session,
   type Encounter,
   type Urge,
@@ -237,7 +236,6 @@ export default function Home() {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
   const [now, setNow] = useState(0);
-  const [atlasTerritory, setAtlasTerritory] = useState<Territory | null>(null);
   // The encounter a trail stone opened, scrolled to and expanded in Atlas.
   const [atlasFocus, setAtlasFocus] = useState<string | null>(null);
   const [backup, setBackup] = useState<Saved | null>(null);
@@ -279,7 +277,7 @@ export default function Home() {
     } catch {
       saveBlocked.current = true;
       setError(
-        'Your saved trail could not be read. It has not been overwritten. You can export it in Me before clearing it.',
+        'Your saved data could not be read. It has not been overwritten. You can download it from Your data before clearing it.',
       );
     }
     setReady(true);
@@ -291,7 +289,7 @@ export default function Home() {
       setBusy(false);
       saveBlocked.current = true;
       setError(
-        'Your trail changed in another tab. Export any unfinished work here, then reload to use the latest trail.',
+        'Your data changed in another tab. Download any unfinished work here, then reload to use the latest version.',
       );
     };
     window.addEventListener('storage', changedElsewhere);
@@ -313,7 +311,7 @@ export default function Home() {
       setError('');
     } catch {
       setError(
-        'This browser could not save your trail. Keep this page open and export your data in Me.',
+        'This browser could not save your data. Keep this page open and download a backup from Your data.',
       );
     }
   }, [s, ready]);
@@ -369,7 +367,7 @@ export default function Home() {
           {
             name: 'stage_edge_situation',
             description:
-              'Open a new situation for user review. Does not start or record an expedition.',
+              'Open a new situation for user review. Does not start or record a step.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -387,8 +385,7 @@ export default function Home() {
                 v.situation.length > 2000
               )
                 throw Error('Provide a situation of 1–2000 characters.');
-              if (s.session)
-                throw Error('Return from the active expedition first.');
+              if (s.session) throw Error('Return from the active step first.');
               const text = v.situation.trim();
               setS((prev) => ({
                 ...prev,
@@ -641,24 +638,13 @@ export default function Home() {
   const worrySplit: [string, string] = last
     ? splitWorryLine(worryLine(last))
     : ['', ''];
-  const filteredEncounters = atlasTerritory
-    ? s.encounters.filter((e) => e.territory === atlasTerritory)
-    : s.encounters;
-  const filteredDiscoveries = atlasTerritory
-    ? found.filter((d) => d.territory === atlasTerritory)
-    : found;
   const backupSummary = backup ? restoreSummary(s, backup) : null;
   const steps = taken(s.encounters);
   // Only explain half-filled stones when one is on screen.
   const stoppedShown = trailStones(s.encounters).stones.some(
     (st) => st.stopped,
   );
-  function showTerritory(t: Territory) {
-    setAtlasFocus(null);
-    setAtlasTerritory(t);
-  }
   function openEntry(id: string | null) {
-    setAtlasTerritory(null);
     setAtlasFocus(id);
     go('atlas');
   }
@@ -699,7 +685,7 @@ export default function Home() {
     if (!backup) return;
     if (saveBlocked.current) {
       setRestoreError(
-        'Export the unreadable data, then clear this device’s trail before restoring a backup.',
+        'Download the unreadable data, then clear this device’s data before restoring a backup.',
       );
       return;
     }
@@ -707,11 +693,11 @@ export default function Home() {
     try {
       localStorage.setItem(KEY, JSON.stringify(merged));
       setS(merged);
-      setRestoreMessage('Your backup has been merged into this trail.');
+      setRestoreMessage('Your backup has been merged in.');
       setBackup(null);
     } catch {
       setRestoreError(
-        'Your browser could not save the restored trail. Your existing trail has not changed.',
+        'Your browser could not save the restored data. Your existing data has not changed.',
       );
     }
   }
@@ -767,7 +753,7 @@ export default function Home() {
     );
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'threshold-map.json';
+    a.download = 'threshold-backup.json';
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
@@ -777,7 +763,7 @@ export default function Home() {
         <header>
           <span className="brand">THRESHOLD</span>
         </header>
-        <p>Opening your trail…</p>
+        <p>Opening Threshold…</p>
       </main>
     );
   return (
@@ -790,6 +776,14 @@ export default function Home() {
             onClick={() =>
               go(s.session ? 'active' : s.encounters.length ? 'map' : 'name')
             }
+          >
+            ←
+          </button>
+        ) : s.screen === 'name' && s.encounters.length > 0 ? (
+          <button
+            className="back"
+            aria-label="Go back"
+            onClick={() => go('map')}
           >
             ←
           </button>
@@ -818,18 +812,16 @@ export default function Home() {
           <span className="brand">THRESHOLD</span>
         )}
         {s.screen === 'me' && <span className="brand">THRESHOLD</span>}
+        {s.screen === 'name' && s.encounters.length > 0 && (
+          <span className="brand">THRESHOLD</span>
+        )}
         {!nav &&
           s.screen !== 'name' &&
           s.screen !== 'observation' &&
           s.screen !== 'active' && <span className="brand">THRESHOLD</span>}
         {s.screen === 'name' && s.encounters.length === 0 && (
           <button className="text-button" onClick={() => go('me')}>
-            Preferences
-          </button>
-        )}
-        {s.screen === 'name' && s.encounters.length > 0 && (
-          <button className="text-button" onClick={() => go('map')}>
-            My trail
+            Your data
           </button>
         )}
       </header>
@@ -837,7 +829,7 @@ export default function Home() {
         <div className="error" role="alert">
           {error}
           <button className="text-button" onClick={() => go('me')}>
-            Open Me
+            Open Your data
           </button>
         </div>
       )}
@@ -871,16 +863,19 @@ export default function Home() {
               });
             }}
           >
-            Continue with a built-in step
+            Use a standard step instead
           </button>
         </div>
       )}
       {s.screen === 'name' && !busy && (
         <section className="opening screen-fade-in">
-          {title('What do you keep turning away from?')}
-          <p className="premise">
-            Threshold turns the things you avoid into territory you can explore.
-          </p>
+          {title('What have you been avoiding?')}
+          {s.encounters.length === 0 && (
+            <p className="premise">
+              Pick one thing. You’ll try a small step for a few minutes, then
+              compare how hard you expected it to be with how it actually felt.
+            </p>
+          )}
           <div className="entry">
             <textarea
               id="situation"
@@ -894,6 +889,12 @@ export default function Home() {
               A conversation, starting a project, answering a message, making a
               decision.
             </p>
+            {s.encounters.length === 0 && (
+              <p className="meta hint">
+                When you continue, this is sent to an AI service to suggest a
+                step. Your history stays in this browser.
+              </p>
+            )}
           </div>
           <Primary disabled={!s.situation.trim() || busy} onClick={resolve}>
             Continue
@@ -1327,20 +1328,11 @@ export default function Home() {
           />
           <p className="meta trail-key">
             {trailCaption(last, s.encounters)}
-            {bluffCounts && ' Stones show expected → felt.'}
+            {bluffCounts && ' Expected → felt, out of 10.'}
             {stoppedShown && ' Half-filled means you stopped early.'}
           </p>
           <div className={newDiscovery ? 'discovery-reveal' : undefined}>
-            <p className="eyebrow accent">
-              {newDiscovery
-                ? 'Discovery'
-                : last.outcome === 'not_started'
-                  ? 'This time'
-                  : s.encounters.filter((e) => e.outcome !== 'not_started')
-                        .length === 1
-                    ? 'First observation'
-                    : 'Observation'}
-            </p>
+            {newDiscovery && <p className="eyebrow accent">New pattern</p>}
             {title(newDiscovery?.title ?? observation(last).title)}
             {last.actual !== null &&
               (bluffCounts ? (
@@ -1375,11 +1367,8 @@ export default function Home() {
               ))}
             {newDiscovery && (
               <p className="optional evidence-scope">
-                Across {discoveryEvidence.length} encounters{' '}
-                {territories[newDiscovery.territory].description
-                  .replace(/^When/, 'when')
-                  .replace(/\.$/, '')}
-                .
+                In {discoveryEvidence.length} steps where you{' '}
+                {territories[newDiscovery.territory].where}.
                 {bluffCounts &&
                   bluffCounts.partly + bluffCounts.yes > 0 &&
                   ` ${bluffCounts.partly} partly happened, ${bluffCounts.yes} happened.`}
@@ -1393,11 +1382,11 @@ export default function Home() {
                 <span className="meta">{worrySplit[0]}</span> {worrySplit[1]}
                 {last.worryHappened === 'unknown' &&
                   !last.worryLater &&
-                  ' You can answer later from the Atlas.'}
+                  ' You can answer later in History.'}
               </p>
             )}
           </div>
-          <Primary onClick={() => go('map')}>See my trail</Primary>
+          <Primary onClick={() => go('map')}>Done</Primary>
         </section>
       )}
       {s.screen === 'map' && (
@@ -1405,7 +1394,7 @@ export default function Home() {
           {steps.length ? (
             <>
               <h1 className="sr-only" ref={heading} tabIndex={-1}>
-                Your trail
+                Home
               </h1>
               <Trail
                 encounters={s.encounters}
@@ -1415,10 +1404,10 @@ export default function Home() {
                 onEarlier={() => openEntry(null)}
               />
               <p className="meta trail-key">
-                {pattern(s.encounters)} {worryPattern(s.encounters)} Stones show
-                expected → felt
-                {stoppedShown && '; half-filled means you stopped early'}. Tap
-                one to open it.
+                {pattern(s.encounters)} {worryPattern(s.encounters)} Expected →
+                felt, out of 10
+                {stoppedShown && '; half-filled means you stopped early'}. Tap a
+                step for details.
               </p>
             </>
           ) : (
@@ -1426,21 +1415,21 @@ export default function Home() {
               {/* With a step waiting, the step leads and this line joins the trail's key. */}
               {next ? (
                 <h1 className="sr-only" ref={heading} tabIndex={-1}>
-                  Your trail
+                  Home
                 </h1>
               ) : (
-                title('Your trail starts with something real.')
+                title('Your progress starts with one real step.')
               )}
               {next && <Trail encounters={[]} next={next} />}
               <p className="meta trail-key">
-                {next && 'Your trail starts with something real. '}Each step you
-                take adds a stone.
+                {next && 'Your progress starts with one real step. '}Each step
+                you take shows up here.
               </p>
             </>
           )}
           {next && (
             <>
-              <p className="eyebrow">Today's Threshold · {next.minutes} min</p>
+              <p className="eyebrow">Next step · {next.minutes} min</p>
               {/* Which situation this reflects, not just the resulting step — this is
                * always the most recent one, and without it there is no way to tell
                * whether it's still the thing worth continuing before committing to it. */}
@@ -1468,7 +1457,7 @@ export default function Home() {
                   });
                 }}
               >
-                Explore
+                Start
               </Primary>
             </>
           )}
@@ -1485,27 +1474,12 @@ export default function Home() {
       )}
       {s.screen === 'atlas' && (
         <section>
-          {title(
-            atlasTerritory ? territories[atlasTerritory].name : 'Your atlas',
-            'tab-title',
-          )}
-          {atlasTerritory && (
-            <p className="meta">{territories[atlasTerritory].description}</p>
-          )}
-          {atlasTerritory && (
-            <button
-              className="text-button"
-              onClick={() => setAtlasTerritory(null)}
-            >
-              See all of my atlas
-            </button>
-          )}
+          {title('History', 'tab-title')}
           {!s.encounters.length && (
             <>
               <p>
-                Every real attempt lands here — what you expected, what actually
-                happened, and the patterns that show up once there are a few to
-                compare.
+                Each step you take shows up here: what you expected, how it
+                felt, and whether your worry came true.
               </p>
               <button
                 className="secondary avoid-row"
@@ -1518,17 +1492,19 @@ export default function Home() {
                   })
                 }
               >
-                I'm avoiding something
+                Start with something you’re avoiding
               </button>
             </>
           )}
-          {filteredDiscoveries.map((d) => (
+          {found.map((d) => (
             <article className="atlas-entry discovery-entry panel" key={d.id}>
-              <p className="eyebrow accent">
-                Discovery · {territories[d.territory].name}
-              </p>
+              <p className="eyebrow accent">Pattern</p>
               <h2>{d.title}</h2>
               <p>{d.body}</p>
+              <p className="meta">
+                In {d.evidence.length} steps where you{' '}
+                {territories[d.territory].where}.
+              </p>
               <details>
                 <summary>See the evidence</summary>
                 {s.encounters
@@ -1540,13 +1516,13 @@ export default function Home() {
                     </p>
                   ))}
                 <p>
-                  {d.support.length} supporting encounters; {d.contrary.length}{' '}
-                  other encounters.
+                  {d.support.length} fit this pattern; {d.contrary.length}{' '}
+                  didn’t.
                 </p>
               </details>
             </article>
           ))}
-          {[...filteredEncounters].reverse().map((e) => (
+          {[...s.encounters].reverse().map((e) => (
             <article
               className="atlas-entry"
               key={e.id}
@@ -1557,19 +1533,7 @@ export default function Home() {
                 {new Date(e.createdAt).toLocaleDateString(undefined, {
                   month: 'short',
                   day: 'numeric',
-                })}{' '}
-                ·{' '}
-                {atlasTerritory ? (
-                  territories[e.territory].name
-                ) : (
-                  <button
-                    className="eyebrow-link"
-                    aria-label={`Only show ${territories[e.territory].name}`}
-                    onClick={() => showTerritory(e.territory)}
-                  >
-                    {territories[e.territory].name}
-                  </button>
-                )}
+                })}
               </p>
               <h2>{observation(e).title}</h2>
               <p>{observation(e).body}</p>
@@ -1620,7 +1584,7 @@ export default function Home() {
                 </>
               )}
               <details>
-                <summary>The encounter</summary>
+                <summary>Details</summary>
                 <dl className="facts panel">
                   <dt className="meta">Avoiding</dt>
                   <dd>{e.situation}</dd>
@@ -1680,45 +1644,42 @@ export default function Home() {
               </details>
             </article>
           ))}
-          {!atlasTerritory &&
-            s.encounters.length > 0 &&
-            s.encounters.length < 4 && (
-              <p className="optional">
-                Patterns show up here once there are a few more encounters to
-                compare.
-              </p>
-            )}
+          {s.encounters.length > 0 && s.encounters.length < 4 && (
+            <p className="optional">
+              Patterns can show up after at least 4 steps with the same kind of
+              difficulty, over 3 or more days. For example, if what you worry
+              about keeps not happening.
+            </p>
+          )}
         </section>
       )}
       {s.screen === 'me' && (
         <section>
-          {title('A trail of your own')}
+          {title('Your data')}
           {s.session && (
-            <Primary onClick={() => go('active')}>
-              Return to your expedition
-            </Primary>
+            <Primary onClick={() => go('active')}>Back to your step</Primary>
           )}
           {saveBlocked.current && (
             <button
               className="text-button"
               onClick={() => window.location.reload()}
             >
-              Reload the saved trail
+              Reload saved data
             </button>
           )}
-          <h2 className="section-heading keep-heading">Keep your trail</h2>
+          <h2 className="section-heading keep-heading">Back up</h2>
           <p>
-            Your trail lives only in this browser, and clearing browser data
-            erases it. Save a copy now and then.
+            Everything is stored only in this browser. Clearing browser data
+            erases it, so download a backup now and then.
           </p>
           <div className="data-actions">
-            {/* An expedition in progress keeps the one primary action. */}
+            {/* A step in progress keeps the one primary action. */}
             {s.session ? (
               <button className="secondary" onClick={exportData}>
-                Export my data
+                Download a backup
               </button>
             ) : (
-              <Primary onClick={exportData}>Export my data</Primary>
+              <Primary onClick={exportData}>Download a backup</Primary>
             )}
             <input
               ref={fileInput}
@@ -1751,14 +1712,11 @@ export default function Home() {
           >
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>
-                  Merge this backup into your trail?
-                </AlertDialogTitle>
+                <AlertDialogTitle>Merge this backup?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  {backupSummary?.added ?? 0} encounters will be added.{' '}
-                  {backupSummary?.duplicates ?? 0} already on this device will
-                  be kept as they are. Your current step and unfinished
-                  expedition will stay here.
+                  {backupSummary?.added ?? 0} steps will be added.{' '}
+                  {backupSummary?.duplicates ?? 0} already here will stay as
+                  they are. Your current step won’t change.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <div role="alert">{restoreError}</div>
@@ -1772,20 +1730,20 @@ export default function Home() {
           </AlertDialog>
           <AlertDialog>
             <AlertDialogTrigger className="text-button destructive">
-              Delete my trail
+              Delete all data
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>
-                  Delete your trail from this device?
+                  Delete all data from this browser?
                 </AlertDialogTitle>
                 <AlertDialogDescription>
-                  This removes your situations, encounters and observations.
-                  Export a copy first if you want to keep them.
+                  This removes everything you’ve recorded here. Download a
+                  backup first if you want to keep it.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Keep my trail</AlertDialogCancel>
+                <AlertDialogCancel>Keep my data</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={() => {
                     try {
@@ -1798,23 +1756,23 @@ export default function Home() {
                       setBackup(null);
                       setRestoreError('');
                       setRestoreMessage('');
-                      setAtlasTerritory(null);
                       setError('');
                     } catch {
                       setError(
-                        'Your trail could not be deleted. Try your browser’s site-data settings.',
+                        'Your data could not be deleted. Try your browser’s site-data settings.',
                       );
                     }
                   }}
                 >
-                  Delete my trail
+                  Delete all data
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
           <p className="meta privacy">
-            Suggestions send what you’re avoiding and what makes it hard, never
-            your trail.
+            When you tap Continue, what you’re avoiding and the reason you
+            picked are sent to an AI service to suggest a step. Your history
+            stays in this browser.
           </p>
         </section>
       )}
@@ -1826,14 +1784,13 @@ export default function Home() {
               aria-current={s.screen === n ? 'page' : undefined}
               onClick={() => {
                 if (n === 'atlas') {
-                  setAtlasTerritory(null);
                   setAtlasFocus(null);
                 }
                 go(n);
               }}
             >
               <span aria-hidden="true">{['↗', '▤', '○'][i]}</span>
-              {['Trail', 'Atlas', 'Me'][i]}
+              {['Home', 'History', 'Your data'][i]}
             </button>
           ))}
         </nav>

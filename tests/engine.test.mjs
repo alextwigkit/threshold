@@ -507,17 +507,17 @@ test('bluff needs at least four samples on at least three dates, and at least 75
     answered('4', 'yes', '2026-9-4'),
   ]).find((d) => d.rule === 'bluff');
   assert.ok(found);
-  assert.equal(found.title, 'What You Worried About Mostly Didn’t Happen');
+  assert.equal(found.title, 'What you worried about mostly didn’t happen');
   const unanimous = discoveries([
     answered('1', 'no', '2026-9-1'),
     answered('2', 'no', '2026-9-2'),
     answered('3', 'no', '2026-9-3'),
     answered('4', 'no', '2026-9-4'),
   ]).find((d) => d.rule === 'bluff');
-  assert.equal(unanimous.title, 'What You Worried About Didn’t Happen');
+  assert.equal(unanimous.title, 'What you worried about didn’t happen');
   assert.equal(
     unanimous.body,
-    'In each of these encounters, what you were worried about didn’t happen.',
+    'In each of these steps, what you were worried about didn’t happen.',
   );
 });
 test('bluff shows mixed evidence like the other rules', () => {

@@ -1057,17 +1057,6 @@ h1.tab-title {
 .trail-key {
   margin: 0 0 var(--space-group);
 }
-.eyebrow-link {
-  padding: 0;
-  background: none;
-  border: 0;
-  font: inherit;
-  letter-spacing: inherit;
-  text-transform: inherit;
-  color: inherit;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
 @media (max-width: 359px) {
   .trail .nums {
     font-size: 0.8125rem;

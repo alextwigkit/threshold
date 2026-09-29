@@ -73,7 +73,7 @@ export function parseSaved(raw: string): Saved {
   try {
     x = JSON.parse(raw);
   } catch {
-    throw Error('This is not a readable Edge backup.');
+    throw Error('This is not a readable Threshold backup.');
   }
   if (
     !x ||
@@ -92,14 +92,14 @@ export function parseSaved(raw: string): Saved {
     (x.lastId !== null && !text(x.lastId, 200))
   )
     throw Error(
-      'This backup contains incomplete or unsupported Edge data. Your map has not changed.',
+      'This backup contains incomplete or unsupported Threshold data. Your data has not changed.',
     );
   if (['active', 'return'].includes(x.screen) && !x.session)
-    throw Error('The saved expedition is incomplete.');
+    throw Error('The saved step is incomplete.');
   if (x.screen === 'setup' && !x.draft)
     throw Error('The saved step is incomplete.');
   if (x.screen === 'observation' && !x.encounters.length)
-    throw Error('The saved observation has no encounter.');
+    throw Error('The saved result has no step.');
   const unique = [
     ...new Map<string, Encounter>(
       x.encounters.map((e: Encounter) => [e.id, e]),

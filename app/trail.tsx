@@ -1,19 +1,17 @@
 'use client';
-import {
-  territories,
-  type Candidate,
-  type Discovery,
-  type Encounter,
-} from '@/lib/engine';
+import { type Candidate, type Discovery, type Encounter } from '@/lib/engine';
 import { trailStones, type Stone } from '@/lib/trail';
 
 const day = (t: number) =>
   new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 
+function truncate(text: string, max = 60) {
+  return text.length > max ? `${text.slice(0, max).trim()}…` : text;
+}
+
 function describe(s: Stone) {
-  const place = territories[s.encounter.territory].short;
   const how = s.stopped ? 'stopped early' : 'stayed';
-  return `Step ${s.step}, ${day(s.encounter.createdAt)}${place ? `, ${place}` : ''}: expected ${s.expected}, experienced ${s.experienced}, ${how}.`;
+  return `Step ${s.step}, ${day(s.encounter.createdAt)}, ${truncate(s.encounter.situation)}: expected ${s.expected}, felt ${s.experienced}, ${how}.`;
 }
 
 /**
@@ -52,19 +50,16 @@ export default function Trail({
       <span className="nums" aria-hidden="true">
         {s.expected} → {s.experienced}
       </span>
-      <span className="place" aria-hidden="true">
-        {territories[s.encounter.territory].short}
-      </span>
     </>
   );
   return (
-    <ol className="trail" aria-label="Your trail">
+    <ol className="trail" aria-label="Your steps">
       <li className="start">
         <span className="stone" aria-hidden="true" />
         {earlier > 0 && onEarlier ? (
           <button
             className="trail-step trail-earlier"
-            aria-label={`${earlier} earlier ${earlier === 1 ? 'step' : 'steps'}, in the Atlas`}
+            aria-label={`${earlier} earlier ${earlier === 1 ? 'step' : 'steps'}, in History`}
             onClick={onEarlier}
           >
             <span className="nums">+{earlier}</span>
@@ -98,17 +93,10 @@ export default function Trail({
       ))}
       {next && (
         <li className="today">
-          <span className="sr-only">
-            {territories[next.territory].short
-              ? `Today's step, ${territories[next.territory].short}.`
-              : "Today's step."}
-          </span>
+          <span className="sr-only">Today’s step.</span>
           <span className="stone" aria-hidden="true" />
           <span className="nums" aria-hidden="true">
             Today
-          </span>
-          <span className="place" aria-hidden="true">
-            {territories[next.territory].short}
           </span>
         </li>
       )}
