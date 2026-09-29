@@ -1,13 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { candidate, discoveries } from '../lib/engine.ts';
-import {
-  taken,
-  trailStones,
-  pattern,
-  trailCaption,
-  worryPattern,
-} from '../lib/trail.ts';
+import { taken, trailStones, pattern, worryPattern } from '../lib/trail.ts';
 const step = (id, overrides = {}) => ({
   ...candidate('starting a proposal', 'understand'),
   id,
@@ -106,29 +100,14 @@ test('the pattern counts steps that felt easier than expected', () => {
       step('3', { prediction: 4, actual: 2 }),
       step('4', { outcome: 'not_started', actual: null }),
     ]),
-    '2 of 3 felt easier than you expected.',
-  );
-});
-
-test('the Observation caption places the step on the trail', () => {
-  const all = [
-    step('1', { prediction: 6, actual: 3 }),
-    step('2', { prediction: 7, actual: 7 }),
-    step('3', { prediction: 4, actual: 2 }),
-  ];
-  assert.equal(trailCaption(all[0], all), 'Your first step.');
-  assert.equal(
-    trailCaption(all[1], all),
-    'Your 2nd step. 1 of 2 felt easier than you expected.',
+    '2 of your 3 steps felt easier than you expected.',
   );
   assert.equal(
-    trailCaption(all[2], all),
-    'Your 3rd step. 2 of 3 felt easier than you expected.',
-  );
-  const skipped = step('4', { outcome: 'not_started', actual: null });
-  assert.equal(
-    trailCaption(skipped, [...all, skipped]),
-    'Only steps you start are counted.',
+    pattern([
+      step('1', { prediction: 6, actual: 3 }),
+      step('2', { prediction: 4, actual: 2 }),
+    ]),
+    'Both of your steps felt easier than you expected.',
   );
 });
 

@@ -6,6 +6,9 @@ import {
   validScale,
   remaining,
   observation,
+  compare,
+  nextStepLine,
+  patternEvidence,
   toggleNotice,
   appendEncounter,
   updateEncounter,
@@ -140,16 +143,100 @@ test('history changes the relevant recommendation and a stop reduces dose', () =
     1,
   );
 });
-test('lower discomfort alone cannot invent a starting-versus-continuing observation', () => {
-  assert.equal(observation(encounter('1', { notices: [] })).code, 'neutral');
-});
-test('high discomfort can support meaningful approach', () => {
+test('compare summarizes prediction versus actual in plain words', () => {
   assert.equal(
-    observation(encounter('1', { actual: 9, notices: ['carried'] })).code,
-    'carried',
+    compare(encounter('1', { prediction: 5, actual: 5 })).heading,
+    'About what you expected',
+  );
+  assert.equal(
+    compare(encounter('1', { prediction: 5, actual: 4 })).heading,
+    'A little easier than you expected',
+  );
+  assert.equal(
+    compare(encounter('1', { prediction: 4, actual: 5 })).heading,
+    'A little harder than you expected',
+  );
+  assert.equal(
+    compare(encounter('1', { prediction: 7, actual: 2 })).heading,
+    'Easier than you expected',
+  );
+  assert.equal(
+    compare(encounter('1', { prediction: 2, actual: 7 })).heading,
+    'Harder than you expected',
+  );
+  assert.equal(
+    compare(encounter('1', { prediction: 5, actual: 5 })).numbers,
+    'Expected 5, felt 5',
+  );
+  assert.equal(
+    compare(encounter('1', { outcome: 'not_started', actual: null })),
+    null,
   );
 });
-test('stopping and not-started cannot produce a carried or doorway claim', () => {
+test('nextStepLine only claims what next actually offers', () => {
+  const stopped = encounter('1', { outcome: 'stopped', minutes: 3 });
+  assert.equal(
+    nextStepLine(stopped, { minutes: 1 }),
+    'Next time, try 1 minute instead of 3 minutes.',
+  );
+  const water = encounter('1', { outcome: 'stopped', minutes: 1 });
+  assert.equal(
+    nextStepLine(water, { minutes: 1 }),
+    'You can make the next one smaller.',
+  );
+  const notStarted = encounter('1', {
+    outcome: 'not_started',
+    actual: null,
+    minutes: 3,
+  });
+  assert.equal(
+    nextStepLine(notStarted, { minutes: 1 }),
+    'A shorter version of this step is on Home when you’re ready.',
+  );
+  assert.equal(
+    nextStepLine(notStarted, { minutes: 3 }),
+    'Your step is on Home when you’re ready.',
+  );
+  const hard = encounter('1', { outcome: 'attempted', actual: 9, minutes: 3 });
+  assert.equal(
+    nextStepLine(hard, { minutes: 1 }),
+    'Next time, try 1 minute instead of 3 minutes.',
+  );
+  const normal = encounter('1', {
+    outcome: 'attempted',
+    actual: 4,
+    minutes: 3,
+  });
+  assert.equal(nextStepLine(normal, { minutes: 1 }), '');
+  assert.equal(nextStepLine(normal, null), '');
+});
+test('observation titles reflect the three outcomes', () => {
+  assert.equal(
+    observation(encounter('1', { outcome: 'not_started', actual: null })).title,
+    'You didn’t start this time',
+  );
+  assert.equal(
+    observation(encounter('1', { outcome: 'stopped' })).title,
+    'You stopped partway',
+  );
+  assert.equal(
+    observation(encounter('1', { prediction: 7, actual: 4 })).title,
+    'Easier than you expected',
+  );
+});
+test('observation.code reflects outcome and how prediction compared to actual', () => {
+  assert.equal(
+    observation(encounter('1', { prediction: 7, actual: 4 })).code,
+    'easier',
+  );
+  assert.equal(
+    observation(encounter('1', { prediction: 5, actual: 5 })).code,
+    'same',
+  );
+  assert.equal(
+    observation(encounter('1', { prediction: 4, actual: 7 })).code,
+    'harder',
+  );
   assert.equal(
     observation(encounter('1', { outcome: 'stopped' })).code,
     'stopped',
@@ -157,6 +244,75 @@ test('stopping and not-started cannot produce a carried or doorway claim', () =>
   assert.equal(
     observation(encounter('1', { outcome: 'not_started', actual: null })).code,
     'not_started',
+  );
+});
+test('patternEvidence merges the count with what the steps were about', () => {
+  const discovery = {
+    id: 'doorway-fog',
+    territory: 'fog',
+    title: 'Starting has been the hardest part',
+    body: '',
+    evidence: ['1', '2', '3', '4'],
+    support: ['1', '2', '3'],
+    contrary: ['4'],
+    rule: 'doorway',
+    establishedAt: 0,
+  };
+  assert.equal(
+    patternEvidence(discovery, []),
+    'You said so in 3 of your 4 steps where you weren’t sure how to begin.',
+  );
+});
+test('patternEvidence says "all" once every step in the sample supports it', () => {
+  const discovery = {
+    id: 'carried-water',
+    territory: 'water',
+    title: '',
+    body: '',
+    evidence: ['1', '2', '3', '4'],
+    support: ['1', '2', '3', '4'],
+    contrary: [],
+    rule: 'carried',
+    establishedAt: 0,
+  };
+  assert.equal(
+    patternEvidence(discovery, []),
+    'You said so in all 4 steps where you were avoiding a feeling.',
+  );
+});
+test('patternEvidence appends the partly/yes split for a bluff pattern', () => {
+  const discovery = {
+    id: 'bluff-spotlight',
+    territory: 'spotlight',
+    title: '',
+    body: '',
+    evidence: ['1', '2', '3', '4'],
+    support: ['1', '2', '3'],
+    contrary: ['4'],
+    rule: 'bluff',
+    establishedAt: 0,
+  };
+  const evidence = [
+    encounter('1', { worryHappened: 'no' }),
+    encounter('2', { worryHappened: 'no' }),
+    encounter('3', { worryHappened: 'no' }),
+    encounter('4', { worryHappened: 'partly' }),
+  ];
+  assert.equal(
+    patternEvidence(discovery, evidence),
+    'In 3 of your 4 steps where you were worried how someone would react, your worry didn’t happen. In 1 it partly did.',
+  );
+  const both = {
+    ...discovery,
+    evidence: ['1', '2', '3', '4', '5'],
+    support: ['1', '2', '3'],
+  };
+  assert.equal(
+    patternEvidence(both, [
+      ...evidence,
+      encounter('5', { worryHappened: 'yes' }),
+    ]),
+    'In 3 of your 5 steps where you were worried how someone would react, your worry didn’t happen. In 1 it partly did, and in 1 it did.',
   );
 });
 test('noticing is multi-select; nothing is exclusive', () => {
@@ -370,7 +526,7 @@ test('worryLine is blank without a worry, quotes it with the outcome otherwise, 
     worryLine(
       encounter('1', { worry: 'they will say no', worryHappened: 'no' }),
     ),
-    '“they will say no” It didn’t happen.',
+    '“they will say no” That didn’t happen.',
   );
   assert.equal(
     worryLine(
@@ -382,7 +538,7 @@ test('worryLine is blank without a worry, quotes it with the outcome otherwise, 
     worryLine(
       encounter('1', { worry: 'they will say no', worryHappened: 'yes' }),
     ),
-    '“they will say no” It happened.',
+    '“they will say no” That happened.',
   );
   assert.equal(
     worryLine(
@@ -398,7 +554,7 @@ test('worryLine is blank without a worry, quotes it with the outcome otherwise, 
         worryLater: 'yes',
       }),
     ),
-    '“they will say no” It happened.',
+    '“they will say no” That happened.',
   );
 });
 test('worryLine truncates a long worry to about 120 characters', () => {
@@ -524,14 +680,14 @@ test('bluff needs at least four samples on at least three dates, and at least 75
     answered('4', 'yes', '2026-9-4'),
   ]).find((d) => d.rule === 'bluff');
   assert.ok(found);
-  assert.equal(found.title, 'What you worried about mostly didn’t happen');
+  assert.equal(found.title, 'Your worries mostly didn’t happen');
   const unanimous = discoveries([
     answered('1', 'no', '2026-9-1'),
     answered('2', 'no', '2026-9-2'),
     answered('3', 'no', '2026-9-3'),
     answered('4', 'no', '2026-9-4'),
   ]).find((d) => d.rule === 'bluff');
-  assert.equal(unanimous.title, 'What you worried about didn’t happen');
+  assert.equal(unanimous.title, 'Your worries didn’t happen');
   assert.equal(
     unanimous.body,
     'In each of these steps, what you were worried about didn’t happen.',

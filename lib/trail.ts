@@ -44,18 +44,17 @@ export function trailStones(
   return { stones: shown, earlier: stones.length - shown.length };
 }
 
-const ordinal = (n: number) => {
-  const s = ['th', 'st', 'nd', 'rd'];
-  const v = n % 100;
-  return `${n}${s[(v - 20) % 10] ?? s[v] ?? s[0]}`;
-};
-
 /** How many steps felt easier than expected, in words, once there is more than one. */
 export function pattern(encounters: Encounter[]) {
   const all = taken(encounters);
   if (all.length < 2) return '';
   const easier = all.filter((e) => (e.actual ?? 0) < e.prediction).length;
-  return `${easier} of ${all.length} felt easier than you expected.`;
+  if (easier === all.length) {
+    return all.length === 2
+      ? 'Both of your steps felt easier than you expected.'
+      : `All ${easier} of your steps felt easier than you expected.`;
+  }
+  return `${easier} of your ${all.length} steps felt easier than you expected.`;
 }
 
 /**
@@ -86,14 +85,4 @@ export function worryPattern(encounters: Encounter[]) {
       : `All ${n} worries you followed up on happened, at least in part.`;
   }
   return `Of ${n} worries you followed up on, ${didnt} didn’t happen and ${n - didnt} did, at least in part.`;
-}
-
-/** The Observation caption: which step this is. */
-export function trailCaption(last: Encounter, encounters: Encounter[]) {
-  if (last.outcome === 'not_started')
-    return 'Only steps you start are counted.';
-  const all = taken(encounters);
-  const step = all.findIndex((e) => e.id === last.id) + 1;
-  if (step === 1) return 'Your first step.';
-  return `Your ${ordinal(step)} step. ${pattern(all.slice(0, step))}`;
 }

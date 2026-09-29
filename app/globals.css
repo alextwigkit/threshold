@@ -913,30 +913,6 @@ h2:focus {
 .summary + .reveal {
   margin-top: var(--space-block);
 }
-/* The finding itself, so the numbers are the largest type on the screen. */
-.evidence {
-  display: flex;
-  align-items: flex-end;
-  gap: 20px;
-  margin: var(--space-block) 0 var(--space-in);
-}
-.evidence div {
-  display: flex;
-  flex-direction: column;
-}
-.evidence strong {
-  font-family: Newsreader, Georgia, serif;
-  font-weight: 500;
-  font-size: 5.5rem;
-  line-height: 1;
-  letter-spacing: -0.04em;
-  color: var(--foreground);
-}
-.evidence .arrow {
-  font-size: 1.75rem;
-  color: var(--foreground);
-  padding-bottom: 12px;
-}
 .observation-copy {
   margin-bottom: var(--space-group);
 }
@@ -1008,9 +984,52 @@ h1.tab-title {
   font-size: 1.75rem;
   margin-bottom: var(--space-in);
 }
-/* The numbers below are the finding, so the title steps down a level. */
+/* The comparison or pattern is the finding, so it leads the screen. */
 .observation h1 {
-  font-size: 2.25rem;
+  font-size: clamp(1.875rem, 9vw, 2.25rem);
+  margin-bottom: var(--space-in);
+}
+/* Three steps: evidence tight to the heading, details a block below, Done a group below. */
+.result-summary {
+  color: var(--foreground);
+  margin: 0;
+}
+/* A one-line comparison needs extra size to outweigh the trail above it. */
+.result-numbers {
+  font-size: 1.125rem;
+}
+/* On Result the trail is context for the finding, so it steps back. */
+.observation .trail {
+  --stone-ink: var(--meta-foreground);
+}
+.observation .trail .nums {
+  color: var(--meta-foreground);
+}
+/* The New pattern eyebrow already names the discovery here. */
+.observation .trail .ring {
+  display: none;
+}
+/* No stone outweighs the finding, so the newest keeps the common size here. */
+.observation .trail .current .stone {
+  --stone: 16px;
+}
+/* The pattern heading carries the news; its eyebrow only labels it. */
+.observation .eyebrow.accent {
+  color: var(--meta-foreground);
+}
+.result-details {
+  margin-top: var(--space-block);
+  font-size: 0.9375rem;
+}
+.result-details p:last-child {
+  margin-bottom: 0;
+}
+.result-done {
+  margin-top: var(--space-group);
+}
+/* The quoted worry reads as part of its sentence, not a smaller label. */
+.result-details .meta {
+  font-size: inherit;
 }
 /*
  * The trail: one stone per step, oldest first. Every mark is data: the pair is
@@ -1018,6 +1037,7 @@ h1.tab-title {
  */
 .trail {
   --stone: 16px;
+  --stone-ink: var(--foreground);
   --stone-y: 11px;
   display: grid;
   grid-auto-flow: column;
@@ -1070,14 +1090,14 @@ h1.tab-title {
   margin-top: calc(var(--stone-y) - var(--stone) / 2);
   /* Pad every stone to the largest (22px) so the numbers share one baseline. */
   margin-bottom: calc(11px - var(--stone) / 2);
-  border: 2px solid var(--foreground);
+  border: 2px solid var(--stone-ink);
   border-radius: 50%;
-  background: var(--foreground);
+  background: var(--stone-ink);
 }
 .trail .stone.stopped {
   background: linear-gradient(
     to right,
-    var(--foreground) 50%,
+    var(--stone-ink) 50%,
     var(--background) 50%
   );
 }
@@ -1299,7 +1319,4 @@ details p {
     opacity: 1;
     transform: translateY(0);
   }
-}
-.evidence-scope {
-  margin-bottom: var(--space-block);
 }

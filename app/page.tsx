@@ -22,6 +22,9 @@ import {
   noticeLabels,
   remaining,
   observation,
+  compare,
+  patternEvidence,
+  patternMeaning,
   discoveries,
   appendEncounter,
   updateEncounter,
@@ -41,13 +44,7 @@ import {
   type Urge,
 } from '@/lib/engine';
 import Trail from './trail';
-import {
-  pattern,
-  taken,
-  trailCaption,
-  trailStones,
-  worryPattern,
-} from '@/lib/trail';
+import { pattern, taken, trailStones, worryPattern } from '@/lib/trail';
 import { SuggestionRequest } from '@/lib/suggestions';
 import {
   KEY,
@@ -649,29 +646,11 @@ export default function Home() {
   const discoveryEvidence = newDiscovery
     ? s.encounters.filter((e) => newDiscovery.evidence.includes(e.id))
     : [];
-  const expectedMean = discoveryEvidence.length
-    ? discoveryEvidence.reduce((n, e) => n + e.prediction, 0) /
-      discoveryEvidence.length
-    : 0;
-  const experiencedMean = discoveryEvidence.length
-    ? discoveryEvidence.reduce((n, e) => n + (e.actual ?? 0), 0) /
-      discoveryEvidence.length
-    : 0;
-  // A bluff discovery is about whether the worry happened, not discomfort:
-  // the arrow pair means expected → experienced everywhere else, so it isn't reused here.
-  const bluffCounts =
-    newDiscovery?.rule === 'bluff'
-      ? {
-          no: discoveryEvidence.filter((e) => e.worryHappened === 'no').length,
-          partly: discoveryEvidence.filter((e) => e.worryHappened === 'partly')
-            .length,
-          yes: discoveryEvidence.filter((e) => e.worryHappened === 'yes')
-            .length,
-        }
-      : null;
   const worrySplit: [string, string] = last
     ? splitWorryLine(worryLine(last))
     : ['', ''];
+  const obs = last ? observation(last, next) : null;
+  const cmp = last ? compare(last) : null;
   const backupSummary = backup ? restoreSummary(s, backup) : null;
   const steps = taken(s.encounters);
   // Only explain half-filled stones when one is on screen.
@@ -1106,7 +1085,7 @@ export default function Home() {
                 className="text-button note-toggle"
                 onClick={() => setShowPurpose(true)}
               >
-                Name what it’s for
+                Add why this matters
               </button>
             </div>
           )}
@@ -1256,16 +1235,16 @@ export default function Home() {
             <div className="summary">
               {!actualOpen && (
                 <AnsweredRow
-                  label="Discomfort"
+                  label="How it felt"
                   value={`${active.actual} of 10`}
                   onChange={() => change('actual')}
                 />
               )}
-              {!urgeOpen && (
+              {!urgeOpen && !active.stopped && (
                 <AnsweredRow
-                  label="Urge"
+                  label="Wanted to stop"
                   value={urgeLabels[active.urge]}
-                  onChange={active.stopped ? undefined : () => change('urge')}
+                  onChange={() => change('urge')}
                 />
               )}
               {hasWorry && !worryOpen && (
@@ -1399,73 +1378,49 @@ export default function Home() {
       )}
       {s.screen === 'observation' && last && (
         <section className="observation">
-          <Trail
-            encounters={s.encounters}
-            found={found}
-            revealId={last.id}
-            newDiscoveryId={newDiscovery?.id}
-          />
-          <p className="meta trail-key">
-            {trailCaption(last, s.encounters)}
-            {bluffCounts && ' Expected → felt, out of 10.'}
-            {stoppedShown && ' Half-filled means you stopped early.'}
-          </p>
+          {last.outcome !== 'not_started' && (
+            <>
+              <Trail
+                encounters={s.encounters}
+                found={found}
+                revealId={last.id}
+                newDiscoveryId={newDiscovery?.id}
+              />
+              <p className="meta trail-key">
+                Each dot is a step: expected → felt, out of 10
+                {stoppedShown && '; half‑filled means you stopped partway'}.
+              </p>
+            </>
+          )}
           <div className={newDiscovery ? 'discovery-reveal' : undefined}>
             {newDiscovery && <p className="eyebrow accent">New pattern</p>}
-            {title(newDiscovery?.title ?? observation(last).title)}
-            {last.actual !== null &&
-              (bluffCounts ? (
-                <>
-                  <div className="evidence">
-                    <div>
-                      <span className="meta">Worries that didn’t happen</span>
-                      <strong>
-                        {bluffCounts.no} of {discoveryEvidence.length}
-                      </strong>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div className="evidence">
-                  <div>
-                    <span className="meta">Expected</span>
-                    <strong>
-                      {newDiscovery ? expectedMean.toFixed(1) : last.prediction}
-                    </strong>
-                  </div>
-                  <span className="arrow" aria-hidden="true">
-                    →
-                  </span>
-                  <div>
-                    <span className="meta">Experienced</span>
-                    <strong>
-                      {newDiscovery ? experiencedMean.toFixed(1) : last.actual}
-                    </strong>
-                  </div>
-                </div>
-              ))}
-            {newDiscovery && (
-              <p className="optional evidence-scope">
-                In {discoveryEvidence.length} steps where you{' '}
-                {territories[newDiscovery.territory].where}.
-                {bluffCounts &&
-                  bluffCounts.partly + bluffCounts.yes > 0 &&
-                  ` ${bluffCounts.partly} partly happened, ${bluffCounts.yes} happened.`}
+            {title(newDiscovery?.title ?? obs?.title ?? '')}
+            {newDiscovery ? (
+              <p className="result-summary">
+                {patternEvidence(newDiscovery, discoveryEvidence)}
+              </p>
+            ) : (
+              <p className="result-summary result-numbers">
+                {cmp ? cmp.numbers : obs?.body}
               </p>
             )}
-            <p className="observation-copy">
-              {newDiscovery?.body ?? observation(last).body}
-            </p>
-            {worrySplit[0] && (
-              <p className="observation-copy">
-                <span className="meta">{worrySplit[0]}</span> {worrySplit[1]}
-                {last.worryHappened === 'unknown' &&
-                  !last.worryLater &&
-                  ' You can answer later in History.'}
-              </p>
-            )}
+            <div className="result-details">
+              {newDiscovery && <p>{patternMeaning[newDiscovery.rule]}</p>}
+              {!newDiscovery && cmp && obs?.body && <p>{obs.body}</p>}
+              {!newDiscovery && worrySplit[0] && (
+                <p>
+                  You worried: <span className="meta">{worrySplit[0]}</span>.{' '}
+                  {last.worryHappened === 'unknown' && !last.worryLater
+                    ? 'Later, in History, you can add whether it happened.'
+                    : worrySplit[1]}
+                </p>
+              )}
+            </div>
           </div>
-          <Primary onClick={() => go('map')}>Done</Primary>
+          {/* Done only dismisses, so it stays quieter than the finding. */}
+          <button className="secondary result-done" onClick={() => go('map')}>
+            Done
+          </button>
         </section>
       )}
       {s.screen === 'map' && (
@@ -1751,7 +1706,7 @@ export default function Home() {
                       <dd>{e.predictionNote}</dd>
                     </>
                   )}
-                  <dt className="meta">Urge to leave</dt>
+                  <dt className="meta">Wanted to stop</dt>
                   <dd>
                     {e.outcome === 'not_started'
                       ? 'Not started'

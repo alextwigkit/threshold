@@ -3,7 +3,7 @@ export type Resistance =
   'understand' | 'start' | 'judged' | 'unpleasant' | 'other' | 'checking';
 export type Urge = 'no' | 'stayed' | 'returned' | 'stopped' | '';
 export const territories: Record<Territory, { where: string }> = {
-  fog: { where: 'weren’t sure how to start or what to do' },
+  fog: { where: 'weren’t sure how to begin' },
   spotlight: { where: 'were worried how someone would react' },
   loop: { where: 'kept checking or preparing' },
   water: { where: 'were avoiding a feeling' },
@@ -330,49 +330,88 @@ export function startedDay(startedAt: number, now: number) {
     day: 'numeric',
   })}`;
 }
-export function observation(e: Encounter) {
-  if (e.outcome === 'not_started')
+function minuteSpan(minutes: number) {
+  return `${minutes} minute${minutes === 1 ? '' : 's'}`;
+}
+// A quiet, plain comparison of what was expected against what happened.
+// Returns null before Return, when there is nothing yet to compare.
+export function compare(
+  e: Encounter,
+): { heading: string; numbers: string } | null {
+  if (e.actual === null) {
+    return null;
+  }
+  const diff = e.prediction - e.actual;
+  const heading =
+    diff >= 2
+      ? 'Easier than you expected'
+      : diff === 1
+        ? 'A little easier than you expected'
+        : diff === 0
+          ? 'About what you expected'
+          : diff === -1
+            ? 'A little harder than you expected'
+            : 'Harder than you expected';
+  return { heading, numbers: `Expected ${e.prediction}, felt ${e.actual}` };
+}
+// What, if anything, to say about the next step: only true when it is
+// actually true against `next`, the step candidate() would offer on Home.
+export function nextStepLine(
+  last: Encounter,
+  next: { minutes: number } | null,
+): string {
+  if (!next) {
+    return '';
+  }
+  const shorter = next.minutes < last.minutes;
+  if (last.outcome === 'stopped') {
+    return shorter
+      ? `Next time, try ${minuteSpan(next.minutes)} instead of ${minuteSpan(last.minutes)}.`
+      : 'You can make the next one smaller.';
+  }
+  if (last.outcome === 'not_started') {
+    return shorter
+      ? 'A shorter version of this step is on Home when you’re ready.'
+      : 'Your step is on Home when you’re ready.';
+  }
+  if ((last.actual ?? 0) >= 8 && shorter) {
+    return `Next time, try ${minuteSpan(next.minutes)} instead of ${minuteSpan(last.minutes)}.`;
+  }
+  return '';
+}
+export function observation(
+  e: Encounter,
+  next: { minutes: number } | null = null,
+) {
+  if (e.outcome === 'not_started') {
     return {
-      title: 'A Step for Another Time',
-      body: 'You didn’t start this time. You can change the step when you’re ready.',
+      title: 'You didn’t start this time',
+      body: nextStepLine(e, next),
       code: 'not_started',
     };
-  if (e.outcome === 'stopped')
+  }
+  if (e.outcome === 'stopped') {
     return {
-      title: 'You Found a Stopping Point',
-      body: 'You approached it, and then stopped. That is part of this encounter, too.',
+      title: 'You stopped partway',
+      body: nextStepLine(e, next),
       code: 'stopped',
     };
-  if (e.notices.includes('doorway'))
-    return {
-      title: 'The Doorway Felt Worse',
-      body: 'This time, starting felt harder than continuing. Let’s see if it happens again.',
-      code: 'doorway',
-    };
-  if (
-    e.notices.includes('carried') &&
-    (e.actual ?? 0) > 0 &&
-    ['stayed', 'returned', 'no'].includes(e.urge)
-  )
-    return {
-      title: 'Uncomfortable, and Still Here',
-      body: 'This time, you could act while some discomfort was still here.',
-      code: 'carried',
-    };
-  if (
-    e.actual !== null &&
-    e.actual < e.prediction &&
-    e.notices.includes('easier')
-  )
-    return {
-      title: 'Different Than Expected',
-      body: 'This encounter felt easier than you expected. That is one step on your trail.',
-      code: 'easier',
-    };
+  }
+  const diff = e.prediction - (e.actual ?? 0);
+  const code =
+    diff >= 2
+      ? 'easier'
+      : diff === 1
+        ? 'little_easier'
+        : diff === 0
+          ? 'same'
+          : diff === -1
+            ? 'little_harder'
+            : 'harder';
   return {
-    title: 'An Encounter, Recorded',
-    body: 'This is what happened this time. It doesn’t need to become a lesson.',
-    code: 'neutral',
+    title: compare(e)?.heading ?? '',
+    body: nextStepLine(e, next),
+    code,
   };
 }
 export function toggleNotice(current: string[], code: string) {
@@ -406,11 +445,11 @@ export function worryLine(e: Encounter) {
   const answer = e.worryLater ?? e.worryHappened;
   const status =
     answer === 'no'
-      ? 'It didn’t happen.'
+      ? 'That didn’t happen.'
       : answer === 'partly'
         ? 'Part of it happened.'
         : answer === 'yes'
-          ? 'It happened.'
+          ? 'That happened.'
           : answer === 'unknown'
             ? 'You weren’t sure yet.'
             : '';
@@ -461,14 +500,14 @@ const discoveryRules: DiscoveryRule[] = [
     rule: 'doorway',
     eligible: (e) => e.outcome !== 'not_started',
     supports: (e) => supports(e, 'doorway'),
-    title: 'Starting is the hardest part',
+    title: 'Starting has been the hardest part',
     body: 'In most of these steps, starting felt harder than keeping going.',
   },
   {
     rule: 'carried',
     eligible: (e) => e.outcome !== 'not_started',
     supports: (e) => supports(e, 'carried'),
-    title: 'You can act while uncomfortable',
+    title: 'You’ve kept going while uncomfortable',
     body: 'In most of these steps, you kept going while discomfort was still there.',
   },
   {
@@ -479,10 +518,10 @@ const discoveryRules: DiscoveryRule[] = [
       e.outcome !== 'not_started' &&
       ['no', 'partly', 'yes'].includes(e.worryHappened ?? ''),
     supports: (e) => e.worryHappened === 'no',
-    title: 'What you worried about mostly didn’t happen',
+    title: 'Your worries mostly didn’t happen',
     body: 'In most of these steps, what you were worried about didn’t happen.',
     unanimous: {
-      title: 'What you worried about didn’t happen',
+      title: 'Your worries didn’t happen',
       body: 'In each of these steps, what you were worried about didn’t happen.',
     },
   },
@@ -537,6 +576,36 @@ export function discoveries(all: Encounter[]): Discovery[] {
       },
     ),
   );
+}
+// What a pattern suggests doing, shown under its evidence on the Result screen.
+export const patternMeaning: Record<Discovery['rule'], string> = {
+  doorway: 'Next time, try making your step just the first action.',
+  carried: 'Next time, you don’t have to wait until it feels comfortable.',
+  bluff: 'Next time a worry holds you back, remember these steps.',
+};
+// One sentence scoping a new pattern's heading to the steps behind it, for
+// the Result screen. The heading states the finding, so this doesn't repeat it.
+export function patternEvidence(d: Discovery, evidence: Encounter[]): string {
+  const total = d.evidence.length;
+  const support = d.support.length;
+  const where = territories[d.territory].where;
+  const scope =
+    support === total && total >= 4
+      ? `all ${total} steps where you ${where}`
+      : `${support} of your ${total} steps where you ${where}`;
+  if (d.rule !== 'bluff') {
+    return `You said so in ${scope}.`;
+  }
+  const partly = evidence.filter((e) => e.worryHappened === 'partly').length;
+  const yes = evidence.filter((e) => e.worryHappened === 'yes').length;
+  const other = [
+    partly && `in ${partly} it partly did`,
+    yes && `in ${yes} it did`,
+  ].filter(Boolean);
+  const rest = other.join(', and ');
+  return other.length
+    ? `In ${scope}, your worry didn’t happen. ${rest[0].toUpperCase()}${rest.slice(1)}.`
+    : `In ${scope}, your worry didn’t happen.`;
 }
 export function isCandidate(e: unknown): e is Candidate {
   if (!e || typeof e !== 'object') return false;
