@@ -19,6 +19,12 @@ import {
   resistanceChoices,
   stepReasons,
   blankStepHints,
+  noticeCodes,
+  noticeLabels,
+  noticingChoices,
+  urgeOnReturn,
+  isLateReturn,
+  startedDay,
 } from '../lib/engine.ts';
 const encounter = (id, overrides = {}) => ({
   ...candidate('starting a proposal', 'understand'),
@@ -621,4 +627,48 @@ test('stepReasons and blankStepHints cover every resistance with real copy', () 
     assert.ok(!blankStepHints[resistance].includes('—'));
     assert.ok(!blankStepHints[resistance].includes('--'));
   }
+});
+
+// Return only offers three notice options going forward, but earlier records
+// used four more codes: those must still validate and still have a label
+// wherever they render (History Details), even though Return no longer offers them.
+test('retired notice codes still validate and still have a label', () => {
+  for (const code of ['easier', 'same', 'harder']) {
+    assert.equal(isSession(encounter('1', { notices: [code] })), true);
+    assert.equal(typeof noticeLabels[code], 'string');
+    assert.ok(noticeLabels[code].trim().length > 0);
+  }
+  // Every code the app has ever stored has a label, not just the retired ones.
+  for (const code of noticeCodes) assert.ok(noticeLabels[code]);
+});
+test('Return offers exactly three notice options', () => {
+  assert.deepEqual(
+    noticingChoices.map(([code]) => code),
+    ['doorway', 'carried', 'other'],
+  );
+});
+test('a stop always overrides the urge with "stopped", never the answer already given', () => {
+  assert.equal(urgeOnReturn(true, ''), 'stopped');
+  assert.equal(urgeOnReturn(true, 'no'), 'stopped');
+  assert.equal(urgeOnReturn(false, 'stayed'), 'stayed');
+  assert.equal(urgeOnReturn(false, ''), '');
+});
+test('a return counts as late only strictly past 30 minutes after the timer ended', () => {
+  const s = encounter('1', { startedAt: 0, minutes: 3 });
+  const end = 3 * 60000 + 30 * 60000;
+  assert.equal(isLateReturn(s, end), false);
+  assert.equal(isLateReturn(s, end + 1), true);
+});
+
+test('startedDay says today, yesterday, or the date', () => {
+  const now = new Date(2026, 8, 29, 9, 0).getTime();
+  assert.equal(startedDay(new Date(2026, 8, 29, 0, 5).getTime(), now), 'today');
+  assert.equal(
+    startedDay(new Date(2026, 8, 28, 23, 50).getTime(), now),
+    'yesterday',
+  );
+  assert.match(
+    startedDay(new Date(2026, 8, 26, 12).getTime(), now),
+    /^on .*26/,
+  );
 });

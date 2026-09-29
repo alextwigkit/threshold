@@ -265,9 +265,6 @@ textarea::placeholder {
   padding-top: 12px;
   border-top: 1px solid var(--border);
 }
-.mechanic-note {
-  margin: var(--space-pair) 0 0;
-}
 .primary {
   display: flex;
   align-items: center;
@@ -642,6 +639,10 @@ h2:has(+ .question-hint) {
   -webkit-line-clamp: 1;
   overflow: hidden;
 }
+/* Return's quiet reminder of the step, above the question that matters here. */
+.return-step {
+  margin: 0 0 var(--space-block);
+}
 /* The question labels the scale, so the two sit together. */
 .setup h1 + .scale-field {
   margin-top: 0;
@@ -674,7 +675,8 @@ h2:has(+ .question-hint) {
   border: 0;
   margin: var(--space-group) 0 var(--space-pair);
 }
-h1.sr-only + .scale-field {
+h1.sr-only + .scale-field,
+.return-step + .scale-field {
   margin-top: 0;
 }
 .scale-legend {
@@ -800,15 +802,14 @@ h2:focus {
 }
 .timer {
   /* Sized in rem so the circle grows with its digits when text is enlarged. */
-  height: 15rem;
-  width: 15rem;
+  height: 12.5rem;
+  width: 12.5rem;
+  position: relative;
   display: grid;
   place-items: center;
-  border: 2px solid var(--field-border);
-  border-radius: 50%;
-  margin: 52px auto;
+  margin: var(--space-group) auto;
   font-family: Newsreader, Georgia, serif;
-  font-size: 4.5rem;
+  font-size: 3.75rem;
   letter-spacing: -0.055em;
   font-variant-numeric: tabular-nums;
   color: var(--foreground);
@@ -816,37 +817,72 @@ h2:focus {
 .active {
   text-align: center;
 }
+/* Time left, as the filled share of the ring: --left is set inline in turns. */
+.timer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--foreground) var(--left, 1turn),
+    var(--border) 0
+  );
+  mask: radial-gradient(
+    farthest-side,
+    transparent calc(100% - 3px),
+    #000 calc(100% - 2.5px)
+  );
+}
+/* The time and what's being timed read as one group. */
 .active .timer {
-  margin-top: 24px;
+  margin: var(--space-block) auto;
 }
-.active .step-text {
-  margin-bottom: var(--space-group);
+/* Short screens: a smaller ring keeps I'm done above the fold without tightening gaps. */
+@media (max-height: 37.5em) {
+  .active .timer {
+    height: 10.5rem;
+    width: 10.5rem;
+    font-size: 3.25rem;
+  }
 }
-/* Context for the step, not a second step: smaller gap above it than the
- * step-to-invitation gap, and no lead-sized text competing with the timer. */
-.purpose-block {
-  margin: calc(var(--space-group) * -1 + var(--space-pair)) 0 var(--space-group);
+/* Body size and shown in full; the clamp only guards an unusually long step. */
+.step-now {
+  color: var(--foreground);
+  margin: 0 0 var(--space-in);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 6;
+  overflow: hidden;
 }
-.invitation {
-  margin-bottom: var(--space-in);
-}
-.timer-note {
+.active .step-text .meta {
   margin: 0;
 }
-/* Two alternatives side by side: the escape narrow, the expected path wide. */
-.action-pair {
-  display: flex;
-  gap: var(--space-in);
-  margin-top: var(--space-group);
+/* The invitation explains the buttons, so it sits with them, not the step. */
+.invitation {
+  margin: var(--space-group) 0 0;
 }
-.action-pair .secondary {
-  width: auto;
-  flex: 0 0 32%;
-  min-height: 54px;
+.invitation + .primary {
+  margin-top: var(--space-pair);
 }
-.action-pair .primary {
-  margin-top: 0;
-  flex: 1;
+/* You started this on {day} at {time}: replaces the timer on a late return,
+ * so it takes the display serif the countdown otherwise would. */
+.late-return {
+  font-family: Newsreader, Georgia, serif;
+  font-size: 1.75rem;
+  letter-spacing: -0.035em;
+  line-height: 1.25;
+  text-wrap: balance;
+  color: var(--foreground);
+  margin: var(--space-block) 0 var(--space-pair);
+}
+/* The stop and exit read as quieter siblings right under I'm done, not a
+ * second choice beside it. */
+.active .secondary {
+  margin-top: var(--space-in);
+}
+.active .exit {
+  display: block;
+  margin: var(--space-in) auto 0;
 }
 .reveal {
   margin-top: var(--space-group);
@@ -1209,11 +1245,6 @@ details p {
   }
   .duration {
     flex-wrap: wrap;
-  }
-  .timer {
-    width: 12.5rem;
-    height: 12.5rem;
-    font-size: 3.75rem;
   }
 }
 

@@ -49,15 +49,33 @@ export const blankStepHints: Record<Resistance, string> = {
 };
 export const careHint =
   'Choose a step that feels safe and manageable. It’s fine to get advice or support first.';
-export const noticingChoices = [
-  ['doorway', 'Starting was harder than continuing'],
-  ['easier', 'It was easier than I expected'],
-  ['carried', 'I was uncomfortable and could still work'],
-  ['same', 'It was about as hard as I expected'],
-  ['harder', 'It was harder than I expected'],
-  ['nothing', 'Nothing stood out'],
-  ['other', 'Something else'],
+// Every code ever recorded, including retired Return options: stored data
+// keeps whatever code it was saved with, so this list only ever grows.
+export const noticeCodes = [
+  'doorway',
+  'easier',
+  'carried',
+  'same',
+  'harder',
+  'nothing',
+  'other',
 ] as const;
+export type NoticeCode = (typeof noticeCodes)[number];
+// A label for every code, so an old entry still renders wherever labels are
+// shown (History Details), even once Return stops offering it.
+export const noticeLabels: Record<NoticeCode, string> = {
+  doorway: 'Starting was the hardest part',
+  easier: 'It was easier than I expected',
+  carried: 'I felt uncomfortable and did it anyway',
+  same: 'It was about as hard as I expected',
+  harder: 'It was harder than I expected',
+  nothing: 'Nothing stood out',
+  other: 'Something else',
+};
+// The options Return actually offers. 'nothing' is covered by Skip instead.
+export const noticingChoices: [NoticeCode, string][] = (
+  ['doorway', 'carried', 'other'] as const
+).map((code) => [code, noticeLabels[code]]);
 export type Candidate = {
   resistanceNote?: string;
   userAction?: string;
@@ -284,6 +302,33 @@ export function validScale(n: unknown): n is number {
 }
 export function remaining(s: Session, now: number) {
   return Math.max(0, Math.ceil((s.startedAt + s.minutes * 60000 - now) / 1000));
+}
+// Stopping partway answers the urge question itself, so it always overrides
+// whatever urge was already recorded; Return never asks it again.
+export function urgeOnReturn(stopped: boolean, current: Urge): Urge {
+  return stopped ? 'stopped' : current;
+}
+// More than 30 minutes after the timer ended, Timer stops assuming the
+// person is still nearby and asks what happened instead of counting down.
+export function isLateReturn(s: Session, now: number) {
+  return now > s.startedAt + s.minutes * 60000 + 30 * 60000;
+}
+// "today", "yesterday", or "on Tuesday, September 29", for the late-return line.
+export function startedDay(startedAt: number, now: number) {
+  const day = (t: number) => new Date(t).toDateString();
+  if (day(startedAt) === day(now)) {
+    return 'today';
+  }
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (day(startedAt) === yesterday.toDateString()) {
+    return 'yesterday';
+  }
+  return `on ${new Date(startedAt).toLocaleDateString(undefined, {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  })}`;
 }
 export function observation(e: Encounter) {
   if (e.outcome === 'not_started')
@@ -541,7 +586,7 @@ export function isSession(e: unknown): e is Session {
     Number.isFinite(x.startedAt) &&
     ['', 'no', 'stayed', 'returned', 'stopped'].includes(x.urge) &&
     Array.isArray(x.notices) &&
-    x.notices.every((n) => noticingChoices.some(([code]) => code === n)) &&
+    x.notices.every((n) => (noticeCodes as readonly string[]).includes(n)) &&
     typeof x.predictionNote === 'string' &&
     typeof x.note === 'string' &&
     (x.worry === undefined ||

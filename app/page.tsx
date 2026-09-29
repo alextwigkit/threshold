@@ -19,6 +19,7 @@ import {
   territories,
   resistanceChoices,
   noticingChoices,
+  noticeLabels,
   remaining,
   observation,
   discoveries,
@@ -31,6 +32,9 @@ import {
   stepReasons,
   blankStepHints,
   careHint,
+  urgeOnReturn,
+  isLateReturn,
+  startedDay,
   type Resistance,
   type Session,
   type Encounter,
@@ -54,12 +58,22 @@ import {
   type Saved,
   type Screen,
 } from '@/lib/storage';
+// Offered only after "I'm done": a stop already answers this, so Return
+// records 'stopped' directly instead of asking (see urgeOnReturn).
 const urgeChoices: [Urge, string][] = [
   ['no', 'No'],
-  ['stayed', 'Yes, and I stayed'],
-  ['returned', 'Yes, I left and came back'],
-  ['stopped', 'Yes, and I stopped'],
+  ['stayed', 'Yes, but I kept going'],
+  ['returned', 'Yes, I paused and came back'],
 ];
+// A label for every urge code, including 'stopped', for rows and History
+// that show an already-recorded answer rather than the question itself.
+const urgeLabels: Record<Urge, string> = {
+  '': '',
+  no: 'No',
+  stayed: 'Yes, but I kept going',
+  returned: 'Yes, I paused and came back',
+  stopped: 'Stopped partway',
+};
 const worryHappenedChoices: [NonNullable<Session['worryHappened']>, string][] =
   [
     ['no', 'No'],
@@ -134,20 +148,24 @@ function AnsweredRow({
   id?: string;
   label: string;
   value: string;
-  onChange: () => void;
+  // Absent when there is no question left to reopen (a stop, recorded
+  // automatically, has no urge question behind it).
+  onChange?: () => void;
 }) {
   return (
     <div className="answered-row">
       <span className="meta">{label}</span>
       <span className="answered-value">{value}</span>
-      <button
-        id={id}
-        className="text-button"
-        aria-label={`Change ${label.toLowerCase()}`}
-        onClick={onChange}
-      >
-        Change
-      </button>
+      {onChange && (
+        <button
+          id={id}
+          className="text-button"
+          aria-label={`Change ${label.toLowerCase()}`}
+          onClick={onChange}
+        >
+          Change
+        </button>
+      )}
     </div>
   );
 }
@@ -572,7 +590,12 @@ export default function Home() {
       keyed.current = false;
       pendingFocus.current = null;
       patch({
-        session: { ...s.session, returnedAt: Date.now(), stopped },
+        session: {
+          ...s.session,
+          returnedAt: Date.now(),
+          stopped,
+          urge: urgeOnReturn(stopped, s.session.urge),
+        },
         screen: 'return',
       });
     }
@@ -715,8 +738,26 @@ export default function Home() {
 
   const nav = ['map', 'atlas', 'me'].includes(s.screen);
   const active = s.session;
+  // Timer: more than 30 minutes past the end, stop counting down and ask
+  // what happened instead.
+  const late = !!active && isLateReturn(active, now);
+  const timerDone = !!active && remaining(active, now) === 0;
+  // The tab title matches the live region once time is up, so it's visible
+  // from another tab too; leaving Timer restores whatever title was there.
+  useEffect(() => {
+    if (s.screen !== 'active' || late || !timerDone) {
+      return;
+    }
+    const previous = document.title;
+    document.title = 'Time’s up · Threshold';
+    return () => {
+      document.title = previous;
+    };
+  }, [s.screen, late, timerDone]);
   const actualOpen = active?.actual === null || reopened === 'actual';
-  const urgeOpen = !active?.urge || reopened === 'urge';
+  // A stop already answers the urge question (see urgeOnReturn), so Return
+  // never reopens it for a stop.
+  const urgeOpen = !active?.stopped && (!active?.urge || reopened === 'urge');
   const hasWorry = !!active?.worry?.trim();
   const worryOpen =
     hasWorry && (!active?.worryHappened || reopened === 'worry');
@@ -1130,37 +1171,63 @@ export default function Home() {
       )}
       {s.screen === 'active' && active && (
         <section className="active">
-          {title(active.title, 'sr-only')}
-          <div
-            className="timer"
-            role="timer"
-            aria-label={`${Math.floor(remaining(active, now) / 60)} minutes ${remaining(active, now) % 60} seconds remaining`}
-          >
-            {Math.floor(remaining(active, now) / 60)
-              .toString()
-              .padStart(2, '0')}
-            :{(remaining(active, now) % 60).toString().padStart(2, '0')}
-          </div>
-          <div className="step-text">
-            <p className="meta">Your step</p>
-            <p className="lead">{active.action}</p>
-          </div>
-          {active.purpose?.trim() && (
-            <p className="meta purpose-block">For: {active.purpose}</p>
+          {title('Timer', 'sr-only')}
+          {late ? (
+            <p className="lead late-return">
+              You started this {startedDay(active.startedAt, now)} at{' '}
+              {new Date(active.startedAt)
+                .toLocaleTimeString(undefined, {
+                  hour: 'numeric',
+                  minute: '2-digit',
+                })
+                .replace(/\s/g, ' ')}
+              . How did it go?
+            </p>
+          ) : (
+            <>
+              {/* The ring empties as time runs out. */}
+              <div
+                className="timer"
+                role="timer"
+                aria-label={`${Math.floor(remaining(active, now) / 60)} minutes ${remaining(active, now) % 60} seconds remaining`}
+                style={
+                  {
+                    '--left': `${remaining(active, now) / (active.minutes * 60)}turn`,
+                  } as React.CSSProperties
+                }
+              >
+                {Math.floor(remaining(active, now) / 60)}:
+                {(remaining(active, now) % 60).toString().padStart(2, '0')}
+              </div>
+            </>
           )}
-          <p className="invitation">
-            Go do it. Come back when you're done, or when something interesting
-            happens.
-          </p>
-          <p className="meta timer-note">
-            Time keeps counting when you leave the app.
-          </p>
-          <div className="action-pair">
-            <button className="secondary" onClick={() => returnFrom(true)}>
-              Stop
-            </button>
-            <Primary onClick={() => returnFrom()}>I'm back</Primary>
+          {/* The step stays in view while it's happening, as a quiet reminder. */}
+          <div className="step-text">
+            <p className="step-now">{active.action}</p>
+            {active.purpose?.trim() && (
+              <p className="meta">For: {active.purpose}</p>
+            )}
           </div>
+          {!late && (
+            // One live region, announced once, when its text actually
+            // changes to the time's-up copy.
+            <p className="meta invitation" role="status">
+              {timerDone
+                ? 'Time’s up. Tap I’m done when you’ve finished.'
+                : 'Tap I’m done whenever you finish, even before 0:00.'}
+              {/* Explained once; after a first step it is known. */}
+              {!timerDone &&
+                s.encounters.length === 0 &&
+                ' The timer keeps running if you leave the app.'}
+            </p>
+          )}
+          <Primary onClick={() => returnFrom()}>I’m done</Primary>
+          <button className="secondary" onClick={() => returnFrom(true)}>
+            I stopped partway
+          </button>
+          <button className="text-button exit" onClick={() => finish(true)}>
+            I didn’t start
+          </button>
         </section>
       )}
       {s.screen === 'return' && active && (
@@ -1172,11 +1239,12 @@ export default function Home() {
             keyed.current = false;
           }}
         >
-          {title('What happened?', 'sr-only')}
+          {title('How it went', 'sr-only')}
+          <p className="meta setup-step return-step">{active.action}</p>
           {actualOpen && (
             <Scale
               id="actual"
-              label="How uncomfortable was it actually?"
+              label="How uncomfortable was it?"
               value={active.actual}
               onChange={(actual) => answer('actual', { actual })}
               onPick={() => picked('actual')}
@@ -1196,10 +1264,8 @@ export default function Home() {
               {!urgeOpen && (
                 <AnsweredRow
                   label="Urge"
-                  value={
-                    urgeChoices.find(([v]) => v === active.urge)?.[1] ?? ''
-                  }
-                  onChange={() => change('urge')}
+                  value={urgeLabels[active.urge]}
+                  onChange={active.stopped ? undefined : () => change('urge')}
                 />
               )}
               {hasWorry && !worryOpen && (
@@ -1218,7 +1284,7 @@ export default function Home() {
           {active.actual !== null && urgeOpen && (
             <section className="reveal" onBlur={(e) => left('urge', e)}>
               <h2 id="urge-label" tabIndex={-1}>
-                Did an urge to avoid or leave show up?
+                Did you want to stop partway?
               </h2>
               <RadioGroup
                 className="choices"
@@ -1276,7 +1342,8 @@ export default function Home() {
             (!hasWorry || active.worryHappened) && (
               <section className="reveal">
                 <h2 id="noticing-label" tabIndex={-1}>
-                  What did you notice?
+                  Anything you noticed?{' '}
+                  <span className="optional">Optional</span>
                 </h2>
                 <p className="meta question-hint" id="noticing-hint">
                   Choose any that fit.
@@ -1328,9 +1395,6 @@ export default function Home() {
                 )}
               </section>
             )}
-          <button className="text-button exit" onClick={() => finish(true)}>
-            I didn't start
-          </button>
         </section>
       )}
       {s.screen === 'observation' && last && (
@@ -1691,7 +1755,7 @@ export default function Home() {
                   <dd>
                     {e.outcome === 'not_started'
                       ? 'Not started'
-                      : urgeChoices.find(([v]) => v === e.urge)?.[1]}
+                      : urgeLabels[e.urge]}
                   </dd>
                   {e.notices.length > 0 && (
                     <>
@@ -1699,7 +1763,7 @@ export default function Home() {
                       <dd>
                         {e.notices
                           .map(
-                            (n) => noticingChoices.find(([v]) => v === n)?.[1],
+                            (n) => (noticeLabels as Record<string, string>)[n],
                           )
                           .join('; ')}
                       </dd>
