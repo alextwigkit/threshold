@@ -1,97 +1,97 @@
-# Threshold — behavior engine
+# Threshold: behavior engine
 
-Current release: private version 3, including optional AI. Read [HANDOFF.md](HANDOFF.md) for current status, decision precedence and verification boundaries. Sections describing the initial build are historical where explicitly labeled.
+Read [HANDOFF.md](HANDOFF.md) for release status and verification
+boundaries. See [PRODUCT.md](PRODUCT.md) for why the territory metaphor is
+internal only; this document checks its claims against `lib/engine.ts`.
 
 ## Governing rule
 
-The model should reason; the product should speak. Keep interpretation, candidate selection, evidence evaluation and map projection separate from rendering. Never optimize for discomfort reduction, time in app or forced progression.
+The engine reasons; the product speaks. Keep interpretation, step selection
+and evidence evaluation separate from rendering. Never optimize for
+discomfort reduction, time in app, or forced progression. Pipeline:
+situation, resistance, territory (internal), a small candidate step,
+prediction and worry, an encounter, then repeated evidence toward a pattern.
 
-Pipeline: situation → resistance → avoidance move → primary/secondary territory → smallest meaningful approach → calibration → expedition → prediction → encounter → observation → repeated evidence → discovery.
+## Territories: internal, and only a `where` phrase
 
-## Input and decision contract
+`territories` no longer carries a name, short label or description; each
+entry is just `{ where }`, a plain phrase used only inside a pattern's scope
+line, never as a heading or title:
 
-Input: situation text, optional confirmed resistance, user-edited action, recent encounters, current capacity and last recommendation. Output: version, confidence, needsClarification, resistance code, primary territory or null, secondary territories, template ID, action slots, duration, reason code and source encounter IDs. Enum validation, length limits and safe defaults precede rendering. This is the conceptual engine contract. The shipping provider receives a deliberately narrower input and returns the schema in server/inference.ts; it cannot create territory names, reward claims or arbitrary UI labels. History remains local.
+- fog: "weren't sure how to begin"
+- spotlight: "were worried how someone would react"
+- loop: "kept checking or preparing"
+- water: "were avoiding a feeling"
+- unknown: "found it hard for another reason"
 
-User correction outranks an inference. Do not force an unknown case into the closest family. The first local implementation may use lexical hints only as tentative routing; ambiguous cases ask for a choice. It must disclose its local nature in Me, not inject technical language into the action flow.
-
-## Territory ontology
-
-| ID | Name | Resistance | Possible avoidance move |
-|---|---|---|---|
-| fog | The Fog | Uncertainty, acting before knowing | Researching instead of beginning |
-| spotlight | The Spotlight | Evaluation or visibility | Withholding a useful question or draft |
-| loop | The Open Loop | Incompleteness, checking, closure | Rechecking after adequate functional review |
-| water | Still Water | Staying with an unpleasant internal state | Distraction or immediate fixing |
-| unknown | Unclassified | Insufficient or different information | Ask user; no invented label |
-
-A situation can have multiple memberships. Reveal a secondary region only when the user confirms its relevance or a real encounter supplies evidence. “The Friction” is not included as a defined territory because the source did not finish that proposal. Inhabitants name repeated moves, never diagnoses or anxiety itself.
+The territory ids and routing are unchanged internally; a situation keeps
+whatever territory it was last classified as. None of this, including the
+ids "fog", "spotlight", "loop" and "water", is ever shown to the user.
 
 ## Clarification
 
-Skip only for a concrete action and unambiguous resistance. Otherwise ask the single approved clarification. Distinguish wanting to understand, not knowing the first step, worry about doing it badly, unpleasantness, and something else. The latter supports free text and a user-authored action. Always permit correction on Setup. No personality inference.
+Skip only for a concrete action and unambiguous resistance. Otherwise ask
+the single approved clarification: wanting to understand, not knowing the
+first step, worry about others' reaction, wanting to keep checking, or
+something else. The user can always correct this on Your step.
 
-## Expedition selection
+## Safety: `needsCare` and `careful`
 
-A valid candidate includes an observable action, a bounded dose (initially 1–5 minutes), relevance to the named situation, and an optional avoidance behavior to refrain from. Never replace a real action with journaling about doing it. Preserve necessary safety, consent and functional checks. Avoid generic “be brave” instructions.
+`needsCare(situation)` matches a conservative, high-signal list (self-harm,
+abuse, medical, legal and financial crisis phrases), biased toward
+under-catching. `candidate()` sets `careful: true` whenever it matches, so
+Your step shows no why line, and the hint above the field is the fixed
+`careHint` ("Choose a step that feels safe and manageable. It's fine to get
+advice or support first.") instead of a resistance-keyed one.
 
-Reviewed examples:
+## Step selection and calibration
 
-- Fog, proposal: Open the proposal and spend 3 minutes writing three possible sections, even if unsure.
-- Spotlight: Ask one relevant question before you feel completely certain how it will sound. User chooses person/channel; Threshold does not send it.
-- Open Loop: Complete the necessary functional check, then end one extra polishing pass.
-- Still Water: Spend one minute noticing the feeling without immediately opening a distraction. Stop if needed.
-- Unknown: User names a small concrete action toward their situation; engine does not manufacture context.
+A valid step has an observable action, a bounded duration (1 to 3 minutes, 1
+when calibration calls for a smaller dose), and relevance to the situation.
+`candidate()` derives the territory, then a template keyed by situation
+keywords (writing, message, question, conversation), then a smaller dose
+when the last matching encounter was stopped, not started, or scored 8 or
+higher. A user's own edited action (`userAction`) is preserved across visits
+and outranks the template. Home's next step and the built-in fallback both
+call the same `candidate()`.
 
-For unsupported situation details, require the user to supply the exact action instead of inserting the whole situation into an awkward template. Show the final action before Begin. User edits are retained with the record.
+## AI failure falls back to the built-in engine, not a blank step
 
-## Calibration and Today's Threshold
-
-Start small. A recent stop or high reported difficulty suggests a smaller dose, never a shame message. Repeated attempted approach may offer a modest duration increase, but discomfort need not decrease. User can always make it smaller or change the action. No automatic escalation based only on low discomfort.
-
-Priority: resume active session; otherwise explicit new situation; otherwise a relevant variant grounded in the latest confirmed situation and history. Do not randomly rotate territories or exhaust one before revealing another. If context is stale or unclear, ask for current resistance. Candidate selection is deterministic for unchanged evidence. Home renders the returned title, action and duration; it must not own recommendation strings.
+When the suggestion request throws, hits the daily limit, or the server
+returns `source: 'local'`, the client runs `infer()` (or the confirmed
+resistance from Clarify) and then `candidate()`, exactly as the fully
+offline path does. A blank step now only happens if `candidate()` itself
+produces one. "Use a standard step instead," shown mid-request, takes the
+same route.
 
 ## Encounter storage
 
-An encounter has id, situation, resistance, territory memberships, action/template version, proposed duration, predictedDiscomfort (integer 0–10), optional prediction note, an optional worry and its Return answer, startedAt, returnedAt, outcome (attempted/stopped/not_started), actualDiscomfort (0–10 or null for not_started), avoidance response, noticing codes, optional note and createdAt. Save idempotently by session ID. Do not infer actual behavior from timer expiry. Preserve all evidence even when no discovery follows. An encounter is otherwise immutable; the one exception is a worry answer left "unknown" on Return, which can be given a later answer from the Atlas.
+An encounter has prediction, an optional worry and its Return answer,
+outcome (attempted, stopped, not_started), actual discomfort (0 to 10, or
+null for not_started) and noticing codes. It is otherwise immutable, apart
+from a worry answered "unknown" on Return, which can be given a later answer
+from History. Encounters are saved idempotently by id.
 
-## Observation policy
+## Result copy: `compare()` and `observation()`
 
-Each claim cites its encounter ID and scoped wording. No global claims from one attempt.
+`compare(e)` turns the prediction/actual gap into one of five headings
+("Easier than you expected" down to "Harder than you expected", or "About
+what you expected" when equal), plus "Expected N, felt M". `observation(e,
+next)` returns that heading for a completed attempt, or "You stopped
+partway" / "You didn't start this time" otherwise, paired with
+`nextStepLine()`, which only claims the next step is shorter when
+`candidate()` would actually return fewer minutes than this one had.
 
-- Reported starting harder than continuing → “The Doorway Felt Worse.” Do not derive this from expected minus actual alone.
-- Reported working while uncomfortable and compatible behavior → “Uncomfortable, and Still Here.”
-- Easier than predicted → “Different Than Expected,” limited to this encounter.
-- Stopped → acknowledge approaching and stopping; no assertion of staying.
-- Nothing stood out → “An Encounter, Recorded.” No manufactured lesson.
-- Not started → no approach trace, no discovery evidence.
+## Pattern policy
 
-If a noticing code contradicts behavior, exclude that claim rather than silently rewriting the report. Numeric expected/actual difference is descriptive, never a score.
-
-## Discovery policy — provisional, test before release
-
-Use windows of up to six comparable attempted or stopped encounters in a territory. Stopped outcomes do not support staying/continuing claims. Require at least four encounters on at least three distinct local dates, at least three explicit supporting observations, and at least 75% support among eligible encounters. A single session or many repeats in one day cannot produce a discovery. Retain evaluated encounter IDs, supporting IDs, contrary IDs, rule and establishment date in the derived discovery. Current code reconstructs this from saved encounters rather than persisting a separate discovery object.
-
-“The Doorway Is Worse Than the Room” requires explicit starting-versus-continuing noticing; prediction error alone cannot establish it. “You Can Act While Uncomfortable” requires actual discomfort and compatible reported approach. “What You Worried About (Mostly) Didn't Happen” (the bluff discovery; “Mostly” is dropped only when every piece of evidence was answered No) requires a named worry answered No, Partly or Yes on Return; only that Return answer counts toward it, never a later Atlas answer, or answering only the good outcomes later could inflate the evidence. It does not reuse the doorway/carried supports() check, which treats stopped and "nothing" as contrary evidence — irrelevant to whether a worry came true. Use tentative wording (“Across these encounters…”), not diagnosis or permanence. With mixed evidence, keep observations and withhold the discovery. New contradictory evidence updates the evidence view and confidence; do not erase the original history. No rewards for selectively favorable reporting.
-
-## Map projection
-
-Map state is derived from encounters, not clicks. Not-started adds nothing. Attempted/stopped adds one stable trace attached to the encounter ID. Familiarity grows with eligible evidence independent of discomfort delta. A discovery resolves a feature once per rule/territory, with evidence references. No invented history, completion percentages or rigid unlock chain.
-
-## Inference service contract
-
-Keep secrets server-side; validate structured responses and treat user text as data. Include timeout/error/offline paths to editable reviewed templates. Consent and retention must be specified before transmitting sensitive situations. Evaluate ambiguity, negation, multi-territory cases, unsafe requests, cultural context, contradictory evidence, overgeneralization and user correction. A keyword prototype cannot pass as this service.
-
-## Required tests
-
-Prediction zero accepted; missing prediction rejected; correction changes routing; no fixed Fog next action; not-started never changes map; stopped does not imply stayed; higher discomfort can support approach; neutral noticing yields neutral observation; one attempt cannot create discovery; duplicates cannot inflate evidence; mixed evidence suppresses discovery; clock-based timer survives backgrounding; records survive reload; invalid storage degrades visibly.
-
-## Local engine continuation
-
-- A plain statement that beginning feels unpleasant is not sufficient to classify Still Water. Use an unclassified step unless the situation explicitly concerns staying with an internal feeling; this preserves the distinction between starting a task and practicing non-escape.
-- Reviewed actions cover drafting, replying, asking, beginning a conversation and stopping an extra checking pass. Retain user edits when offering a repeat. No automatic action for an ambiguous high-stakes decision.
-- Doorway and acting-while-uncomfortable evidence are evaluated independently from compatible noticing selections; the displayed primary observation cannot discard additional evidence.
-- Discovery thresholds apply separately to each family. A carried-discomfort discovery requires an attempted outcome, actual discomfort above zero, and an explicit compatible noticing response. Lower discomfort is never required.
-
-## September 7 integration update
-
-Optional AI suggestions preserve the approved screens and first-use flow. The current contract, privacy disclosure, bounded request limits and validation status are recorded in [INFERENCE_INTEGRATION.md](INFERENCE_INTEGRATION.md). AI remains off until the user opts in; observations, discoveries and map evidence remain local and deterministic.
+`discoveries()` scans sliding windows of up to six comparable attempted or
+stopped encounters per territory, requiring at least four encounters across
+at least three distinct dates, at least three supporting encounters, and at
+least 75% support. Three rules: doorway (starting felt harder than
+continuing), carried (kept going while uncomfortable), and bluff (a named
+worry, answered on Return only, that mostly didn't come true; a later
+History answer never counts, so answering favorable outcomes later can't
+inflate its evidence). `patternEvidence()` states the scope in plain words
+using each territory's `where` phrase (or "found out" for bluff), never the
+territory name. Mixed evidence past the qualifying window keeps the pattern
+with a note that recent steps are mixed, rather than withdrawing it.

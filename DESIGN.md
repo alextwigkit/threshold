@@ -1,73 +1,97 @@
-# Threshold — design contract
+# Threshold: design contract
 
-Current release: private version 3, including optional AI. Read [HANDOFF.md](HANDOFF.md) for current status, decision precedence and verification boundaries. Sections describing the initial build are historical where explicitly labeled.
+Read [HANDOFF.md](HANDOFF.md) for release status and verification
+boundaries. This document records the visual direction and the layout rules
+that came out of the usability rethink (see [UX.md](UX.md) for the vocabulary
+rules and per-screen job and primary action).
 
 ## Foundation
 
-Use the recovered latest Stitch screens in references/ as the visual foundation. Contemporary Personal Atlas: warm neutral ground, editorial serif, humanist sans, fine charcoal linework, quiet terracotta. This is the locked direction, not a starting point for another redesign.
+Contemporary Personal Atlas: warm neutral ground, editorial serif, humanist
+sans, fine charcoal linework, quiet terracotta. This is the locked direction,
+not a starting point for another redesign.
 
 ## Tokens
 
 - Ground: #FCF9F4; secondary surface: #F3F0EB.
 - Ink: #20211E; muted text: #50534E; hairline: #DFDDD6.
-- Accent: #AC3D24 (selected controls, meaningful route, observation label); use #C85235 only where contrast is not needed for small text.
-- Display: Newsreader when bundled; Georgia fallback. Functional text: a restrained humanist sans such as locally available system sans; do not introduce Inter by default.
-- Body 16–18px, line-height 1.5; headings 28–36px mobile; labels 14px minimum. Generous but purposeful spacing, 20px mobile gutters, readable 560px content column.
-- Primary action: solid ink, warm-white text, approximately 52px high, modest radius. Form surfaces softly separated; no stacks of floating cards.
+- Accent: #AC3D24 (selected controls, the primary route, the result heading);
+  use #C85235 only where contrast is not needed for small text.
+- Display: Newsreader when bundled; Georgia fallback. Functional text: a
+  restrained humanist sans; do not introduce Inter by default.
+- Body 16 to 18px, line height 1.5; headings 28 to 36px on mobile; labels
+  14px minimum. Primary action: solid ink, warm white text, about 52px high,
+  modest radius. Form surfaces are softly separated; no floating card stacks.
 
-These numerical tokens translate screenshots into implementation; pixel values are engineering choices. Fonts must be bundled or have deliberate offline fallbacks. No remote font dependency required for the core loop.
+## Layout rules
+
+- **One focal element per screen.** Judge the whole screen, not each part in
+  isolation; rank it tier 1, tier 2, background before building or changing
+  it (see UX.md's screen list for the ranking each screen must hit).
+- **Emphasis is zero-sum.** Size, weight, contrast, tint and borders all draw
+  from the same budget. Spend it on tier 1; demote or delete supporting copy
+  rather than adding a second loud element.
+- **The gap scale has four steps**, set as custom properties: `--space-in`
+  (8px, between an element and its own label or hint), `--space-pair` (16px,
+  between two closely related lines, such as a heading and the text right
+  under it), `--space-block` (24px, between a block and the next distinct
+  block on the same screen), and `--space-group` (40px, between a screen's
+  major sections, such as the next step and the progress section on Home).
+  Demote an element by shrinking its size or contrast, never by shrinking a
+  gap; a cramped screen is a hierarchy bug even if the ranking is right.
+- **Adjacent heading levels differ by at least 1.25x** in size or weight, so
+  a heading and a sub-heading are never mistaken for the same rank.
+- **The primary action is visible without scrolling**, at 390x844 and
+  375x667; 320x568 is best effort only, since the narrowest devices are rare
+  in this app's audience. If the primary action does not fit above the fold,
+  cut or move content rather than compress the gap scale.
+- **A tinted box must earn its place.** Reserve tinted surfaces (pattern
+  cards, panels) for content that genuinely needs to be set apart; a form
+  section or a quiet aside does not get one by default.
 
 ## Composition
 
-Name is an editorial question plus a large natural input, not a hero page. Clarify uses spare selectable rows. Setup combines compact territory fragment with exact action, prediction and Begin; the scale must not disappear beneath decorative space. Active centers the timer with a quiet circle and action, preserving room to return. Return uses typography and spaced controls, progressively revealed. Observation gives world response and a scoped claim. Home puts the trail above today's step, which leads; Trail / Atlas / Me is spare bottom navigation.
+Start is an editorial question plus a large natural input, not a hero page.
+Your step centers the editable step text as the largest type on the screen,
+with the why line or hint quietly underneath. Before you start leads with
+the discomfort scale, with the worry field visible below it. Timer centers
+the ring and the time, with "I'm done" reachable without scrolling. Result
+gives the comparison or the pattern first, and Done second. Home puts the
+next step above progress; Home, History and Your data sit in spare bottom
+navigation.
 
 ## The worry line
 
-Observation and Atlas entries for an encounter that named a worry show a quiet line under the body: the person's own words in meta colour, quoted, then what happened in ordinary body text. Only the person's own words or this one reviewed sentence shape are shown back; never a generated summary of the worry.
+Result and History entries for a step that named a worry show a quiet line:
+the person's own words in meta color, quoted, then what happened in ordinary
+body text; never a generated summary of the worry. A worry pattern's evidence
+is one figure ("in 3 of the 4 steps where you found out, your worry didn't
+happen"), not the expected-to-felt numbers used elsewhere; its scope line
+names the situation's kind of difficulty in plain words (for example, "steps
+where you were worried how someone would react"), never an internal
+territory name.
 
-The bluff discovery is about whether the worry happened, not discomfort. Its title is data-dependent: “What You Worried About Didn't Happen” when every encounter in the evidence was answered No, and “What You Worried About Mostly Didn't Happen” otherwise. Its Observation evidence is one figure, “Worries that didn't happen” N of M, rather than the Expected → Experienced arrow pair used everywhere else; the scope line under the figure adds the partly and yes counts when either is above zero. That arrow always means expected → experienced, so it is not reused for this figure, and the Observation trail caption adds “Stones show expected → felt.” so the stones are not read as worry counts. For every discovery, the scope line sits directly under the figure it qualifies and names the territory by its plain description (“Across 4 encounters when being seen or heard is part of the hard thing.”), not by its metaphor. Territory names appear only with their description beside them, as on a filtered Atlas; step titles say what to do in plain words, not the territory metaphor.
+## Row of dots (the former trail)
 
-## Trail grammar
+Home and Result show a row of dots: one per step taken, oldest first. Every
+mark encodes a stored field; nothing is placed for decoration. Order along
+the row is when the step happened; the numbers under a dot are expected then
+felt discomfort; a solid or half-filled dot means completed or stopped
+partway (never a failure mark); a ring marks the dot that established a
+pattern. Only the latest four dots show on Home, with earlier steps collapsed
+into "+N earlier" that opens History; Result shows the full row, muted, with
+no caption words and no tap interaction. Not starting leaves no dot.
 
-Home and Observation show a trail: one stone per step taken, oldest first, along a single path. Every mark encodes a stored field; nothing is placed for decoration or by hash.
-
-| Channel | Data |
-|---|---|
-| Order along the path | when the step happened |
-| Numbers under a stone | expected → experienced discomfort |
-| Solid or half-filled stone | stayed, or stopped early (never a failure mark) |
-| Word under a stone | what made it hard, in one plain word (Unclear, Visible, Checking, Feeling), never the territory metaphor |
-| Dashed open accent stone at the end | today's step, on Home only |
-| Accent ring | the step that established a discovery |
-
-- Start: a short bar the path leaves from. Only the latest four stones show; earlier steps collapse into "+N earlier", which opens the Atlas.
-- Not started leaves no stone. Opening the app, waiting or tapping Begin never changes the trail.
-- The step just recorded is the largest stone on Observation and settles in once.
-- Tapping a stone opens that encounter in the Atlas.
-- Accent means only today's step, a discovery ring, or the observation label.
-
-Rich illustrative inhabitants remain future authored assets, unlocked only by recurring behavior evidence.
-
-## Motion
-
-A short stone settle and discovery ring can provide curiosity and satisfaction, about 400–800ms. No endless pulsing or mandatory wait. Respect prefers-reduced-motion; information remains understandable with animation disabled. Never fabricate history.
-
-## Copy contract
-
-The model reasons; the product speaks. UI strings come from reviewed templates. Action text may contain user-edited or validated situation-specific slots. Never directly render arbitrary model prose as a psychological conclusion.
-
-Allowed concepts: Threshold, trail, step, territory, expedition, explore, path, observation, discovery, inhabitant. World language may communicate real state (unknown, familiar, stopped here). Functional actions use ordinary language: Continue, Begin, I'm back, Stop, See my trail.
-
-Prohibited: coordinates, elevations, scales, folios, taxonomy, protocols, invented records, faux scientific metadata, motivational praise, “Great job”, AI sparkles, chat bubbles, gradient buttons, glass surfaces, XP, streaks, badges, dashboard analytics, card grids. No hard-coded “Another Step into The Fog” recommendation. Never use “Follow the initial clarity before the doubt returns.”
+A short dot settle, about 400 to 800ms, can provide curiosity and
+satisfaction, but never an endless pulse or a mandatory wait. Respect
+prefers-reduced-motion; information remains understandable with animation
+disabled.
 
 ## Review checklist
 
-Compare each implemented screen with its reference for hierarchy, spacing, palette and interaction meaning. Apply only documented corrections. Check 320/390px widths, desktop, keyboard, 200% text and reduced motion before release. A technically built screen is not proof of visual or device QA.
-
-## Evidence projection continuation
-
-Stone order is stable by createdAt then encounter ID, including when older history is restored; restoring never changes an existing stone except its step number. Mark qualified discoveries with a ring on the establishing stone, not a fictional named landmark. Atlas entry eyebrows filter the Atlas by territory.
-
-## September 7 integration update
-
-Optional AI suggestions preserve the approved screens and first-use flow. The current contract, privacy disclosure, bounded request limits and validation status are recorded in [INFERENCE_INTEGRATION.md](INFERENCE_INTEGRATION.md). AI remains off until the user opts in; observations, discoveries and trail evidence remain local and deterministic.
+Check 320, 390 and 375px widths, desktop, keyboard, 200% text and reduced
+motion before release. After a visual change, screenshot each changed screen
+at mobile size (plain and blurred with `filter: blur(7px)`), and get a blind
+hierarchy read from a fresh reviewer against the intended tier-1/tier-2
+ranking; NOT READY blocks calling a screen finished. A technically built
+screen is not proof of visual or device QA.
