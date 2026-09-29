@@ -416,6 +416,24 @@ export default function Home() {
     setSuggestionMessage('');
     patch({ screen });
   };
+  // The on-device step: used offline, when suggestions fail, and on request.
+  function builtInStep(confirmed: Resistance | null) {
+    const situation = s.situation.trim();
+    const guess = confirmed
+      ? { resistance: confirmed, confident: true }
+      : infer(situation);
+    patch({
+      resistance: guess.resistance,
+      draft: {
+        ...candidate(situation, guess.resistance, s.encounters),
+        resistanceNote: s.custom,
+        purpose: lastPurpose(s.encounters, situation),
+      },
+      prediction: null,
+      predictionNote: '',
+      screen: guess.confident ? 'setup' : 'clarify',
+    });
+  }
   async function requestStep(confirmed: Resistance | null) {
     if (!navigator.onLine) return false;
     const epoch = ++requestEpoch.current;
@@ -424,12 +442,22 @@ export default function Home() {
     const situation = s.situation.trim();
     try {
       const result = await suggestionRequest.current.run(situation, confirmed);
-      if (!result) return true;
+      if (!result) {
+        return true;
+      }
+      if (result.source === 'local') {
+        builtInStep(confirmed);
+        setSuggestionMessage(
+          'Suggestions are unavailable right now, so this is a standard step.',
+        );
+        return true;
+      }
       let draft = result.candidate;
       const local = candidate(situation, draft.resistance, s.encounters);
       // Previous edits and smaller-dose rules remain local and outrank a new suggestion.
-      if (local.userAction) draft = local;
-      else if (local.minutes < draft.minutes)
+      if (local.userAction) {
+        draft = { ...local, careful: draft.careful || local.careful };
+      } else if (local.minutes < draft.minutes) {
         draft = {
           ...draft,
           minutes: local.minutes,
@@ -438,6 +466,7 @@ export default function Home() {
             `${local.minutes} minute${local.minutes === 1 ? '' : 's'}`,
           ),
         };
+      }
       patch({
         draft: {
           ...draft,
@@ -453,30 +482,14 @@ export default function Home() {
             ? 'clarify'
             : 'setup',
       });
-      if (result.source === 'local')
-        setSuggestionMessage(
-          'Suggestions are unavailable right now. You can choose your own step.',
-        );
       return true;
     } catch (e) {
+      builtInStep(confirmed);
       setSuggestionMessage(
         e instanceof Error && e.message === 'limit'
-          ? 'You’ve reached the suggestion limit. You can still choose your own step.'
-          : 'Suggestions are unavailable right now. You can still choose your own step.',
+          ? 'You’ve reached today’s suggestion limit, so this is a standard step.'
+          : 'Suggestions are unavailable right now, so this is a standard step.',
       );
-      const draft = {
-        ...candidate(situation, confirmed ?? 'other'),
-        title: 'Choose your own step',
-        action: '',
-        purpose: lastPurpose(s.encounters, situation),
-      };
-      patch({
-        draft,
-        resistance: confirmed ?? 'other',
-        prediction: null,
-        predictionNote: '',
-        screen: 'setup',
-      });
       return true;
     } finally {
       if (epoch === requestEpoch.current) setBusy(false);
@@ -493,35 +506,19 @@ export default function Home() {
     setShowWorry(false);
     setWorryDraft('');
     setShowPurpose(false);
-    if (await requestStep(null)) return;
-    const guess = infer(s.situation);
-    const draft = {
-      ...candidate(s.situation.trim(), guess.resistance, s.encounters),
-      purpose: lastPurpose(s.encounters, s.situation),
-    };
-    patch({
-      resistance: guess.resistance,
-      draft,
-      prediction: null,
-      predictionNote: '',
-      screen: guess.confident ? 'setup' : 'clarify',
-    });
+    if (await requestStep(null)) {
+      return;
+    }
+    builtInStep(null);
   }
   async function setup() {
     setShowWorry(false);
     setWorryDraft('');
     setShowPurpose(false);
-    if (await requestStep(s.resistance)) return;
-    patch({
-      draft: {
-        ...candidate(s.situation.trim(), s.resistance, s.encounters),
-        resistanceNote: s.custom,
-        purpose: lastPurpose(s.encounters, s.situation),
-      },
-      prediction: null,
-      predictionNote: '',
-      screen: 'setup',
-    });
+    if (await requestStep(s.resistance)) {
+      return;
+    }
+    builtInStep(s.resistance);
   }
   function begin() {
     if (s.session) {
@@ -851,16 +848,7 @@ export default function Home() {
               setShowWorry(false);
               setWorryDraft('');
               setShowPurpose(false);
-              const draft = {
-                ...candidate(s.situation.trim(), s.resistance, s.encounters),
-                purpose: lastPurpose(s.encounters, s.situation),
-              };
-              patch({
-                draft,
-                prediction: null,
-                predictionNote: '',
-                screen: 'setup',
-              });
+              builtInStep(s.screen === 'clarify' ? s.resistance : null);
             }}
           >
             Use a standard step instead

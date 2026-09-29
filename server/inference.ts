@@ -246,6 +246,9 @@ export function renderSuggestion(
       territory: decision.primary,
       secondary: [],
       template: `model-${decision.template}-v1`,
+      ...(base.careful || decision.eligibility === 'needs_user_step'
+        ? { careful: true }
+        : {}),
     },
   };
 }

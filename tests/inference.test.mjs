@@ -135,6 +135,8 @@ test('low confidence and unknown cases require clarification; doses remain small
   });
   assert.equal(s.candidate.action, '');
   assert.equal(s.needsClarification, true);
+  assert.equal(s.candidate.careful, true);
+  assert.equal(renderSuggestion(input, judgment).candidate.careful, undefined);
 });
 test('request sends only situation and confirmed resistance with storage disabled', () => {
   const b = responseRequest(input, 'test-model');

@@ -15,6 +15,7 @@ import {
   isEncounter,
   isSession,
   isCandidate,
+  needsCare,
 } from '../lib/engine.ts';
 const encounter = (id, overrides = {}) => ({
   ...candidate('starting a proposal', 'understand'),
@@ -268,7 +269,14 @@ test('a safety-critical situation is never auto-templated, regardless of which k
     const result = candidate(situation, resistance);
     assert.equal(result.territory, 'unknown', situation);
     assert.equal(result.action, '', situation);
+    assert.equal(result.careful, true, situation);
+    assert.equal(needsCare(situation), true, situation);
   }
+  assert.equal(needsCare('ask my boss for a raise'), false);
+  assert.equal(
+    candidate('ask my boss for a raise', 'judged').careful,
+    undefined,
+  );
   // An ordinary conversation without any safety-critical language is unaffected.
   assert.notEqual(
     candidate('ask my boss for a raise', 'judged').action,
@@ -594,6 +602,8 @@ test('lastPurpose carries across resistances for the same situation, not across 
 test('isCandidate accepts a purpose up to 300 characters and rejects longer', () => {
   const base = candidate('starting a proposal', 'understand');
   assert.equal(isCandidate(base), true);
+  assert.equal(isCandidate({ ...base, careful: true }), true);
+  assert.equal(isCandidate({ ...base, careful: 'yes' }), false);
   assert.equal(isCandidate({ ...base, purpose: 'x'.repeat(300) }), true);
   assert.equal(isCandidate({ ...base, purpose: 'x'.repeat(301) }), false);
 });

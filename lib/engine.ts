@@ -40,6 +40,8 @@ export type Candidate = {
   // What this step is for, in the person's own words. Set explicitly by
   // whatever builds the draft (never by a server response) from `lastPurpose`.
   purpose?: string;
+  // Sensitive situation: the person writes their own step and is never nudged.
+  careful?: boolean;
 };
 export type Session = Candidate & {
   id: string;
@@ -89,6 +91,14 @@ export function infer(situation: string): {
   if (uncertain) return { resistance: 'understand', confident: false };
   return { resistance: 'start', confident: false };
 }
+// Mirrors the AI path's own instruction to route coercion/danger/medical-legal-financial/
+// safety-critical situations to a blank, user-written step instead of an auto-generated
+// one. Conservative on purpose: high-signal phrases only, biased toward under-catching.
+export function needsCare(situation: string) {
+  return /\b(suicid\w*|self[- ]?harm|end(?:ing)? (my|his|her|their) life|end it all|not want to (live|be here)|better off dead|kill(?:ing)? (myself|him|her|them)|hurt(?:ing)? (myself|someone)|abus\w*|assault\w*|domestic violence|overdose|medication|prescription|diagnos\w*|surgery|lawsuit|attorney|custody battle|eviction|foreclosure|bankrupt\w*|restraining order)\b/i.test(
+    situation,
+  );
+}
 export function candidate(
   situation: string,
   resistance: Resistance,
@@ -106,15 +116,7 @@ export function candidate(
     !!last && (last.outcome !== 'attempted' || (last.actual ?? 0) >= 8);
   const minutes = smaller ? 1 : 3;
   const span = `${minutes} minute${minutes === 1 ? '' : 's'}`;
-  // Mirrors the AI path's own instruction to route coercion/danger/medical-legal-financial/
-  // safety-critical situations to a blank, user-written step instead of an auto-generated
-  // one. Conservative on purpose: high-signal phrases only, biased toward under-catching
-  // (an ordinary situation blocked from templating loses nothing but a canned sentence) over
-  // over-catching (falsely refusing to template a large fraction of ordinary situations).
-  const safetyCritical =
-    /\b(suicid\w*|self[- ]?harm|end(?:ing)? (my|his|her|their) life|end it all|not want to (live|be here)|better off dead|kill(?:ing)? (myself|him|her|them)|hurt(?:ing)? (myself|someone)|abus\w*|assault\w*|domestic violence|overdose|medication|prescription|diagnos\w*|surgery|lawsuit|attorney|custody battle|eviction|foreclosure|bankrupt\w*|restraining order)\b/i.test(
-      situation,
-    );
+  const safetyCritical = needsCare(situation);
   // A recurring situation+resistance pair keeps whatever territory it was actually
   // classified as (frequently by the AI, which reasons about the situation directly)
   // instead of re-deriving one from this crude resistance-only table every time. Without
@@ -233,6 +235,7 @@ export function candidate(
     situation: situation.trim(),
     resistanceNote: last?.resistanceNote,
     userAction,
+    ...(safetyCritical ? { careful: true } : {}),
   };
 }
 // The most recent purpose named for this situation, across any resistance.
@@ -474,6 +477,7 @@ export function isCandidate(e: unknown): e is Candidate {
     (x.resistanceNote === undefined ||
       (typeof x.resistanceNote === 'string' &&
         x.resistanceNote.length <= 1000)) &&
+    (x.careful === undefined || typeof x.careful === 'boolean') &&
     Object.hasOwn(territories, x.territory) &&
     [
       'understand',
