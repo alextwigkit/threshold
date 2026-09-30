@@ -296,24 +296,6 @@ textarea::placeholder {
   font-weight: 500;
   margin-top: var(--space-group);
 }
-/* Flow screens outgrow a small phone: the primary stays in view, masking the content
- * behind it, with a soft top edge so the content reads as continuing underneath. */
-.clarify > .primary,
-.setup > .primary {
-  position: sticky;
-  bottom: var(--space-pair);
-  z-index: 1;
-  box-shadow:
-    0 var(--space-pair) 0 var(--space-pair) var(--background),
-    0 calc(-1 * var(--space-pair)) var(--space-block) var(--space-in)
-      var(--background);
-}
-/* Whatever follows the pinned primary paints above its mask. */
-.clarify > .primary ~ *,
-.setup > .primary ~ * {
-  position: relative;
-  z-index: 2;
-}
 /* A glyph, not text: sized relative to the button label, not a text role. */
 .primary .arrow {
   font-size: 1.5em;

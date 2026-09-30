@@ -65,9 +65,10 @@ below for the gap scale that spaces these roles apart.
 - **The primary action is visible without scrolling**, at 390x844 and
   375x667; 320x568 is best effort only, since the narrowest devices are rare
   in this app's audience. If the primary action does not fit above the fold,
-  cut or move content rather than compress the gap scale. On Clarify, Your
-  step and Before you start the primary is pinned to the bottom of the
-  viewport while the content scrolls, and settles into flow at the end.
+  cut or move content rather than compress the gap scale. Never pin the
+  primary over content: a pinned button overlapped the fields on a real
+  phone. Clarify's six choices push Continue below the fold at 375x667;
+  that is accepted, since choosing is the screen's task.
 - **A tinted box must earn its place.** Reserve tinted surfaces (pattern
   cards, panels) for content that genuinely needs to be set apart; a form
   section or a quiet aside does not get one by default.
