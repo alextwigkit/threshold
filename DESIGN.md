@@ -19,9 +19,30 @@ not a starting point for another redesign.
   use #C85235 only where contrast is not needed for small text.
 - Display: Newsreader when bundled; Georgia fallback. Functional text: a
   restrained humanist sans; do not introduce Inter by default.
-- Body 16 to 18px, line height 1.5; headings 28 to 36px on mobile; labels
-  14px minimum. Primary action: solid ink, warm white text, about 52px high,
-  modest radius. Form surfaces are softly separated; no floating card stacks.
+- Primary action: solid ink, warm white text, about 52px high, modest radius.
+  Form surfaces are softly separated; no floating card stacks.
+
+## Type roles
+
+Six roles, each a `--text-*` token; every font-size in the app uses one of
+them, or inherits (exceptions: the timer's short-screen size, and glyphs
+sized in em against their own label).
+
+| Role | Face / size / weight | Used for |
+| --- | --- | --- |
+| Display | serif 54/400 | the timer only |
+| Title | serif 30/400 | one per screen (h1) |
+| Heading | serif 20/400 | sections and groups (h2/h3) |
+| Lead | sans 24/400, ink | what to read: the step, the result comparison, the step field |
+| Body | sans 16/400, buttons 500 | text, options, buttons |
+| Meta | sans 14/400, `--meta-foreground` (#666a62, 5.26:1 on the background) | context, dates, counts, hints, dot labels, nav, wordmark |
+
+Rules: Title is 1.5x Heading; only buttons and choice chips carry weight 500,
+everything else here is 400; no uppercase and no positive letter-spacing
+anywhere (the serif roles keep their own negative tracking); one link style,
+underlined, at the size of its surrounding text; serif is reserved for
+Display, Title and Heading so it always signals structure. See Layout rules
+below for the gap scale that spaces these roles apart.
 
 ## Layout rules
 
@@ -44,7 +65,9 @@ not a starting point for another redesign.
 - **The primary action is visible without scrolling**, at 390x844 and
   375x667; 320x568 is best effort only, since the narrowest devices are rare
   in this app's audience. If the primary action does not fit above the fold,
-  cut or move content rather than compress the gap scale.
+  cut or move content rather than compress the gap scale. On Clarify, Your
+  step and Before you start the primary is pinned to the bottom of the
+  viewport while the content scrolls, and settles into flow at the end.
 - **A tinted box must earn its place.** Reserve tinted surfaces (pattern
   cards, panels) for content that genuinely needs to be set apart; a form
   section or a quiet aside does not get one by default.

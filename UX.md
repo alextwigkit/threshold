@@ -36,16 +36,20 @@ supports it; everything else is background.
 3. **Your step** (first half of `setup`): read and, if needed, edit the step.
    Tier 1: the step text, editable, in the largest type on the screen. Tier
    2: the why line under it, or a hint above the field when the step is
-   blank. Primary action: Next.
+   blank, then "How many minutes?" as chips of 1, 3, 5 and 10, plus an extra
+   chip when the person has typed another length in the step itself (up to
+   30); the last length chosen carries forward to the next step. Primary
+   action: Next.
 4. **Before you start** (second half of `setup`): predict and name a worry.
    Tier 1: the 0-10 discomfort scale. Tier 2: the worry field. The step and
    its duration show as one quiet reminder line. Primary action: Start
    timer.
 5. **Timer** (`active`): do the step. Tier 1: the time, in a ring that empties
-   as it runs out. Tier 2: "I'm done". "I stopped partway" and "I didn't
-   start" are also reachable without scrolling. A late return (more than 30
-   minutes after time was up) replaces the ring with a sentence asking how
-   it went.
+   as it runs out, then counts up past 0:00 with "Time's up. Keep going if
+   you like, and tap “I’m done” when you finish." Tier 2: "I'm done". "I
+   stopped partway" and "I didn't start" are also reachable without
+   scrolling. A late return (more than 30 minutes after time was up) replaces
+   the ring with a sentence asking how it went.
 6. **How it went** (`return`): report the outcome. Tier 1: the current
    question (discomfort, then urge, then the worry check, then noticing),
    revealed one at a time. Answered questions collapse into a summary row.
@@ -56,15 +60,28 @@ supports it; everything else is background.
    underneath (the expected/felt numbers, the pattern's evidence, or the
    next-step line). The row of dots stays, muted, above the heading. Primary
    action: Done (kept secondary, since it only dismisses).
-8. **Home** (`map`): decide what to do next. Tier 1: the next step, with its
-   duration and situation, then Start. Tier 2: "Your progress", the easier-
+8. **Home** (`map`): decide what to do next. With a step already chosen, the
+   reading order is: "Next step" (Heading), a Meta line ("{situation} ·
+   {minutes} min"), the step itself (Lead), "Change step" (Meta link), an
+   optional "For: {purpose}" line, then Start; "Work on something else"
+   follows as a quiet link. With a situation but no step yet, it reads
+   instead: "Working on" (Heading), the situation (Lead), Choose a step, then
+   "Work on something else". Tier 1 is the step or situation, then Start or
+   Choose a step. Tier 2, below either state: "Your progress", the easier-
    than-expected and worry sentences, and the row of dots. Primary action:
-   Start.
-9. **History** (`atlas`): review what came before. Tier 1: patterns, when any
-   exist, each with its evidence stated in words. Tier 2: steps grouped by
-   situation, newest first, newest group open. Primary action: none; this is
-   a review screen. Empty state offers "Start with something you're
-   avoiding".
+   Start (or Choose a step, before a step exists).
+9. **History** (`atlas`): review what came before. The screen's own title is
+   visually hidden; the content carries the hierarchy. Tier 1: patterns, when
+   any exist, each with its evidence stated in words. Tier 2: steps grouped
+   by situation, newest first, newest group open, each group a Heading with a
+   Meta line under it ("N steps · last {date}"); an entry inside a group
+   reads Meta date, Body step, then a Meta result line ("{comparison} ·
+   discomfort {expected} → {felt}"), a worry line when one was named ("You
+   worried: "..." {status}", in Meta), and Details. Each group ends with
+   "Take another step on this"; a hairline separates one group from the
+   next. When there are no patterns yet, a single Meta line at the end of the
+   list explains what it takes to find one. Primary action: none; this is a
+   review screen. Empty state offers "Start with something you're avoiding".
 10. **Your data** (`me`): manage local data. Tier 1: "Download a backup".
     Tier 2: "Restore a backup", "Delete all data", and the privacy line
     about what is sent to the AI service. Primary action: Download a backup.
