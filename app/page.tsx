@@ -50,6 +50,7 @@ import {
   worryPattern,
   groupBySituation,
   recentSituations,
+  trailKey,
 } from '@/lib/trail';
 import { SuggestionRequest } from '@/lib/suggestions';
 import {
@@ -459,10 +460,11 @@ export default function Home() {
     const guess = confirmed
       ? { resistance: confirmed, confident: true }
       : infer(situation);
+    const step = candidate(situation, guess.resistance, s.encounters);
     patch({
       resistance: guess.resistance,
       draft: {
-        ...candidate(situation, guess.resistance, s.encounters),
+        ...step,
         resistanceNote: s.custom,
         purpose: lastPurpose(s.encounters, situation),
       },
@@ -473,6 +475,16 @@ export default function Home() {
       setupFrom: 'clarify',
       worryDraft: undefined,
     });
+    return step.action.trim() !== '';
+  }
+  // Says what the person is looking at: a built-in step, or a blank one to write.
+  function fallbackMessage(hasStep: boolean, limit: boolean) {
+    const why = limit
+      ? 'You’ve reached today’s suggestion limit'
+      : 'No suggestion came back this time';
+    return hasStep
+      ? `${why}, so this is a standard step.`
+      : `${why}, so write a step of your own.`;
   }
   async function requestStep(confirmed: Resistance | null) {
     if (!navigator.onLine) return false;
@@ -486,10 +498,7 @@ export default function Home() {
         return true;
       }
       if (result.source === 'local') {
-        builtInStep(confirmed);
-        setSuggestionMessage(
-          'Suggestions are unavailable right now, so this is a standard step.',
-        );
+        setSuggestionMessage(fallbackMessage(builtInStep(confirmed), false));
         return true;
       }
       let draft = result.candidate;
@@ -527,11 +536,11 @@ export default function Home() {
       });
       return true;
     } catch (e) {
-      builtInStep(confirmed);
       setSuggestionMessage(
-        e instanceof Error && e.message === 'limit'
-          ? 'You’ve reached today’s suggestion limit, so this is a standard step.'
-          : 'Suggestions are unavailable right now, so this is a standard step.',
+        fallbackMessage(
+          builtInStep(confirmed),
+          e instanceof Error && e.message === 'limit',
+        ),
       );
       return true;
     } finally {
@@ -664,10 +673,6 @@ export default function Home() {
   const cmp = last ? compare(last) : null;
   const backupSummary = backup ? restoreSummary(s, backup) : null;
   const steps = taken(s.encounters);
-  // Only explain half-filled stones when one is on screen.
-  const stoppedShown = trailStones(s.encounters).stones.some(
-    (st) => st.stopped,
-  );
   function openEntry(id: string | null) {
     setAtlasFocus(id);
     const entry = id && s.encounters.find((e) => e.id === id);
@@ -888,11 +893,6 @@ export default function Home() {
           </button>
         </div>
       )}
-      {suggestionMessage && s.screen !== 'setup' && (
-        <p className="notice" role="status">
-          {suggestionMessage}
-        </p>
-      )}
       {busy && (
         <div role="status" className="loading">
           <p>
@@ -935,12 +935,6 @@ export default function Home() {
               A conversation, starting a project, answering a message, making a
               decision.
             </p>
-            {s.encounters.length === 0 && (
-              <p className="meta hint">
-                When you continue, this is sent to an AI service to suggest a
-                step. Your history stays in this browser.
-              </p>
-            )}
           </div>
           <Primary
             id="continue-button"
@@ -1048,11 +1042,6 @@ export default function Home() {
             purpose={showPurpose ? undefined : s.draft.purpose?.trim()}
             onEditPurpose={() => setShowPurpose(true)}
           />
-          {suggestionMessage && (
-            <p className="notice" role="status">
-              {suggestionMessage}
-            </p>
-          )}
           {blankAtArrival
             ? title('What’s one small step you could take?')
             : title('Your step', 'eyebrow step-eyebrow')}
@@ -1137,6 +1126,11 @@ export default function Home() {
                 Add why this matters
               </button>
             </div>
+          )}
+          {suggestionMessage && (
+            <p className="notice" role="status">
+              {suggestionMessage}
+            </p>
           )}
         </section>
       )}
@@ -1436,8 +1430,7 @@ export default function Home() {
                 newDiscoveryId={newDiscovery?.id}
               />
               <p className="meta trail-key">
-                Each dot is a step: expected → felt, out of 10
-                {stoppedShown && '; half‑filled means you stopped partway'}.
+                {trailKey(trailStones(s.encounters).stones, false)}
               </p>
             </>
           )}
@@ -1603,9 +1596,7 @@ export default function Home() {
                 onEarlier={() => openEntry(null)}
               />
               <p className="meta trail-key">
-                Expected → felt, out of 10
-                {stoppedShown && '; half-filled means you stopped early'}. Tap a
-                step for details.
+                {trailKey(trailStones(s.encounters).stones, true)}
               </p>
             </section>
           )}

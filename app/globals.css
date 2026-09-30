@@ -422,9 +422,9 @@ section > .text-button {
   padding: 0;
   margin: 0 0 var(--space-pair);
 }
-/* On Setup it follows Begin: the title already says to choose your own step. */
+/* On Your step it closes the screen: background to the step, not a lead-in to it. */
 .setup .notice {
-  margin: var(--space-pair) 0 0;
+  margin: var(--space-group) 0 0;
 }
 /*
  * Fills the same vertical space the screen it's replacing would (matches

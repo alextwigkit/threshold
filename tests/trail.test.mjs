@@ -8,6 +8,7 @@ import {
   worryPattern,
   groupBySituation,
   recentSituations,
+  trailKey,
 } from '../lib/trail.ts';
 const step = (id, overrides = {}) => ({
   ...candidate('starting a proposal', 'understand'),
@@ -221,5 +222,22 @@ test('the worry pattern counts a Return answer or a later Atlas answer, but not 
       step('3', { worryHappened: 'no' }),
     ]),
     'None of the 3 worries you followed up on happened.',
+  );
+});
+
+test('trailKey explains the numbers with the latest step, and only mentions what is on screen', () => {
+  assert.equal(trailKey([], true), '');
+  const { stones } = trailStones([step('1', { prediction: 5, actual: 3 })]);
+  assert.equal(
+    trailKey(stones, false),
+    'The numbers are discomfort out of 10: 5 → 3 means you expected 5 and it felt like 3.',
+  );
+  const both = trailStones([
+    step('1', { outcome: 'stopped' }),
+    step('2', { prediction: 6, actual: 0 }),
+  ]).stones;
+  assert.equal(
+    trailKey(both, true),
+    'The numbers are discomfort out of 10: 6 → 0 means you expected 6 and it felt like 0. A half-filled dot means you stopped partway. Tap a dot to see that step.',
   );
 });

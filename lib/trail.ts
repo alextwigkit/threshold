@@ -44,6 +44,21 @@ export function trailStones(
   return { stones: shown, earlier: stones.length - shown.length };
 }
 
+/** The key under the dots, worked through with the latest step's own numbers. */
+export function trailKey(stones: Stone[], tappable: boolean) {
+  const latest = stones.at(-1);
+  if (!latest) return '';
+  const { expected: e, experienced: f } = latest;
+  return [
+    `The numbers are discomfort out of 10: ${e} → ${f} means you expected ${e} and it felt like ${f}.`,
+    stones.some((x) => x.stopped) &&
+      'A half-filled dot means you stopped partway.',
+    tappable && 'Tap a dot to see that step.',
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
+
 /** How many steps felt easier than expected, in words, once there is more than one. */
 export function pattern(encounters: Encounter[]) {
   const all = taken(encounters);
