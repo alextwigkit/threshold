@@ -152,24 +152,26 @@ h1 {
   margin: 0 0 var(--space-pair);
 }
 h2 {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   margin: 0 0 var(--space-pair);
 }
 h3 {
   font-size: 1.25rem;
 }
 /*
- * Type roles: Display (timer), Title (h1), Heading (h2), Lead, Body (p), Meta.
+ * Type roles: Display (timer, 54px), Title (h1, 30px), Heading (h2/h3, 20px),
+ * Lead (.lead, 24px sans ink), Body (p, 16px), Meta (.meta, 14px muted).
  * Serif is reserved for Display, Title and Heading so it always signals structure.
+ * Only buttons carry weight 500; everything else here is 400.
  */
 .lead {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   line-height: 1.45;
   color: var(--foreground);
 }
 .meta {
-  font-size: 0.8125rem;
-  font-weight: 500;
+  font-size: 0.875rem;
+  font-weight: 400;
   line-height: 1.45;
   color: var(--meta-foreground);
 }
@@ -186,10 +188,10 @@ p {
     calc(32px + env(safe-area-inset-bottom, 0px))
     calc(24px + env(safe-area-inset-left, 0px));
 }
+/* Wordmark: Meta role, normal case. Shared across every screen's header. */
 .brand {
   font-size: 0.875rem;
-  letter-spacing: 0.22em;
-  font-weight: 600;
+  font-weight: 400;
   color: var(--meta-foreground);
 }
 header {
@@ -999,9 +1001,19 @@ h2:focus {
   color: var(--foreground);
   font-weight: 600;
 }
+/* Space, not rules, separates entries; lines inside an entry sit tight. */
 .atlas-entry {
-  padding: var(--space-block) 0;
-  border-bottom: 1px solid var(--border);
+  margin-top: var(--space-pair);
+}
+.atlas-entry > * {
+  margin: 0;
+}
+.atlas-entry > * + * {
+  margin-top: var(--space-in);
+}
+/* The summary's own tap padding already spaces Details from the result. */
+.atlas-entry > details {
+  margin-top: 0;
 }
 .atlas-entry ~ .optional {
   margin-top: var(--space-pair);
@@ -1009,18 +1021,8 @@ h2:focus {
 .atlas-entry details {
   color: var(--muted-foreground);
 }
-/* A tab's name orients; its content is what the eye should land on. */
-h1.tab-title {
-  font-size: 1.75rem;
-  margin-bottom: var(--space-pair);
-}
-/* Section names only label what follows; the patterns and groups carry the weight. */
+/* Section names are real Heading-role h2s now; this rule only sets spacing. */
 .section-label {
-  font-family: inherit;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  letter-spacing: normal;
-  color: var(--meta-foreground);
   margin: var(--space-group) 0 0;
 }
 .section-label:first-of-type {
@@ -1043,54 +1045,72 @@ h1.tab-title {
   min-height: 44px;
   padding: 8px 12px;
 }
+/* A closing note under its own hairline, so it can't read as another group. */
 .pattern-hint {
-  margin: 0 0 var(--space-block);
+  margin: var(--space-group) 0 var(--space-block);
+  padding-top: var(--space-block);
+  border-top: 1px solid var(--border);
 }
 /* The date only labels an entry; the result line is what the eye should read. */
 .atlas-entry h3,
 .atlas-entry h4 {
   font-family: inherit;
-  font-size: 0.8125rem;
-  font-weight: 600;
+  font-size: 0.875rem;
+  font-weight: 400;
   letter-spacing: normal;
-  line-height: 1.2;
+  line-height: 1.45;
   color: var(--meta-foreground);
-  margin: 0 0 var(--space-in);
 }
-/* Groups of steps by situation: --space-group between groups. */
+/* First group sits a block below the title; later groups get a hairline. */
 .atlas-group {
-  margin-top: var(--space-group);
-}
-.atlas-group:first-of-type {
   margin-top: var(--space-block);
+}
+.atlas-group + .atlas-group {
+  margin-top: var(--space-block);
+  padding-top: var(--space-block);
+  border-top: 1px solid var(--border);
+}
+.atlas-group > .text-button {
+  margin-top: var(--space-pair);
+}
+/* Patterns is its own section, a group gap below the last situation. */
+.atlas-group + .section-label {
+  margin-top: var(--space-group);
 }
 /* A label attaches to what it introduces. */
 .section-label + .atlas-group {
   margin-top: var(--space-pair);
 }
-/* Only entries inside a group get rules, so the gap alone separates groups. */
-.atlas-group .atlas-entry:last-child {
-  border-bottom: 0;
-}
+/* Heading, then a Meta line under it; not right-aligned. */
 .group-summary {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-pair);
+  display: block;
+  position: relative;
+  min-height: 0;
+  padding: 0 32px 0 0;
   text-decoration: none;
 }
-.group-summary > .meta {
-  white-space: nowrap;
+.group-summary::-webkit-details-marker {
+  display: none;
+}
+/* A chevron shows the group opens; it turns when open. */
+.group-summary::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 9px;
+  height: 9px;
+  border-right: 1.5px solid var(--foreground);
+  border-bottom: 1.5px solid var(--foreground);
+  transform: rotate(45deg);
+}
+.atlas-group[open] > .group-summary::after {
+  top: 10px;
+  transform: rotate(-135deg);
 }
 .group-summary h2,
 .group-summary h3 {
-  font-family: inherit;
-  font-size: 1.0625rem;
-  font-weight: 500;
-  letter-spacing: normal;
-  line-height: 1.3;
-  color: var(--foreground);
-  margin: 0;
+  margin: 0 0 var(--space-in);
 }
 /* The comparison or pattern is the finding, so it leads the screen. */
 .observation h1 {
@@ -1274,41 +1294,43 @@ h1.tab-title {
     column-gap: 6px;
   }
 }
-/* A label, not a heading to read: the step text below is the largest type. */
-.home-step {
-  font-family: inherit;
-  line-height: 1.45;
+.home-action {
+  line-height: 1.35;
+  margin-bottom: var(--space-in);
+}
+/* Start belongs to the step above it, so it sits a block below, not a group. */
+.change-step + .primary,
+.change-step + .meta + .primary,
+.home-action + .primary {
   margin-top: var(--space-block);
 }
-.home-action {
-  font-size: 1.5rem;
-  line-height: 1.35;
-  margin-bottom: var(--space-block);
+/* Sits right under the step it edits, so it reads as Meta, not a peer link. */
+.change-step,
+.home-else {
+  font-size: 0.875rem;
+  color: var(--meta-foreground);
 }
-.home-links {
-  margin-top: var(--space-in);
-}
-/* The rarest finding stands apart from ordinary observations. */
+/* A hairline row, not a tinted card: patterns aren't History's tier-1 content. */
 .discovery-entry {
+  padding: var(--space-block) 0;
+  margin: 0;
+  border-bottom: 1px solid var(--border);
+}
+.discovery-entry:last-of-type {
   border-bottom: 0;
-  padding: 20px;
-  margin: var(--space-pair) 0;
 }
 .discovery-entry p:last-of-type {
   margin-bottom: 0;
 }
-/* The finding outranks the group headings below it, in size and in step from its body. */
-.discovery-entry h3 {
-  font-size: 1.375rem;
-  margin: 0 0 var(--space-in);
-}
 /* Labelled facts: Meta label, ink value, so each line says what it is. */
+/* A hairline, not a tint: these facts aren't the tier-1 content on History. */
 .facts {
   display: grid;
   grid-template-columns: max-content 1fr;
   gap: 8px 16px;
   margin: 12px 0 0;
-  padding: 12px 16px;
+  padding: 12px 0 0;
+  border-top: 1px solid var(--border);
 }
 .facts dt {
   margin: 0;

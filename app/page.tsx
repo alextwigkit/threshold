@@ -863,7 +863,7 @@ export default function Home() {
     return (
       <main className="shell">
         <header>
-          <span className="brand">THRESHOLD</span>
+          <span className="brand">Threshold</span>
         </header>
         <p>Opening Threshold…</p>
       </main>
@@ -919,16 +919,16 @@ export default function Home() {
             ←
           </button>
         ) : (
-          <span className="brand">THRESHOLD</span>
+          <span className="brand">Threshold</span>
         )}
-        {s.screen === 'me' && <span className="brand">THRESHOLD</span>}
+        {s.screen === 'me' && <span className="brand">Threshold</span>}
         {s.screen === 'name' && s.encounters.length > 0 && (
-          <span className="brand">THRESHOLD</span>
+          <span className="brand">Threshold</span>
         )}
         {!nav &&
           s.screen !== 'name' &&
           s.screen !== 'observation' &&
-          s.screen !== 'active' && <span className="brand">THRESHOLD</span>}
+          s.screen !== 'active' && <span className="brand">Threshold</span>}
         {s.screen === 'name' && s.encounters.length === 0 && (
           <button className="text-button" onClick={() => go('me')}>
             Your data
@@ -1529,13 +1529,32 @@ export default function Home() {
           )}
           {next && (
             <>
-              <h2 className="eyebrow home-step">
-                {next.action ? `Next step · ${next.minutes} min` : 'Next step'}
-              </h2>
-              <p className="meta situation-context">{next.situation}</p>
               {next.action ? (
                 <>
+                  <h2>Next step</h2>
+                  <p className="meta situation-context">
+                    {`${next.situation} · ${next.minutes} min`}
+                  </p>
                   <p className="lead home-action">{next.action}</p>
+                  <button
+                    className="text-button change-step"
+                    onClick={() => {
+                      setShowPurpose(false);
+                      patch({
+                        draft: next,
+                        situation: next.situation,
+                        resistance: next.resistance,
+                        prediction: null,
+                        predictionNote: '',
+                        worryDraft: undefined,
+                        setupPart: undefined,
+                        setupFrom: 'home',
+                        screen: 'setup',
+                      });
+                    }}
+                  >
+                    Change step
+                  </button>
                   {next.purpose?.trim() && (
                     <p className="meta">For: {next.purpose}</p>
                   )}
@@ -1557,44 +1576,11 @@ export default function Home() {
                   >
                     Start
                   </Primary>
-                  <div className="setup-links home-links">
-                    <button
-                      className="text-button"
-                      onClick={() => {
-                        setShowPurpose(false);
-                        patch({
-                          draft: next,
-                          situation: next.situation,
-                          resistance: next.resistance,
-                          prediction: null,
-                          predictionNote: '',
-                          worryDraft: undefined,
-                          setupPart: undefined,
-                          setupFrom: 'home',
-                          screen: 'setup',
-                        });
-                      }}
-                    >
-                      Change step
-                    </button>
-                    <button
-                      className="text-button"
-                      onClick={() =>
-                        patch({
-                          situation: '',
-                          custom: '',
-                          draft: null,
-                          screen: 'name',
-                        })
-                      }
-                    >
-                      Work on something else
-                    </button>
-                  </div>
                 </>
               ) : (
                 <>
-                  <p>You haven’t chosen a step yet.</p>
+                  <h2>Working on</h2>
+                  <p className="lead home-action">{next.situation}</p>
                   <Primary
                     onClick={() => {
                       setShowPurpose(false);
@@ -1617,22 +1603,20 @@ export default function Home() {
               )}
             </>
           )}
-          {!next?.action && (
-            <button
-              className="secondary avoid-row"
-              onClick={() =>
-                patch({
-                  situation: '',
-                  custom: '',
-                  draft: null,
-                  screen: 'name',
-                })
-              }
-            >
-              {/* With a situation already here, this starts a different one. */}
-              {next ? 'Work on something else' : "I'm avoiding something"}
-            </button>
-          )}
+          {/* With a situation already here, a quiet link starts a different one. */}
+          <button
+            className={next ? 'text-button home-else' : 'secondary avoid-row'}
+            onClick={() =>
+              patch({
+                situation: '',
+                custom: '',
+                draft: null,
+                screen: 'name',
+              })
+            }
+          >
+            {next ? 'Work on something else' : "I'm avoiding something"}
+          </button>
           {steps.length > 0 && (
             <section className="progress" aria-labelledby="progress-title">
               <h2 id="progress-title">Your progress</h2>
@@ -1657,7 +1641,7 @@ export default function Home() {
       )}
       {s.screen === 'atlas' && (
         <section>
-          {title('History', 'tab-title')}
+          {title('History', 'sr-only')}
           {!s.encounters.length && (
             <>
               <p>
@@ -1690,7 +1674,7 @@ export default function Home() {
                     a.createdAt - b.createdAt || a.id.localeCompare(b.id),
                 );
                 return (
-                  <article className="discovery-entry panel" key={d.id}>
+                  <article className="discovery-entry" key={d.id}>
                     <h3>{d.title}</h3>
                     <p>{patternEvidence(d, evidenceEncounters)}</p>
                     <p className="meta">{patternMeaning[d.rule]}</p>
@@ -1721,12 +1705,6 @@ export default function Home() {
               <h2 className="section-label">Your steps</h2>
             </>
           )}
-          {s.encounters.length > 0 && found.length === 0 && (
-            <p className="meta pattern-hint">
-              A pattern can show up once you’ve taken 4 or more steps where the
-              same thing made it hard, on at least 3 different days.
-            </p>
-          )}
           {groupBySituation(s.encounters).map((group, index) => {
             const key = group.situation.trim();
             // The newest group starts open.
@@ -1747,29 +1725,25 @@ export default function Home() {
                   <GroupHeading>{group.situation}</GroupHeading>
                   <span className="meta">
                     {group.entries.length} step
-                    {group.entries.length === 1 ? '' : 's'}
+                    {group.entries.length === 1 ? '' : 's'} · last{' '}
+                    {new Date(group.entries[0].createdAt).toLocaleDateString(
+                      undefined,
+                      { month: 'short', day: 'numeric' },
+                    )}
                   </span>
                 </summary>
-                <button
-                  className="text-button"
-                  onClick={() =>
-                    patch({
-                      situation: group.situation,
-                      custom: '',
-                      draft: null,
-                      screen: 'name',
-                    })
-                  }
-                >
-                  Take another step on this
-                </button>
                 {group.entries.map((e) => {
+                  // Same notation as Home's key, so the scale is named here too.
+                  const cmp = compare(e);
+                  const numbers = cmp
+                    ? ` · discomfort ${e.prediction} → ${e.actual}`
+                    : '';
                   const result =
                     e.outcome === 'not_started'
                       ? 'Didn’t start'
                       : e.outcome === 'stopped' || e.urge === 'stopped'
-                        ? `Stopped partway · ${compare(e)?.numbers}`
-                        : `${compare(e)?.heading} · ${compare(e)?.numbers}`;
+                        ? `Stopped partway${numbers}`
+                        : `${cmp?.heading ?? 'Not rated yet'}${numbers}`;
                   // The result line already says when a step stopped or never started.
                   const showUrge =
                     e.outcome === 'attempted' && e.urge !== 'stopped';
@@ -1797,8 +1771,15 @@ export default function Home() {
                       <p className="meta">{result}</p>
                       {e.worry?.trim() && (
                         <>
-                          <p className="observation-copy">
-                            {worryLine(e)}
+                          <p className="meta">
+                            {(() => {
+                              const [quote, status] = splitWorryLine(
+                                worryLine(e),
+                              );
+                              return status
+                                ? `You worried: ${quote}. ${status}`
+                                : `You worried: ${quote}`;
+                            })()}
                             {!showWorryButtons(e) &&
                               e.worryHappened === 'unknown' && (
                                 <>
@@ -1848,7 +1829,7 @@ export default function Home() {
                       {hasDetails && (
                         <details>
                           <summary>Details</summary>
-                          <dl className="facts panel">
+                          <dl className="facts">
                             {e.purpose && (
                               <>
                                 <dt className="meta">What it's for</dt>
@@ -1900,9 +1881,28 @@ export default function Home() {
                     </article>
                   );
                 })}
+                <button
+                  className="text-button"
+                  onClick={() =>
+                    patch({
+                      situation: group.situation,
+                      custom: '',
+                      draft: null,
+                      screen: 'name',
+                    })
+                  }
+                >
+                  Take another step on this
+                </button>
               </details>
             );
           })}
+          {s.encounters.length > 0 && found.length === 0 && (
+            <p className="meta pattern-hint">
+              Patterns show up once you’ve taken 4 or more steps where the same
+              thing made it hard, on at least 3 different days.
+            </p>
+          )}
         </section>
       )}
       {s.screen === 'me' && (
