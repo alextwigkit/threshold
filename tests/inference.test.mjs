@@ -63,16 +63,64 @@ test('input requires explicit versioned consent and rejects unexpected history',
   assert.throws(() => parseInput({ ...input, consentVersion: null }));
   assert.throws(() => parseInput({ ...input, history: ['private'] }));
 });
-test('judgment rejects invented territories, titles and incompatible templates', () => {
+test('judgment rejects invented territories and unrecognized keys', () => {
   for (const bad of [
     { ...judgment, primary: 'plate-1' },
     { ...judgment, title: 'Great job' },
-    { ...judgment, template: 'message' },
-    { ...judgment, primary: 'water' },
-    { ...judgment, secondary: ['fog'] },
-    { ...judgment, eligibility: 'needs_user_step' },
   ])
     assert.throws(() => parseJudgment(bad));
+});
+test('judgment repairs inconsistent but structurally valid combinations', () => {
+  // template not allowed for the resistance falls back to the resistance's default.
+  assert.equal(
+    parseJudgment({ ...judgment, template: 'message' }).template,
+    'begin',
+  );
+  // primary not allowed for the resistance falls back to the resistance's default territory.
+  assert.equal(parseJudgment({ ...judgment, primary: 'water' }).primary, 'fog');
+  // secondary equal to primary is dropped rather than rejected.
+  assert.deepEqual(
+    parseJudgment({ ...judgment, secondary: ['fog'] }).secondary,
+    [],
+  );
+  // needs_user_step always forces own_step.
+  assert.equal(
+    parseJudgment({ ...judgment, eligibility: 'needs_user_step' }).template,
+    'own_step',
+  );
+});
+test('measured bad model combinations repair to a grounded, consistent judgment', () => {
+  const a = parseJudgment({
+    ...judgment,
+    resistance: 'start',
+    primary: 'spotlight',
+    template: 'message',
+  });
+  assert.equal(a.primary, 'fog');
+  assert.equal(a.template, 'begin');
+  const b = parseJudgment({
+    ...judgment,
+    resistance: 'judged',
+    primary: 'unknown',
+    template: 'question',
+  });
+  assert.equal(b.template, 'own_step');
+  const c = parseJudgment({
+    ...judgment,
+    resistance: 'unpleasant',
+    primary: 'water',
+    template: 'draft',
+  });
+  assert.equal(c.template, 'own_step');
+});
+test('parseJudgment repair is idempotent', () => {
+  const once = parseJudgment({
+    ...judgment,
+    resistance: 'start',
+    primary: 'spotlight',
+    template: 'message',
+  });
+  assert.deepEqual(parseJudgment(once), once);
 });
 test('product renders controlled title and grounded slots; secondary remains unconfirmed', () => {
   const s = renderSuggestion(input, { ...judgment, secondary: ['spotlight'] });
@@ -105,8 +153,98 @@ test('the notice template accepts a paraphrased feeling name ungrounded in the s
   });
   assert.equal(
     s.candidate.action,
-    'For 1 minute, notice the discomfort before opening a distraction. You can stop whenever you need to.',
+    'Notice the discomfort before opening a distraction. You can stop whenever you need to.',
   );
+});
+test('begin renders the first-part step for understand, start and other resistances', () => {
+  const grounded = {
+    ...judgment,
+    template: 'begin',
+    object: 'the design proposal',
+  };
+  const u = renderSuggestion(input, grounded);
+  assert.equal(u.candidate.title, 'Start With the First Part');
+  assert.equal(
+    u.candidate.action,
+    'Do the first part of the design proposal. It doesn’t need to be good.',
+  );
+  const s = renderSuggestion(input, {
+    ...grounded,
+    resistance: 'start',
+    primary: 'fog',
+  });
+  assert.match(s.candidate.action, /Do the first part of the design proposal/);
+  const otherInput = {
+    ...input,
+    situation: 'I keep avoiding cleaning the kitchen after dinner.',
+  };
+  const o = renderSuggestion(otherInput, {
+    ...grounded,
+    resistance: 'other',
+    primary: 'unknown',
+    object: 'cleaning the kitchen',
+  });
+  assert.match(o.candidate.action, /Do the first part of cleaning the kitchen/);
+});
+test('message template reads correctly with a gerund object', () => {
+  const gerundInput = {
+    ...input,
+    situation: 'I keep avoiding calling joseph and inviting him to the house.',
+  };
+  const s = renderSuggestion(gerundInput, {
+    ...judgment,
+    resistance: 'judged',
+    primary: 'spotlight',
+    template: 'message',
+    object: 'calling joseph and inviting him to the house',
+  });
+  assert.match(
+    s.candidate.action,
+    /^Write a first draft of the message about calling joseph/,
+  );
+});
+test('no template action text mentions minutes; duration lives only in the minutes field', () => {
+  const checkInput = {
+    ...input,
+    situation: 'I keep rechecking the slide deck after it is already correct.',
+  };
+  const cases = [
+    { ...judgment, template: 'draft', object: 'the design proposal' },
+    {
+      ...judgment,
+      resistance: 'judged',
+      primary: 'spotlight',
+      template: 'question',
+      object: 'the design proposal',
+    },
+    {
+      ...judgment,
+      resistance: 'judged',
+      primary: 'spotlight',
+      template: 'message',
+      object: 'the design proposal',
+    },
+    {
+      ...judgment,
+      resistance: 'checking',
+      primary: 'loop',
+      template: 'check',
+      object: 'the slide deck',
+    },
+    {
+      ...judgment,
+      resistance: 'unpleasant',
+      primary: 'water',
+      template: 'notice',
+      object: 'the discomfort',
+    },
+    { ...judgment, template: 'begin', object: 'the design proposal' },
+  ];
+  for (const j of cases) {
+    const situation = j.template === 'check' ? checkInput : input;
+    const s = renderSuggestion(situation, j);
+    assert.doesNotMatch(s.candidate.action, /\bminutes?\b/i);
+  }
 });
 test('confirmed corrections outrank a model classification', () => {
   assert.throws(
@@ -162,6 +300,28 @@ test('extractor handles output arrays and rejects refusals, truncation and malfo
     },
   ])
     assert.throws(() => extractJudgment(bad));
+});
+test('extractor tells apart malformed JSON from a structurally invalid judgment', () => {
+  assert.throws(() => {
+    try {
+      extractJudgment({
+        status: 'completed',
+        output: [{ content: [{ type: 'output_text', text: 'not json' }] }],
+      });
+    } catch (e) {
+      assert.equal(e.message, 'invalid_output');
+      throw e;
+    }
+  });
+  const invalidStructure = { ...judgment, title: 'Great job' };
+  assert.throws(() => {
+    try {
+      extractJudgment(payload(invalidStructure));
+    } catch (e) {
+      assert.equal(e.message, 'invalid_judgment');
+      throw e;
+    }
+  });
 });
 test('provider call fixes destination, keeps key in header and renders validated output', async () => {
   let called = false;

@@ -506,15 +506,15 @@ export default function Home() {
       // Previous edits and smaller-dose rules remain local and outrank a new suggestion.
       if (local.userAction) {
         draft = { ...local, careful: draft.careful || local.careful };
+      } else if (
+        !draft.action.trim() &&
+        !draft.careful &&
+        local.action.trim()
+      ) {
+        // A blank model step falls back to the built-in one rather than an empty field.
+        draft = local;
       } else if (local.minutes < draft.minutes) {
-        draft = {
-          ...draft,
-          minutes: local.minutes,
-          action: draft.action.replace(
-            /\b3 minutes\b/g,
-            `${local.minutes} minute${local.minutes === 1 ? '' : 's'}`,
-          ),
-        };
+        draft = { ...draft, minutes: local.minutes };
       }
       patch({
         draft: {

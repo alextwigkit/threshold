@@ -55,8 +55,12 @@ export async function handleSuggestion(
   if (!permitted) return json({ error: 'try_later' }, 429);
   try {
     return json(await requestSuggestion(input, context.provider));
-  } catch {
+  } catch (e) {
     // No sensitive exception messages, provider response bodies, or API keys leave the server.
+    console.warn(
+      'suggestion_fallback',
+      e instanceof Error ? e.message : 'unknown',
+    );
     const fallback = candidate(
       input.situation,
       input.confirmedResistance ?? 'other',

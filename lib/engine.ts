@@ -145,7 +145,7 @@ export function infer(situation: string): {
 // safety-critical situations to a blank, user-written step instead of an auto-generated
 // one. Conservative on purpose: high-signal phrases only, biased toward under-catching.
 export function needsCare(situation: string) {
-  return /\b(suicid\w*|self[- ]?harm|end(?:ing)? (my|his|her|their) life|end it all|not want to (live|be here)|better off dead|kill(?:ing)? (myself|him|her|them)|hurt(?:ing)? (myself|someone)|abus\w*|assault\w*|domestic violence|overdose|medication|prescription|diagnos\w*|surgery|lawsuit|attorney|custody battle|eviction|foreclosure|bankrupt\w*|restraining order)\b/i.test(
+  return /\b(suicid\w*|self[- ]?harm|end(?:ing)? (my|his|her|their) life|end it all|not want to (live|be here)|better off dead|kill(?:ing)? (myself|him|her|them)|hurt(?:ing)? (myself|someone)|abus\w*|assault\w*|domestic violence|overdose|medication|prescription|diagnos\w*|surgery|lawsuit|attorney|custody|eviction|foreclosure|bankrupt\w*|restraining order)\b/i.test(
     situation,
   );
 }

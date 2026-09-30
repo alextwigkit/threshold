@@ -429,6 +429,7 @@ test('a safety-critical situation is never auto-templated, regardless of which k
     ['tell my friend I want to end my life', 'judged'],
     ['call my lawyer about the eviction notice', 'judged'],
     ['ask my doctor about the surgery next week', 'understand'],
+    ['signing the custody agreement my ex sent', 'start'],
   ];
   for (const [situation, resistance] of cases) {
     const result = candidate(situation, resistance);
