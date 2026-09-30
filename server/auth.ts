@@ -186,15 +186,15 @@ body{margin:0;min-height:100svh;display:flex;align-items:center;justify-content:
 form{max-width:320px;width:100%}
 h1{font-family:Newsreader,Georgia,'Times New Roman',serif;font-weight:400;letter-spacing:-0.035em;line-height:1.2;font-size:1.875rem;text-align:center;margin:0 0 32px;color:#20211e}
 .field{margin-bottom:16px}
-.field-label{display:block;font-weight:500;margin-bottom:8px}
+.field-label{display:block;font-weight:400;margin-bottom:8px}
 input{width:100%;min-height:48px;padding:12px 14px;font:inherit;font-size:1rem;background:#f5f2ed;border:1px solid #dfddd6;border-radius:6px;color:#20211e}
 input::placeholder{color:#8a8c83}
 input:focus-visible{outline:2px solid #ac3d24;outline-offset:2px}
-.error{padding:12px;border-left:2px solid #ac3d24;margin:0 0 20px;color:#ac3d24;font-size:0.9375rem}
+.error{padding:12px;border-left:2px solid #ac3d24;margin:0 0 20px;color:#ac3d24;font-size:0.875rem}
 button{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;background:#20211e;color:#fcf9f4;border:0;border-radius:5px;padding:16px 24px;min-height:54px;font:inherit;font-weight:500;margin-top:8px;cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none;transition:transform 100ms ease-out}
 button:focus-visible{outline:2px solid #ac3d24;outline-offset:4px}
 button:active{transform:scale(0.98)}
-.arrow{font-size:1.5rem;line-height:1}
+.arrow{font-size:1.5em;line-height:1}
 </style></head><body>
 <form method="POST" action="/login">
 <h1>Threshold</h1>

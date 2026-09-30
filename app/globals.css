@@ -44,6 +44,18 @@
   --space-pair: 16px;
   --space-block: 24px;
   --space-group: 40px;
+  /*
+   * Six type roles, one size each: Display (timer only), Title (h1),
+   * Heading (h2/h3), Lead (what to read), Body (default text), Meta
+   * (context, labels, nav). Every font-size below uses one of these,
+   * or inherits.
+   */
+  --text-display: 3.375rem;
+  --text-title: 1.875rem;
+  --text-heading: 1.25rem;
+  --text-lead: 1.5rem;
+  --text-body: 1rem;
+  --text-meta: 0.875rem;
   --popover: #fcf9f4;
   --popover-foreground: #20211e;
   --radius: 8px;
@@ -69,7 +81,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: 'Avenir Next', Avenir, 'Segoe UI', sans-serif;
-  font-size: 1rem;
+  font-size: var(--text-body);
   line-height: 1.55;
   /*
    * Only bites when a single word cannot fit its line, which happens to large
@@ -147,30 +159,31 @@ h3 {
   line-height: 1.2;
 }
 h1 {
-  font-size: clamp(1.875rem, 6vw, 2rem);
+  font-size: var(--text-title);
   text-wrap: balance;
   margin: 0 0 var(--space-pair);
 }
 h2 {
-  font-size: 1.25rem;
+  font-size: var(--text-heading);
   margin: 0 0 var(--space-pair);
 }
 h3 {
-  font-size: 1.25rem;
+  font-size: var(--text-heading);
 }
 /*
- * Type roles: Display (timer, 54px), Title (h1, 30px), Heading (h2/h3, 20px),
- * Lead (.lead, 24px sans ink), Body (p, 16px), Meta (.meta, 14px muted).
+ * Type roles: Display (--text-display, timer only), Title (--text-title, h1),
+ * Heading (--text-heading, h2/h3), Lead (--text-lead, .lead), Body
+ * (--text-body, p), Meta (--text-meta, .meta). See the token block in :root.
  * Serif is reserved for Display, Title and Heading so it always signals structure.
  * Only buttons carry weight 500; everything else here is 400.
  */
 .lead {
-  font-size: 1.5rem;
+  font-size: var(--text-lead);
   line-height: 1.45;
   color: var(--foreground);
 }
 .meta {
-  font-size: 0.875rem;
+  font-size: var(--text-meta);
   font-weight: 400;
   line-height: 1.45;
   color: var(--meta-foreground);
@@ -190,7 +203,7 @@ p {
 }
 /* Wordmark: Meta role, normal case. Shared across every screen's header. */
 .brand {
-  font-size: 0.875rem;
+  font-size: var(--text-meta);
   font-weight: 400;
   color: var(--meta-foreground);
 }
@@ -215,7 +228,7 @@ header {
 }
 .field-label {
   display: block;
-  font-weight: 500;
+  font-weight: 400;
   margin-bottom: var(--space-in);
 }
 /* The one surface primitive: tone, radius, padding and default child spacing.
@@ -254,7 +267,8 @@ header {
   background: none;
   border: 0;
   padding: 0;
-  font-size: 1.25rem;
+  /* Lead: the tier-1 answer to the screen's question. */
+  font-size: var(--text-lead);
   line-height: 1.45;
   color: var(--foreground);
 }
@@ -282,8 +296,27 @@ textarea::placeholder {
   font-weight: 500;
   margin-top: var(--space-group);
 }
+/* Flow screens outgrow a small phone: the primary stays in view, masking the content
+ * behind it, with a soft top edge so the content reads as continuing underneath. */
+.clarify > .primary,
+.setup > .primary {
+  position: sticky;
+  bottom: var(--space-pair);
+  z-index: 1;
+  box-shadow:
+    0 var(--space-pair) 0 var(--space-pair) var(--background),
+    0 calc(-1 * var(--space-pair)) var(--space-block) var(--space-in)
+      var(--background);
+}
+/* Whatever follows the pinned primary paints above its mask. */
+.clarify > .primary ~ *,
+.setup > .primary ~ * {
+  position: relative;
+  z-index: 2;
+}
+/* A glyph, not text: sized relative to the button label, not a text role. */
 .primary .arrow {
-  font-size: 1.5rem;
+  font-size: 1.5em;
   line-height: 1;
 }
 .opening > .primary {
@@ -304,7 +337,7 @@ textarea::placeholder {
   min-height: 0;
   padding: 12px 4px;
   margin-block: -12px;
-  font-size: 0.875rem;
+  font-size: var(--text-meta);
 }
 /* A lone tertiary action sits on its own line, close under the action it follows. */
 section > .text-button {
@@ -334,7 +367,7 @@ section > .text-button {
   overflow: hidden;
   width: 100%;
   text-align: left;
-  font-size: 0.875rem;
+  font-size: var(--text-meta);
 }
 .primary + .text-button {
   margin-top: var(--space-in);
@@ -343,7 +376,7 @@ section > .text-button {
 .exit {
   margin-top: var(--space-group);
   color: var(--meta-foreground);
-  font-size: 0.875rem;
+  font-size: var(--text-meta);
 }
 /* ...except once Continue exists, where it pairs with that as the alternative. */
 .reveal:has(> .primary, > .continue) + .exit {
@@ -371,22 +404,22 @@ section > .text-button {
   display: block;
   margin-top: var(--space-pair);
   color: var(--meta-foreground);
-  font-size: 0.875rem;
+  font-size: var(--text-meta);
 }
 .back {
   border: 0;
   background: none;
-  font-size: 1.5rem;
+  /* A glyph, not text: sized relative to the button, not a text role. */
+  font-size: 1.5em;
   padding: 0 8px 0 0;
   min-width: 44px;
   min-height: 44px;
   text-align: left;
 }
+/* Eyebrow: Meta role, normal case; no longer leans on caps or tracking. */
 .eyebrow {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
+  font-size: var(--text-meta);
+  font-weight: 400;
   color: var(--meta-foreground);
   margin-bottom: var(--space-in);
 }
@@ -420,7 +453,7 @@ section > .text-button {
 .notice {
   border-left: 0;
   color: var(--meta-foreground);
-  font-size: 0.8125rem;
+  font-size: var(--text-meta);
   padding: 0;
   margin: 0 0 var(--space-pair);
 }
@@ -464,7 +497,7 @@ section > .text-button {
   align-items: center;
   gap: 10px;
   color: var(--muted-foreground);
-  font-size: 1.125rem;
+  font-size: var(--text-body);
 }
 .spinner {
   color: var(--accent);
@@ -591,16 +624,17 @@ fieldset.choices {
   color: var(--foreground);
   padding: 14px;
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--text-body);
   font-weight: 400;
   line-height: 1.5;
 }
 .field-label .text-input {
   margin-top: var(--space-in);
 }
+/* Lead, restated: .text-input's Body size comes later and would win over .lead. */
 .action-input {
   min-height: 5.625rem;
-  font-size: 1.375rem;
+  font-size: var(--text-lead);
   line-height: 1.35;
   /* Tier 1 on Setup: a firmer edge than the scale beneath it. */
   border: 1.5px solid var(--foreground);
@@ -611,11 +645,13 @@ fieldset.choices {
 /* The scale is what Before you start asks for, so its cells get a firmer target. */
 .setup .scale-choice {
   min-height: 48px;
-  font-size: 1.0625rem;
+  font-size: var(--text-body);
 }
-/* A label, not a heading: the step text in the field is the largest type. */
+/* A label, not a heading: the step text in the field is the largest type.
+ * Resets h1's serif tracking, since this drops to sans. */
 .step-eyebrow {
   font-family: inherit;
+  letter-spacing: normal;
   line-height: 1.45;
 }
 /* A question's hint belongs to it; the answers start a new block. */
@@ -628,7 +664,7 @@ h2:has(+ .question-hint) {
 }
 .note-toggle {
   color: var(--meta-foreground);
-  font-size: 0.875rem;
+  font-size: var(--text-meta);
 }
 .setup-links {
   display: flex;
@@ -646,7 +682,8 @@ h2:has(+ .question-hint) {
 }
 /* The why: body colour a size below the step, bound to the field above. */
 .step-reason {
-  font-size: 0.9375rem;
+  font-size: var(--text-meta);
+  color: var(--meta-foreground);
   line-height: 1.55;
   margin: var(--space-in) 0 0;
 }
@@ -694,7 +731,7 @@ h2:has(+ .question-hint) {
 }
 .optional {
   color: var(--meta-foreground);
-  font-size: 0.875rem;
+  font-size: var(--text-meta);
   font-weight: 400;
 }
 /* Whitespace, not a rule, separates it from the group above. */
@@ -707,16 +744,17 @@ h1.sr-only + .scale-field,
 .return-step + .scale-field {
   margin-top: 0;
 }
+/* Stands in for the screen's h1 when the scale is the question (see Return). */
 .scale-legend {
   font-family: Newsreader, Georgia, 'Times New Roman', serif;
-  font-size: 1.5rem;
+  font-size: var(--text-title);
   letter-spacing: -0.035em;
   line-height: 1.2;
   margin-bottom: var(--space-pair);
 }
 /* On Setup the scale follows the title, so it steps down a full level from it. */
 .setup .scale-legend {
-  font-size: 1.25rem;
+  font-size: var(--text-heading);
   margin-bottom: var(--space-pair);
 }
 .scale-legend:focus,
@@ -774,7 +812,7 @@ h2:focus {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  font-size: 0.8125rem;
+  font-size: var(--text-meta);
   color: var(--meta-foreground);
   margin-top: 8px;
 }
@@ -782,11 +820,11 @@ h2:focus {
   text-align: right;
 }
 .duration-field {
-  margin-top: var(--space-in);
+  margin-top: var(--space-block);
 }
 .duration-legend {
-  font-weight: 500;
-  font-size: 0.875rem;
+  font-weight: 400;
+  font-size: var(--text-meta);
   color: var(--meta-foreground);
   margin-bottom: var(--space-in);
 }
@@ -830,7 +868,7 @@ h2:focus {
   padding: 12px 0 12px 8px;
   min-height: 0;
   flex-shrink: 0;
-  font-size: 0.8125rem;
+  font-size: var(--text-meta);
 }
 .timer {
   /* Sized in rem so the circle grows with its digits when text is enlarged. */
@@ -841,7 +879,7 @@ h2:focus {
   place-items: center;
   margin: var(--space-group) auto;
   font-family: Newsreader, Georgia, serif;
-  font-size: 3.75rem;
+  font-size: var(--text-display);
   letter-spacing: -0.055em;
   font-variant-numeric: tabular-nums;
   color: var(--foreground);
@@ -873,7 +911,8 @@ h2:focus {
 .active .timer {
   margin: var(--space-block) auto;
 }
-/* Short screens: a smaller ring keeps I'm done above the fold without tightening gaps. */
+/* Short screens: a smaller ring keeps I'm done above the fold without
+ * tightening gaps. Display's one responsive exception, alongside the token. */
 @media (max-height: 37.5em) {
   .active .timer {
     height: 10.5rem;
@@ -882,7 +921,10 @@ h2:focus {
   }
 }
 /* Body size and shown in full; the clamp only guards an unusually long step. */
+/* Lead, the same style the step has on Your step and Home. */
 .step-now {
+  font-size: var(--text-lead);
+  line-height: 1.35;
   color: var(--foreground);
   margin: 0 0 var(--space-in);
   display: -webkit-box;
@@ -901,10 +943,10 @@ h2:focus {
   margin-top: var(--space-pair);
 }
 /* You started this on {day} at {time}: replaces the timer on a late return,
- * so it takes the display serif the countdown otherwise would. */
+ * so it takes the Title role the countdown otherwise would. */
 .late-return {
   font-family: Newsreader, Georgia, serif;
-  font-size: 1.75rem;
+  font-size: var(--text-title);
   letter-spacing: -0.035em;
   line-height: 1.25;
   text-wrap: balance;
@@ -933,7 +975,7 @@ h2:focus {
   display: flex;
   align-items: baseline;
   gap: 12px;
-  font-size: 0.875rem;
+  font-size: var(--text-meta);
 }
 .answered-row .meta {
   min-width: 5.5rem;
@@ -943,7 +985,7 @@ h2:focus {
   margin-right: auto;
 }
 .answered-row .text-button {
-  font-size: 0.8125rem;
+  font-size: var(--text-meta);
   padding: 10px 0;
 }
 .summary + .reveal {
@@ -951,10 +993,6 @@ h2:focus {
 }
 .observation-copy {
   margin-bottom: var(--space-group);
-}
-/* The answers are the task here, so the question steps down beside them. */
-.clarify h1 {
-  font-size: 1.625rem;
 }
 .with-nav {
   /* Clears the fixed nav, which grows with its labels, so this must too. */
@@ -989,17 +1027,17 @@ h2:focus {
   border: 0;
   min-width: 74px;
   min-height: 50px;
-  font-size: 0.8125rem;
+  font-size: var(--text-meta);
   color: var(--muted-foreground);
 }
+/* A decorative glyph, not text: sized relative to the label beside it. */
 .bottom-nav button span {
-  font-size: 1.5625rem;
+  font-size: 1.75em;
   line-height: 1;
 }
-/* Ink and weight, not the accent, which belongs to content. */
+/* Ink alone, not weight, which belongs to content, carries current here. */
 .bottom-nav [aria-current] {
   color: var(--foreground);
-  font-weight: 600;
 }
 /* Space, not rules, separates entries; lines inside an entry sit tight. */
 .atlas-entry {
@@ -1055,7 +1093,7 @@ h2:focus {
 .atlas-entry h3,
 .atlas-entry h4 {
   font-family: inherit;
-  font-size: 0.875rem;
+  font-size: var(--text-meta);
   font-weight: 400;
   letter-spacing: normal;
   line-height: 1.45;
@@ -1112,9 +1150,9 @@ h2:focus {
 .group-summary h3 {
   margin: 0 0 var(--space-in);
 }
-/* The comparison or pattern is the finding, so it leads the screen. */
+/* The comparison or pattern is the finding, so it leads the screen; Title,
+ * same as every other h1. */
 .observation h1 {
-  font-size: clamp(1.875rem, 9vw, 2.25rem);
   margin-bottom: var(--space-in);
 }
 /* Three steps: evidence tight to the heading, details a block below, Done a group below. */
@@ -1122,9 +1160,9 @@ h2:focus {
   color: var(--foreground);
   margin: 0;
 }
-/* A one-line comparison needs extra size to outweigh the trail above it. */
+/* Lead: the result comparison is what to read on this screen. */
 .result-numbers {
-  font-size: 1.125rem;
+  font-size: var(--text-lead);
 }
 /* On Result the trail is context for the finding, so it steps back. */
 .observation .trail {
@@ -1147,7 +1185,7 @@ h2:focus {
 }
 .result-details {
   margin-top: var(--space-block);
-  font-size: 0.9375rem;
+  font-size: var(--text-body);
 }
 .result-details p:last-child {
   margin-bottom: 0;
@@ -1256,23 +1294,19 @@ h2:focus {
 }
 .trail .nums {
   margin-top: var(--space-in);
-  font-size: 0.9375rem;
-  font-weight: 500;
+  font-size: var(--text-meta);
   line-height: 1.3;
-  letter-spacing: -0.02em;
   color: var(--foreground);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 .trail .place {
-  font-size: 0.75rem;
-  font-weight: 500;
+  font-size: var(--text-meta);
   line-height: 1.3;
   color: var(--meta-foreground);
 }
 .trail .start .nums,
 .trail .today .nums {
-  font-weight: 500;
   color: var(--meta-foreground);
 }
 .trail .today .nums {
@@ -1282,14 +1316,15 @@ h2:focus {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-/* The key reads with the trail: bound tight above, a full group gap below. */
+/* The key reads with the trail: a pair gap above clears wrapped labels. */
 .trail-key {
-  margin: 0 0 var(--space-group);
+  margin: var(--space-pair) 0 var(--space-group);
 }
+.observation .trail {
+  margin-top: var(--space-group);
+}
+/* One row at 320px: the labels stay Meta, so the gap between stones narrows. */
 @media (max-width: 359px) {
-  .trail .nums {
-    font-size: 0.8125rem;
-  }
   .trail {
     column-gap: 6px;
   }
@@ -1307,7 +1342,7 @@ h2:focus {
 /* Sits right under the step it edits, so it reads as Meta, not a peer link. */
 .change-step,
 .home-else {
-  font-size: 0.875rem;
+  font-size: var(--text-meta);
   color: var(--meta-foreground);
 }
 /* A hairline row, not a tinted card: patterns aren't History's tier-1 content. */

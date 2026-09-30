@@ -1181,10 +1181,10 @@ export default function Home() {
             </p>
             <button
               className="text-button"
-              aria-label="Change step"
+              aria-label="Edit step"
               onClick={() => patch({ setupPart: undefined })}
             >
-              Change
+              Edit
             </button>
           </div>
           {title('How uncomfortable will it be?')}
@@ -1288,8 +1288,8 @@ export default function Home() {
             // changes to the time's-up copy.
             <p className="meta invitation" role="status">
               {timerDone
-                ? 'Time’s up. Keep going if you like, and tap I’m done when you finish.'
-                : 'Tap I’m done whenever you finish, even before 0:00.'}
+                ? 'Time’s up. Keep going if you like, and tap “I’m done” when you finish.'
+                : 'Tap “I’m done” whenever you finish, even before 0:00.'}
               {/* Explained once; after a first step it is known. */}
               {!timerDone &&
                 s.encounters.length === 0 &&
@@ -1315,7 +1315,9 @@ export default function Home() {
           }}
         >
           {title('How it went', 'sr-only')}
-          <p className="meta setup-step return-step">{active.action}</p>
+          <p className="meta setup-step return-step">
+            Your step: {active.action}
+          </p>
           {actualOpen && (
             <Scale
               id="actual"
@@ -1474,19 +1476,6 @@ export default function Home() {
       )}
       {s.screen === 'observation' && last && (
         <section className="observation">
-          {last.outcome !== 'not_started' && (
-            <>
-              <Trail
-                encounters={s.encounters}
-                found={found}
-                revealId={last.id}
-                newDiscoveryId={newDiscovery?.id}
-              />
-              <p className="meta trail-key">
-                {trailKey(trailStones(s.encounters).stones, false)}
-              </p>
-            </>
-          )}
           <div className={newDiscovery ? 'discovery-reveal' : undefined}>
             {newDiscovery && <p className="eyebrow accent">New pattern</p>}
             {title(newDiscovery?.title ?? obs?.title ?? '')}
@@ -1512,6 +1501,20 @@ export default function Home() {
               )}
             </div>
           </div>
+          {/* The trail is context for the finding, so it follows it. */}
+          {last.outcome !== 'not_started' && (
+            <>
+              <Trail
+                encounters={s.encounters}
+                found={found}
+                revealId={last.id}
+                newDiscoveryId={newDiscovery?.id}
+              />
+              <p className="meta trail-key">
+                {trailKey(trailStones(s.encounters).stones, false)}
+              </p>
+            </>
+          )}
           {/* Done only dismisses, so it stays quieter than the finding. */}
           <button className="secondary result-done" onClick={() => go('map')}>
             Done
@@ -2022,8 +2025,8 @@ export default function Home() {
             </AlertDialogContent>
           </AlertDialog>
           <p className="meta privacy">
-            When you tap Continue, what you’re avoiding and the reason you
-            picked are sent to an AI service to suggest a step. Your history
+            When the app suggests a step, what you’re avoiding and the reason
+            you picked are sent to an AI service to suggest a step. Your history
             stays in this browser.
           </p>
         </section>

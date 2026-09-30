@@ -50,7 +50,7 @@ export function trailKey(stones: Stone[], tappable: boolean) {
   if (!latest) return '';
   const { expected: e, experienced: f } = latest;
   return [
-    `The numbers are discomfort out of 10: ${e} → ${f} means you expected ${e} and it felt like ${f}.`,
+    `The numbers are discomfort out of 10: ${e}\u00a0→\u00a0${f} means you expected ${e} and it felt like ${f}.`,
     stones.some((x) => x.stopped) &&
       'A half-filled dot means you stopped partway.',
     tappable && 'Tap a dot to see that step.',

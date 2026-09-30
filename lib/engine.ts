@@ -15,7 +15,7 @@ export const resistanceChoices: [Resistance, string][] = [
   ['judged', 'I’m worried about how someone will react.'],
   ['checking', 'I keep checking or preparing instead of moving ahead.'],
   ['unpleasant', 'I’m trying to avoid the feeling it brings up.'],
-  ['other', 'Something else—or I’m not sure yet.'],
+  ['other', 'Something else, or I’m not sure yet.'],
 ];
 // The why line under the step on Your step, keyed by the Clarify answer.
 export const stepReasons: Record<Resistance, string> = {

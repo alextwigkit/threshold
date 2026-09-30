@@ -230,7 +230,7 @@ test('trailKey explains the numbers with the latest step, and only mentions what
   const { stones } = trailStones([step('1', { prediction: 5, actual: 3 })]);
   assert.equal(
     trailKey(stones, false),
-    'The numbers are discomfort out of 10: 5 → 3 means you expected 5 and it felt like 3.',
+    'The numbers are discomfort out of 10: 5\u00a0→\u00a03 means you expected 5 and it felt like 3.',
   );
   const both = trailStones([
     step('1', { outcome: 'stopped' }),
@@ -238,6 +238,6 @@ test('trailKey explains the numbers with the latest step, and only mentions what
   ]).stones;
   assert.equal(
     trailKey(both, true),
-    'The numbers are discomfort out of 10: 6 → 0 means you expected 6 and it felt like 0. A half-filled dot means you stopped partway. Tap a dot to see that step.',
+    'The numbers are discomfort out of 10: 6\u00a0→\u00a00 means you expected 6 and it felt like 0. A half-filled dot means you stopped partway. Tap a dot to see that step.',
   );
 });
