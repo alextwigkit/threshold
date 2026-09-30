@@ -35,34 +35,79 @@ the single approved clarification: wanting to understand, not knowing the
 first step, worry about others' reaction, wanting to keep checking, or
 something else. The user can always correct this on Your step.
 
-## Safety: `needsCare` and `careful`
+## Safety: `needsCare`, `needs_user_step` and `careful`
 
 `needsCare(situation)` matches a conservative, high-signal list (self-harm,
 abuse, medical, legal and financial crisis phrases), biased toward
-under-catching. `candidate()` sets `careful: true` whenever it matches, so
-Your step shows no why line, and the hint above the field is the fixed
-`careHint` ("Choose a step that feels safe and manageable. It's fine to get
-advice or support first.") instead of a resistance-keyed one.
+under-catching. On the model path, the judgment's `eligibility` field can
+independently flag `needs_user_step`, reserved for a similarly narrow set:
+medical, legal or financial decisions, self-harm, abuse, coercion, danger or
+safety-critical checks, never an
+ordinary task, even one the model can't ground a template for. `careful` is
+`needsCare(situation) || needs_user_step`: whichever one fires, Your step
+shows no why line, and the hint above the field is the fixed `careHint`
+("Choose a step that feels safe and manageable. It's fine to get advice or
+support first.") instead of a resistance-keyed one.
 
 ## Step selection and calibration
 
-A valid step has an observable action, a bounded duration (1 to 3 minutes, 1
-when calibration calls for a smaller dose), and relevance to the situation.
-`candidate()` derives the territory, then a template keyed by situation
-keywords (writing, message, question, conversation), then a smaller dose
-when the last matching encounter was stopped, not started, or scored 8 or
-higher. A user's own edited action (`userAction`) is preserved across visits
-and outranks the template. Home's next step and the built-in fallback both
-call the same `candidate()`.
+A valid step has an observable action and relevance to the situation; no
+action text, built-in or template, ever states a duration (see Duration,
+below, for where minutes come from). `candidate()` derives the territory,
+then a template keyed by situation keywords (writing, message, question,
+conversation), then a smaller dose when the last matching encounter was
+stopped, not started, or scored 8 or higher. A user's own edited action
+(`userAction`) is preserved across visits and outranks the template. Home's
+next step and the built-in fallback both call the same `candidate()`.
+
+## Duration: carried minutes, chips, and the count-up timer
+
+`minutes` is the only source of a step's duration; it is never stated inside
+action text. `candidate()` carries the last matching encounter's minutes
+forward when finite, greater than 0 and at most 30, and otherwise defaults
+to 3; calibration's smaller dose overrides that to 1. The device owns
+minutes on the AI path too: a model suggestion's action text comes from its
+template, but its minutes come from the local `candidate()`, except
+`model-notice-v1`, which always stays 1. `statedMinutes()` in
+`lib/duration.ts` reads a duration only out of step text the person actually
+typed (seconds round up to 1 minute, capped at 30; a known, accepted false
+positive reads a step text like "the 90s playlist" as 90 seconds). Your
+step's duration field offers chips for 1, 3, 5 and 10 minutes, plus an extra
+chip when the draft already holds some other typed value. The timer counts
+down to 0:00, then keeps counting up instead of stopping there.
+
+## Judgment repair, not rejection
+
+`parseJudgment()` still rejects a judgment that fails schema validation,
+that names `ungrounded_object` (the free object slot wasn't copied from the
+situation), or that returns `correction_overridden` (the model's resistance
+disagrees with a resistance the user already confirmed). Everything else, a
+benign mismatch between resistance, primary territory and template that the
+schema allows individually but that don't cohere together, is repaired to
+that resistance's defaults instead of thrown away: primary falls back to
+`primaryDefaults[resistance]` when it isn't in `primaryAllowed[resistance]`,
+template falls back through `templateDefaults` (or `own_step`) when it
+doesn't list that resistance, secondary drops the primary and `unknown`, and
+`own_step`'s object is cleared. Repair is idempotent: repairing an
+already-repaired judgment returns it unchanged. `begin` is the template for
+doing the first part of an ordinary task or activity (going to the gym,
+cleaning the kitchen); it's allowed for `understand`, `start` and `other`,
+and is what those three repair to by default.
+
+Only the error's code, never the situation or any provider content, is ever
+logged: the server's fallback path logs the thrown error's message and
+nothing else.
 
 ## AI failure falls back to the built-in engine, not a blank step
 
 When the suggestion request throws, hits the daily limit, or the server
 returns `source: 'local'`, the client runs `infer()` (or the confirmed
 resistance from Clarify) and then `candidate()`, exactly as the fully
-offline path does. A blank step now only happens if `candidate()` itself
-produces one. "Use a standard step instead," shown mid-request, takes the
-same route.
+offline path does. When the model does return but leaves the action blank
+and the step isn't `careful`, the client substitutes that same local
+`candidate()` step rather than leaving the field empty; a blank, careful
+step (`own_step`, or `needs_user_step`) is left for the person to write.
+"Use a standard step instead," shown mid-request, takes the same route.
 
 ## Encounter storage
 
