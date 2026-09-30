@@ -42,6 +42,7 @@ import {
   type Encounter,
   type Urge,
 } from '@/lib/engine';
+import { statedMinutes } from '@/lib/duration';
 import Trail from './trail';
 import {
   pattern,
@@ -140,6 +141,44 @@ function Scale({
       <div className="scale-ends" id={`${id}-ends`}>
         <span>0 · No discomfort</span> <span>10 · Very uncomfortable</span>
       </div>
+    </div>
+  );
+}
+const durationChoices = [1, 3, 5, 10];
+// A row of duration chips, styled like the scale's own choice cells. When the
+// draft holds a value outside the usual four, an extra chip shows it selected
+// instead of silently dropping it.
+function DurationPicker({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (minutes: number) => void;
+}) {
+  const options = durationChoices.includes(value)
+    ? durationChoices
+    : [...durationChoices, value].sort((a, b) => a - b);
+  return (
+    <div className="duration-field">
+      <div className="duration-legend" id="duration-label">
+        How many minutes?
+      </div>
+      <RadioGroup
+        className="duration-choices"
+        value={String(value)}
+        onValueChange={(v) => onChange(Number(v))}
+        aria-labelledby="duration-label"
+      >
+        {options.map((m) => (
+          <label
+            className={`scale-choice ${value === m ? 'selected' : ''}`}
+            key={m}
+          >
+            <RadioGroupItem value={String(m)} />
+            <span>{m}</span>
+          </label>
+        ))}
+      </RadioGroup>
     </div>
   );
 }
@@ -513,8 +552,12 @@ export default function Home() {
       ) {
         // A blank model step falls back to the built-in one rather than an empty field.
         draft = local;
-      } else if (local.minutes < draft.minutes) {
-        draft = { ...draft, minutes: local.minutes };
+      } else {
+        // Duration stays on the device (carried choice, smaller dose); a notice step stays at 1.
+        draft = {
+          ...draft,
+          minutes: draft.template === 'model-notice-v1' ? 1 : local.minutes,
+        };
       }
       patch({
         draft: {
@@ -742,6 +785,13 @@ export default function Home() {
   // what happened instead.
   const late = !!active && isLateReturn(active, now);
   const timerDone = !!active && remaining(active, now) === 0;
+  // Once the timer's done, count up instead of sitting at 0:00.
+  const overSeconds = active
+    ? Math.max(
+        0,
+        Math.floor((now - (active.startedAt + active.minutes * 60000)) / 1000),
+      )
+    : 0;
   // The tab title matches the live region once time is up, so it's visible
   // from another tab too; leaving Timer restores whatever title was there.
   useEffect(() => {
@@ -1057,40 +1107,28 @@ export default function Home() {
             className="text-input action-input lead"
             maxLength={1000}
             value={s.draft.action}
-            onChange={(e) =>
+            onChange={(e) => {
+              // Only text the person actually typed is read for a stated
+              // duration; carried-over or model text never runs through this.
+              const stated = statedMinutes(e.target.value);
               patch({
                 draft: {
                   ...s.draft!,
                   action: e.target.value,
                   userAction: e.target.value,
+                  minutes: stated ?? s.draft!.minutes,
                 },
-              })
-            }
+              });
+            }}
           />
           {!blankAtArrival && !s.draft.careful && (
             <p className="step-reason">{stepReasons[s.resistance]}</p>
           )}
           {s.draft.action.trim() && (
-            <div className="duration">
-              <span className="duration-label">{s.draft.minutes} min</span>
-              <button
-                className="text-button"
-                onClick={() =>
-                  patch({
-                    draft: {
-                      ...s.draft!,
-                      minutes: s.draft!.minutes === 1 ? 3 : 1,
-                      action: s.draft!.action.replace(
-                        /\b[13] minutes?\b/g,
-                        s.draft!.minutes === 1 ? '3 minutes' : '1 minute',
-                      ),
-                    },
-                  })
-                }
-              >
-                {s.draft.minutes === 1 ? 'Use 3 minutes' : 'Make it 1 minute'}
-              </button>
-            </div>
+            <DurationPicker
+              value={s.draft.minutes}
+              onChange={(minutes) => patch({ draft: { ...s.draft!, minutes } })}
+            />
           )}
           <Primary
             onClick={() => patch({ setupPart: 'prepare' })}
@@ -1207,19 +1245,34 @@ export default function Home() {
             </p>
           ) : (
             <>
-              {/* The ring empties as time runs out. */}
+              {/* The ring empties as time runs out, then stays full once time's up. */}
               <div
                 className="timer"
                 role="timer"
-                aria-label={`${Math.floor(remaining(active, now) / 60)} minutes ${remaining(active, now) % 60} seconds remaining`}
+                aria-label={
+                  timerDone
+                    ? `${Math.floor(overSeconds / 60)} minute${Math.floor(overSeconds / 60) === 1 ? '' : 's'} ${overSeconds % 60} second${overSeconds % 60 === 1 ? '' : 's'} over`
+                    : `${Math.floor(remaining(active, now) / 60)} minutes ${remaining(active, now) % 60} seconds remaining`
+                }
                 style={
                   {
-                    '--left': `${remaining(active, now) / (active.minutes * 60)}turn`,
+                    '--left': timerDone
+                      ? '1turn'
+                      : `${remaining(active, now) / (active.minutes * 60)}turn`,
                   } as React.CSSProperties
                 }
               >
-                {Math.floor(remaining(active, now) / 60)}:
-                {(remaining(active, now) % 60).toString().padStart(2, '0')}
+                {timerDone ? (
+                  <span className="timer-over">
+                    +{Math.floor(overSeconds / 60)}:
+                    {(overSeconds % 60).toString().padStart(2, '0')}
+                  </span>
+                ) : (
+                  <>
+                    {Math.floor(remaining(active, now) / 60)}:
+                    {(remaining(active, now) % 60).toString().padStart(2, '0')}
+                  </>
+                )}
               </div>
             </>
           )}
@@ -1235,7 +1288,7 @@ export default function Home() {
             // changes to the time's-up copy.
             <p className="meta invitation" role="status">
               {timerDone
-                ? 'Time’s up. Tap I’m done when you’ve finished.'
+                ? 'Time’s up. Keep going if you like, and tap I’m done when you finish.'
                 : 'Tap I’m done whenever you finish, even before 0:00.'}
               {/* Explained once; after a first step it is known. */}
               {!timerDone &&

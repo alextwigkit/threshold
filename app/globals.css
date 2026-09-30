@@ -779,27 +779,31 @@ h2:focus {
 .scale-ends span:last-child {
   text-align: right;
 }
-.duration {
-  display: flex;
-  align-items: center;
-  gap: 24px;
+.duration-field {
   margin-top: var(--space-in);
-  color: var(--muted-foreground);
+}
+.duration-legend {
+  font-weight: 500;
   font-size: 0.875rem;
+  color: var(--meta-foreground);
+  margin-bottom: var(--space-in);
+}
+/* Same cell language as the 0-10 scale: ink fill marks the selected chip. */
+/* One row even with a typed fifth duration, so no chip stretches alone. */
+.duration-choices {
+  display: flex !important;
+  gap: 6px !important;
+}
+.duration-choices .scale-choice {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0 4px;
+  white-space: nowrap;
 }
 .data-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px 28px;
-}
-.duration .text-button {
-  font-size: 0.875rem;
-}
-/* Not underlined like the two buttons beside it: this one is informational, not tappable. */
-.duration-label {
-  font-weight: 500;
-  color: var(--meta-foreground);
-  margin-right: auto;
 }
 /* Home's situation, bound to the label above and the step below. */
 .situation-context {
@@ -842,6 +846,10 @@ h2:focus {
 }
 .active {
   text-align: center;
+}
+/* Overtime count-up reads as quieter than the countdown it replaces. */
+.timer-over {
+  color: var(--muted-foreground);
 }
 /* Time left, as the filled share of the ring: --left is set inline in turns. */
 .timer::before {
@@ -1367,9 +1375,6 @@ details p {
   .shell {
     padding-left: 18px;
     padding-right: 18px;
-  }
-  .duration {
-    flex-wrap: wrap;
   }
 }
 

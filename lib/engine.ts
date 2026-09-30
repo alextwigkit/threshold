@@ -164,8 +164,15 @@ export function candidate(
   const attempted = prior.filter((e) => e.outcome !== 'not_started');
   const smaller =
     !!last && (last.outcome !== 'attempted' || (last.actual ?? 0) >= 8);
-  const minutes = smaller ? 1 : 3;
-  const span = `${minutes} minute${minutes === 1 ? '' : 's'}`;
+  // Carry forward the last chosen duration; only a smaller dose or water forces 1.
+  const carried =
+    last &&
+    Number.isFinite(last.minutes) &&
+    last.minutes > 0 &&
+    last.minutes <= 30
+      ? last.minutes
+      : 3;
+  const minutes = smaller ? 1 : carried;
   const safetyCritical = needsCare(situation);
   // A recurring situation+resistance pair keeps whatever territory it was actually
   // classified as (frequently by the AI, which reasons about the situation directly)
@@ -214,14 +221,16 @@ export function candidate(
       template = 'draft';
       action =
         attempted.length && !smaller
-          ? `Open the draft and spend ${span} adding to one section before checking whether it is right.`
-          : `Open the draft and spend ${span} writing three possible sections, even if you’re unsure.`;
+          ? 'Open the draft and add to one section before checking whether it is right.'
+          : 'Open the draft and write three possible sections, even if you’re unsure.';
     } else if (message) {
       template = 'reply';
-      action = `Open the message and spend ${span} writing a first sentence before revising it.`;
+      action =
+        'Open the message and write a first sentence before revising it.';
     } else if (question) {
       template = 'question';
-      action = `Spend ${span} writing the one question you need answered. Ask it without researching the answer first.`;
+      action =
+        'Write the one question you need answered. Ask it without researching the answer first.';
       title = 'Ask Before You’re Sure';
     }
   }
@@ -230,33 +239,38 @@ export function candidate(
     if (question) {
       template = 'visible-question';
       title = 'Ask Before You’re Sure';
-      action = `Write the one question you need answered, then ask the person you had in mind without rehearsing it again. Allow ${span}.`;
+      action =
+        'Write the one question you need answered, then ask the person you had in mind without rehearsing it again.';
     } else if (message) {
       template = 'visible-message';
       title = 'Send Without Another Rehearsal';
-      action = `Spend ${span} writing the message. Check the recipient and essential details, then send it without another wording pass.`;
+      action =
+        'Write the message. Check the recipient and essential details, then send it without another wording pass.';
     } else if (writing) {
       template = 'visible-draft';
       title = 'Share One Unfinished Section';
-      action = `Choose one unfinished section you are willing to share. Spend ${span} checking essential details, then ask for feedback on that section.`;
+      action =
+        'Choose one unfinished section you are willing to share. Check essential details, then ask for feedback on that section.';
     } else if (conversation) {
       template = 'conversation';
       title = 'Begin the Conversation';
-      action = `Ask the person you had in mind for a suitable time to talk. Start with one sentence about what matters, without rehearsing the whole conversation. Allow ${span}.`;
+      action =
+        'Ask the person you had in mind for a suitable time to talk. Start with one sentence about what matters, without rehearsing the whole conversation.';
     }
   }
   if (territory === 'loop') {
     title = 'Stop After Enough';
     if (writing || message) {
       template = 'end-checking';
-      action = `Spend ${span} doing the necessary functional check. Then close the draft without one more polishing pass.`;
+      action =
+        'Do the necessary functional check. Then close the draft without one more polishing pass.';
     }
   }
   if (territory === 'water') {
     title = 'Stay With It for a Moment';
     template = 'notice-feeling';
     action =
-      'For 1 minute, notice the feeling you named before opening a distraction. You can stop whenever you need to.';
+      'Notice the feeling you named before opening a distraction. You can stop whenever you need to.';
   }
   // Preserve the concrete action the user wrote instead of discarding it on the next visit.
   const lastDefault = last ? candidate(last.situation, last.resistance) : null;
@@ -269,7 +283,7 @@ export function candidate(
       : undefined);
   if (userAction?.trim()) {
     action = smaller
-      ? `For ${span}, try just the beginning of this step: ${userAction}`
+      ? `Try just the beginning of this step: ${userAction}`
       : userAction;
     template = 'user-action';
   }

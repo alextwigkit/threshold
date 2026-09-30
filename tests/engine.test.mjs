@@ -829,3 +829,114 @@ test('startedDay says today, yesterday, or the date', () => {
     /^on .*26/,
   );
 });
+
+// minutes is the only place a duration lives: the action text itself must
+// never restate it, or the two can drift (e.g. a carried-over 5-minute step
+// still saying "For 3 minutes").
+test('no built-in action states a duration, for any resistance or keyword template', () => {
+  const durationPattern = /\b\d+ (minute|second)s?\b/;
+  const resistances = [
+    'understand',
+    'start',
+    'judged',
+    'unpleasant',
+    'other',
+    'checking',
+  ];
+  const keywordSituations = [
+    'draft the quarterly proposal',
+    'send a message to the team',
+    'ask a question before the meeting',
+    'have a conversation with my manager',
+    'a brand new thing with no keyword',
+  ];
+  for (const resistance of resistances) {
+    for (const situation of keywordSituations) {
+      assert.doesNotMatch(
+        candidate(situation, resistance).action,
+        durationPattern,
+        `${resistance}: ${situation}`,
+      );
+    }
+  }
+  // The one continuation-specific wording variant (fog/writing, "keep going").
+  const situation = 'draft the quarterly proposal';
+  const prior = [
+    encounter('1', {
+      situation,
+      resistance: 'understand',
+      territory: 'fog',
+      outcome: 'attempted',
+      actual: 3,
+    }),
+  ];
+  assert.doesNotMatch(
+    candidate(situation, 'understand', prior).action,
+    durationPattern,
+  );
+  const water = candidate('i feel restless and want to scroll', 'unpleasant');
+  assert.equal(water.territory, 'water');
+  assert.doesNotMatch(water.action, durationPattern);
+});
+
+test('carries forward the last chosen duration instead of resetting to a fixed default', () => {
+  const situation = 'draft the quarterly proposal';
+  // A normal (non-smaller-dose) return with a 5-minute step carries 5 forward.
+  const five = [
+    encounter('1', {
+      situation,
+      resistance: 'understand',
+      outcome: 'attempted',
+      actual: 3,
+      minutes: 5,
+    }),
+  ];
+  assert.equal(candidate(situation, 'understand', five).minutes, 5);
+  // A smaller dose (stop, not started, or actual >= 8) still forces 1, regardless.
+  const stopped = [
+    encounter('1', {
+      situation,
+      resistance: 'understand',
+      outcome: 'stopped',
+      minutes: 5,
+    }),
+  ];
+  assert.equal(candidate(situation, 'understand', stopped).minutes, 1);
+  const hard = [
+    encounter('1', {
+      situation,
+      resistance: 'understand',
+      outcome: 'attempted',
+      actual: 8,
+      minutes: 5,
+    }),
+  ];
+  assert.equal(candidate(situation, 'understand', hard).minutes, 1);
+  // An invalid stored minutes value (out of range) falls back to 3, not through.
+  const bad = [
+    encounter('1', {
+      situation,
+      resistance: 'understand',
+      outcome: 'attempted',
+      actual: 3,
+      minutes: 45,
+    }),
+  ];
+  assert.equal(candidate(situation, 'understand', bad).minutes, 3);
+  // Water is always 1, even when a larger duration was carried.
+  const waterSituation =
+    'sitting to meditate when i feel activated and energized';
+  const waterPrior = [
+    encounter('1', {
+      situation: waterSituation,
+      resistance: 'unpleasant',
+      territory: 'water',
+      outcome: 'attempted',
+      actual: 3,
+      minutes: 5,
+    }),
+  ];
+  assert.equal(candidate(waterSituation, 'unpleasant', waterPrior).minutes, 1);
+  // No history at all still defaults to 3.
+  assert.equal(candidate(situation, 'understand').minutes, 3);
+});
