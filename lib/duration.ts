@@ -49,3 +49,43 @@ export function statedMinutes(text: string): number | null {
   }
   return null;
 }
+
+// How long a step really took, from the stored start and the tap on Return.
+// Null when that tap can't be trusted: missing, or long after the timer ended
+// (the late-return screen), when it says when they came back, not when they stopped.
+export function timeTaken(e: {
+  startedAt: number;
+  returnedAt?: number;
+  minutes: number;
+}): string | null {
+  if (e.returnedAt === undefined || e.returnedAt <= e.startedAt) {
+    return null;
+  }
+  if (e.returnedAt > e.startedAt + (e.minutes + 30) * 60000) {
+    return null;
+  }
+  const total = Math.round((e.returnedAt - e.startedAt) / 1000);
+  if (total < 60) {
+    return `${total} sec`;
+  }
+  if (total >= 600) {
+    return `${Math.round(total / 60)} min`;
+  }
+  const seconds = total % 60;
+  return seconds
+    ? `${Math.floor(total / 60)} min ${seconds} sec`
+    : `${total / 60} min`;
+}
+// The line shown on Result.
+export function timeLine(e: {
+  startedAt: number;
+  returnedAt?: number;
+  minutes: number;
+  outcome: string;
+}): string | null {
+  const taken = timeTaken(e);
+  if (taken === null || e.outcome === 'not_started') {
+    return null;
+  }
+  return e.outcome === 'stopped' ? `Stopped after ${taken}` : `Took ${taken}`;
+}

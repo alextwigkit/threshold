@@ -42,7 +42,7 @@ import {
   type Encounter,
   type Urge,
 } from '@/lib/engine';
-import { statedMinutes } from '@/lib/duration';
+import { statedMinutes, timeLine, timeTaken } from '@/lib/duration';
 import Trail from './trail';
 import {
   pattern,
@@ -1499,6 +1499,9 @@ export default function Home() {
                     : worrySplit[1]}
                 </p>
               )}
+              {!newDiscovery && timeLine(last) && (
+                <p className="meta">{timeLine(last)}</p>
+              )}
             </div>
           </div>
           {/* The trail is context for the finding, so it follows it. */}
@@ -1750,6 +1753,7 @@ export default function Home() {
                   // The result line already says when a step stopped or never started.
                   const showUrge =
                     e.outcome === 'attempted' && e.urge !== 'stopped';
+                  const took = timeTaken(e);
                   const hasDetails =
                     e.purpose ||
                     e.resistanceNote ||
@@ -1769,6 +1773,7 @@ export default function Home() {
                           month: 'short',
                           day: 'numeric',
                         })}
+                        {took && ` · ${took}`}
                       </EntryHeading>
                       <p>{e.action}</p>
                       <p className="meta">{result}</p>

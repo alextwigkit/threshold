@@ -58,7 +58,10 @@ supports it; everything else is background.
    heading ("Easier than you expected", an outcome like "You stopped
    partway", or a new pattern's heading). Tier 2: the supporting line
    underneath (the expected/felt numbers, the pattern's evidence, or the
-   next-step line). The row of dots stays, muted, above the heading. Primary
+   next-step line). A Meta line says how long the step took ("Took 4 min
+   20 sec", or "Stopped after ..."); it is omitted when the person came back
+   more than 30 minutes after the timer ended, since the finish time is then
+   unknown. The row of dots stays, muted, above the heading. Primary
    action: Done (kept secondary, since it only dismisses).
 8. **Home** (`map`): decide what to do next. With a step already chosen, the
    reading order is: "Next step" (Heading), a Meta line ("{situation} ·
@@ -75,7 +78,8 @@ supports it; everything else is background.
    any exist, each with its evidence stated in words. Tier 2: steps grouped
    by situation, newest first, newest group open, each group a Heading with a
    Meta line under it ("N steps · last {date}"); an entry inside a group
-   reads Meta date, Body step, then a Meta result line ("{comparison} ·
+   reads Meta date (with how long it took, "Sep 29 · 4 min 20 sec", when
+   known), Body step, then a Meta result line ("{comparison} ·
    discomfort {expected} → {felt}"), a worry line when one was named ("You
    worried: "..." {status}", in Meta), and Details. Each group ends with
    "Take another step on this"; a hairline separates one group from the
