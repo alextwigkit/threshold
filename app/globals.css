@@ -921,6 +921,7 @@ h2:focus {
 /* The invitation explains the buttons, so it sits with them, not the step. */
 .invitation {
   margin: var(--space-group) 0 0;
+  text-wrap: balance;
 }
 .invitation + .primary {
   margin-top: var(--space-pair);

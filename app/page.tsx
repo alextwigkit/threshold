@@ -45,7 +45,6 @@ import {
 import { statedMinutes, timeLine, timeTaken } from '@/lib/duration';
 import Trail from './trail';
 import {
-  pattern,
   taken,
   trailStones,
   worryPattern,
@@ -1389,6 +1388,7 @@ export default function Home() {
             // One live region, announced once, when its text actually
             // changes to the time's-up copy.
             <p className="meta invitation" role="status">
+              Notice what the resistance does as you go.{' '}
               {timerDone
                 ? 'Time’s up. Keep going if you like, and tap “I’m done” when you finish.'
                 : 'Tap “I’m done” whenever you finish, even before 0:00.'}
@@ -2031,10 +2031,9 @@ export default function Home() {
           {steps.length > 0 && (
             <section className="progress" aria-labelledby="progress-title">
               <h2 id="progress-title">Your progress</h2>
-              {(pattern(s.encounters) || worryPattern(s.encounters)) && (
-                <p>
-                  {pattern(s.encounters)} {worryPattern(s.encounters)}
-                </p>
+              {/* No count of easier steps: feeling better isn't the measure. */}
+              {worryPattern(s.encounters) && (
+                <p>{worryPattern(s.encounters)}</p>
               )}
               <Trail
                 encounters={s.encounters}

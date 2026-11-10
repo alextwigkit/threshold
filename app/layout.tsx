@@ -3,7 +3,7 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'Threshold',
   description:
-    'Turn toward something you have been avoiding. See what you discover.',
+    'Get to know the resistance that comes up around things that matter to you.',
   manifest: '/manifest.webmanifest',
   appleWebApp: { capable: true, statusBarStyle: 'default', title: 'Threshold' },
   icons: { icon: '/icon.svg', apple: '/icon-192.png' },
