@@ -1,9 +1,10 @@
 # Threshold
 
-A private, offline-capable, mobile-first PWA that helps one person approach
-something meaningful they habitually avoid: name the situation, take a small
-real-world step, predict how it will feel, then compare that with what
-actually happened. Over enough steps it surfaces patterns.
+A private, offline-capable, mobile-first PWA for getting to know the
+resistance that comes up around things that matter: write down a moment of
+resistance as it happens or afterwards, learn its usual lines, and sometimes
+take a small real-world step and compare how it felt with what you expected.
+Over enough steps it surfaces patterns.
 
 Live at [threshold.threshold0.workers.dev](https://threshold.threshold0.workers.dev/),
 behind a username/password login. **Start with [HANDOFF.md](HANDOFF.md)** for
@@ -15,18 +16,33 @@ These are settled. Change them only on an explicit decision by the owner,
 and record the change here and in the owning doc.
 
 **What the app rewards**
-- The goal is acting while resistance is present, never feeling better, time
-  in the app, or finishing a timer. An attempted step counts even when it was
-  uncomfortable or stopped partway; a stop is an honest half-filled mark, not
-  a failure. No points, streaks, levels, quotas or default notifications.
-  ([PRODUCT.md](PRODUCT.md))
+- The goal is meeting resistance with curiosity, never feeling better, time
+  in the app, or finishing a timer. Noticing a moment of resistance counts
+  even when no step follows (November 9 decision). An attempted step counts
+  even when it was uncomfortable or stopped partway; a stop is an honest
+  half-filled mark, not a failure. No points, streaks, levels, quotas or
+  default notifications. ([PRODUCT.md](PRODUCT.md))
 - Not a therapy, diagnosis, task manager, chat assistant or curriculum. Never
   encourage unsafe action or skipping a necessary safety check.
 
+**Noticing** (November 9 decision: in-the-moment urges and reluctance come
+first)
+- Home leads with "I noticed some resistance": a few words about what's
+  happening, optionally what the resistance is saying, and when it was
+  noticed. Saving says whether you've met this line before. Nothing is
+  scored, and nothing reminds you to log.
+- After a "just now" entry, two optional follow-ups: guess what the urge will
+  do, then watch it for a minute; or name the smallest thing you'd try.
+  Leaving straight away is just as valid. Neither creates a step or asks for
+  a rating.
+- Noticed moments never feed patterns, the dots or step history.
+
 **Words**
-- Plain interface: the person sees "step", "history" and "pattern". The
-  original threshold, territory, trail and atlas metaphor lives only in code
-  identifiers and storage fields, for compatibility. ([UX.md](UX.md))
+- Plain interface: the person sees "step", "history" and "pattern", and
+  noticed moments speak of what the resistance is "saying" and its "usual
+  lines". The original threshold, territory, trail and atlas metaphor lives
+  only in code identifiers and storage fields, for compatibility.
+  ([UX.md](UX.md))
 - A worry named before a step is the person's own claim and is checked
   afterwards; it is a sharper test than the 0 to 10 guess.
 
@@ -92,4 +108,6 @@ deploy fails. Then `npm run deploy`. `npm run start` previews the packaged
 Worker locally. The service worker registers only in production.
 
 Device data belongs to its origin, so local and hosted copies have separate
-histories; move data with backup and restore.
+histories; move data with backup and restore. **Don't roll a deploy back to a
+build from before commit 5d4853d (November 10, 2026):** older builds drop
+noticed moments the first time they load saved data.

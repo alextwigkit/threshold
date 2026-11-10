@@ -6,18 +6,26 @@ explicitly labeled.
 
 ## Purpose
 
-Threshold helps a person approach something meaningful they habitually
-avoid. A real attempt adds to their history; evidence from attempts can
-become a useful pattern. Success means acting with resistance present, not
-feeling better or completing a timer.
+Threshold helps a person get to know the resistance that comes up around
+things that matter to them, the way a player gets to know a hard opponent's
+moves. Success means meeting resistance with curiosity: noticing it, and
+sometimes acting while it's present. It never means feeling better or
+completing a timer (November 9, 2026 decision; it was "acting with
+resistance present").
 
 ## Core loop
 
-Name a current situation, say what makes it hard, choose a small real-world
-step, predict how uncomfortable it will be and name a worry, attempt it
-outside Threshold, record what happened, and see the result: how it compared
-to what was expected and whether the worry happened. Over enough steps the
-app surfaces a pattern.
+The first focus is in-the-moment urges and reluctance. Notice resistance,
+write down what's happening and, optionally, what it's saying, and see
+whether you've met that line before. After a "just now" entry, optionally
+guess what the urge will do and watch it for a minute, or name the smallest
+thing you'd try.
+
+The planned-step loop remains: name a current situation, say what makes it
+hard, choose a small real-world step, predict how uncomfortable it will be
+and name a worry, attempt it outside Threshold, record what happened, and
+see the result: how it compared to what was expected and whether the worry
+happened. Over enough steps the app surfaces a pattern.
 
 ## Naming: internal only
 
@@ -44,6 +52,11 @@ quotes user-facing copy, it uses the current wording.
   afterward, sharper than a 0-10 guess since it is the person's own claim.
 - Purpose: the person's own reason for the step, named once and carried
   forward for the same situation, shown at the moment the step is presented.
+- Moment (a noticed entry): a short record of resistance, acted on or not:
+  what was happening, optionally what the resistance said, and when it was
+  noticed, with the optional follow-ups (a guess and what the urge did in a
+  watched minute; the smallest thing to try, and whether it was tried). It is
+  separate from steps and never counts toward a pattern.
 - Pattern (internal name: discovery): a tentative repeated finding with
   inspectable supporting and contrary evidence, stated in words.
 
@@ -65,10 +78,12 @@ one.
 
 ## Reward rules
 
-An attempted step adds to the history even when uncomfortable or unfinished.
-Stopping produces an honest half-filled mark, never a failure badge. Merely
-opening the app, waiting, or starting the timer adds nothing. No points,
-streaks, levels, leaderboards, gameplay quotas, or default notifications.
+A noticed moment is acknowledged by saying whether its line has been met
+before; it is never scored. An attempted step adds to the history even when
+uncomfortable or unfinished. Stopping produces an honest half-filled mark,
+never a failure badge. Merely opening the app, waiting, or starting the
+timer adds nothing. No points, streaks, levels, leaderboards, gameplay
+quotas, or default notifications.
 
 ## Scope boundaries
 

@@ -117,6 +117,17 @@ null for not_started) and noticing codes. It is otherwise immutable, apart
 from a worry answered "unknown" on Return, which can be given a later answer
 from History. Encounters are saved idempotently by id.
 
+## Noticed moments: recognition only
+
+A moment (`lib/moments.ts`) is a short record of resistance noticed, acted
+on or not. The engine draws one conclusion from moments, recognition:
+`recognised()` says "met before" when what the resistance said matches an
+earlier entry's, ignoring case, spacing, quotes and closing punctuation, or,
+when nothing was said, when what was happening matches. `usualLines()`
+offers the person's own earlier answers, most used first. Moments never feed
+`candidate()`, `discoveries()`, the dots or Home's next step, and nothing
+interprets their text.
+
 ## Result copy: `compare()` and `observation()`
 
 `compare(e)` turns the prediction/actual gap into one of five headings
