@@ -8,6 +8,7 @@ import {
   type Session,
   type Encounter,
 } from './engine.ts';
+import { isMoment, type Moment } from './moments.ts';
 export type Screen =
   | 'name'
   | 'clarify'
@@ -17,7 +18,10 @@ export type Screen =
   | 'observation'
   | 'map'
   | 'atlas'
-  | 'me';
+  | 'me'
+  | 'notice'
+  | 'noticed'
+  | 'watch';
 export type Saved = {
   version: 1;
   screen: Screen;
@@ -29,7 +33,11 @@ export type Saved = {
   predictionNote: string;
   session: Session | null;
   encounters: Encounter[];
+  // Moments of resistance noticed, acted on or not.
+  moments: Moment[];
   lastId: string | null;
+  // The moment the noticed and watch screens are about.
+  momentId?: string;
   // Which half of Setup is showing. Absent means the first half, "Your step".
   setupPart?: 'prepare';
   // Where the current setup flow started, for Back and for Home's Start.
@@ -48,6 +56,7 @@ export const initial: Saved = {
   predictionNote: '',
   session: null,
   encounters: [],
+  moments: [],
   lastId: null,
 };
 export const KEY = 'edge-atlas-v1';
@@ -61,6 +70,9 @@ const screens = [
   'map',
   'atlas',
   'me',
+  'notice',
+  'noticed',
+  'watch',
 ];
 const resistances = [
   'understand',
@@ -98,7 +110,12 @@ export function parseSaved(raw: string): Saved {
     (x.lastId !== null && !text(x.lastId, 200)) ||
     (x.setupPart !== undefined && x.setupPart !== 'prepare') ||
     (x.setupFrom !== undefined && !['home', 'clarify'].includes(x.setupFrom)) ||
-    (x.worryDraft !== undefined && !text(x.worryDraft, 1000))
+    (x.worryDraft !== undefined && !text(x.worryDraft, 1000)) ||
+    (x.moments !== undefined &&
+      (!Array.isArray(x.moments) ||
+        x.moments.length > 10000 ||
+        !x.moments.every(isMoment))) ||
+    (x.momentId !== undefined && !text(x.momentId, 200))
   )
     throw Error(
       'This backup contains incomplete or unsupported Threshold data. Your data has not changed.',
@@ -114,9 +131,14 @@ export function parseSaved(raw: string): Saved {
       x.encounters.map((e: Encounter) => [e.id, e]),
     ).values(),
   ].sort((a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id));
+  const moments = sortMoments(x.moments ?? []);
+  const followed = moments.some((m) => m.id === x.momentId);
+  // Fields this build doesn't know are kept, so a rollback can't erase them.
   return {
+    ...(x as object),
     version: 1,
-    screen: x.screen,
+    screen:
+      ['noticed', 'watch'].includes(x.screen) && !followed ? 'map' : x.screen,
     situation: x.situation,
     resistance: x.resistance,
     custom: x.custom,
@@ -125,20 +147,29 @@ export function parseSaved(raw: string): Saved {
     predictionNote: x.predictionNote,
     session: x.session,
     encounters: unique,
+    moments,
     lastId: x.lastId,
     ...(x.setupPart !== undefined ? { setupPart: x.setupPart } : {}),
     ...(x.setupFrom !== undefined ? { setupFrom: x.setupFrom } : {}),
     ...(x.worryDraft !== undefined ? { worryDraft: x.worryDraft } : {}),
   };
 }
+function sortMoments(moments: Moment[]) {
+  return [
+    ...new Map<string, Moment>(moments.map((m) => [m.id, m])).values(),
+  ].sort((a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id));
+}
 export function restoreSummary(current: Saved, backup: Saved) {
   const ids = new Set([
     ...current.encounters.map((e) => e.id),
     ...(current.session ? [current.session.id] : []),
   ]);
+  const momentIds = new Set(current.moments.map((m) => m.id));
   return {
     added: backup.encounters.filter((e) => !ids.has(e.id)).length,
     duplicates: backup.encounters.filter((e) => ids.has(e.id)).length,
+    momentsAdded: backup.moments.filter((m) => !momentIds.has(m.id)).length,
+    momentDuplicates: backup.moments.filter((m) => momentIds.has(m.id)).length,
   };
 }
 export function mergeBackup(current: Saved, backup: Saved): Saved {
@@ -151,10 +182,47 @@ export function mergeBackup(current: Saved, backup: Saved): Saved {
   const encounters = [...merged.values()].sort(
     (a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id),
   );
+  // Moments already here win, like steps.
+  const moments = sortMoments([...backup.moments, ...current.moments]);
   // Restore history, never someone else's unfinished timer or a different device's drafts.
   return {
     ...current,
     encounters,
+    moments,
     lastId: current.lastId ?? encounters.at(-1)?.id ?? null,
   };
+}
+// Reopening the app with no step running lands on Home rather than wherever
+// it was left, unless a flow is mid-way: clarify, setup, a typed situation,
+// or a minute being watched in the last half hour.
+export function screenOnOpen(s: Saved, now: number): Saved {
+  if (s.session) {
+    return s;
+  }
+  const watched = s.moments.find((m) => m.id === s.momentId);
+  if (
+    s.screen === 'watch' &&
+    watched?.watchStartedAt !== undefined &&
+    watched.watched === undefined &&
+    watched.watchStartedAt <= now &&
+    now - watched.watchStartedAt < 30 * 60000
+  ) {
+    return s;
+  }
+  const resting: Screen[] = [
+    'observation',
+    'map',
+    'atlas',
+    'me',
+    'notice',
+    'noticed',
+    'watch',
+  ];
+  const idle =
+    resting.includes(s.screen) || (s.screen === 'name' && !s.situation.trim());
+  if (!idle) {
+    return s;
+  }
+  const history = s.encounters.length > 0 || s.moments.length > 0;
+  return { ...s, screen: history ? 'map' : 'name', momentId: undefined };
 }

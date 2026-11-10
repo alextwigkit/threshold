@@ -60,6 +60,7 @@ import {
   parseSaved,
   mergeBackup,
   restoreSummary,
+  screenOnOpen,
   type Saved,
   type Screen,
 } from '@/lib/storage';
@@ -143,6 +144,22 @@ function Scale({
       </div>
     </div>
   );
+}
+// "2 steps and 1 noticed moment will be added. 3 already here will stay as they are."
+function restoreLine(
+  summary: ReturnType<typeof restoreSummary> | null,
+): string {
+  const count = (n: number, one: string, many: string) =>
+    `${n} ${n === 1 ? one : many}`;
+  const added = summary?.added ?? 0;
+  const moments = summary?.momentsAdded ?? 0;
+  const kept = (summary?.duplicates ?? 0) + (summary?.momentDuplicates ?? 0);
+  const parts = [
+    ...(added || !moments ? [count(added, 'step', 'steps')] : []),
+    ...(moments ? [count(moments, 'noticed moment', 'noticed moments')] : []),
+  ];
+  const stay = kept === 1 ? 'will stay as it is' : 'will stay as they are';
+  return `${parts.join(' and ')} will be added. ${kept} already here ${stay}.`;
 }
 const durationChoices = [1, 3, 5, 10];
 // A row of duration chips, styled like the scale's own choice cells. When the
@@ -345,7 +362,7 @@ export default function Home() {
       const raw = localStorage.getItem(KEY);
       if (raw) {
         rawUnreadable.current = raw;
-        setS(parseSaved(raw));
+        setS(screenOnOpen(parseSaved(raw), Date.now()));
         rawUnreadable.current = null;
       }
     } catch {
@@ -1974,9 +1991,7 @@ export default function Home() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Merge this backup?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  {backupSummary?.added ?? 0} steps will be added.{' '}
-                  {backupSummary?.duplicates ?? 0} already here will stay as
-                  they are. Your current step won’t change.
+                  {restoreLine(backupSummary)} Your current step won’t change.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <div role="alert">{restoreError}</div>

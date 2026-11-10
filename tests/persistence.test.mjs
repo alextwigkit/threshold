@@ -6,6 +6,7 @@ import {
   parseSaved,
   mergeBackup,
   restoreSummary,
+  screenOnOpen,
 } from '../lib/storage.ts';
 import { trailStones } from '../lib/trail.ts';
 const e = (id, extra = {}) => ({
@@ -121,7 +122,12 @@ test('restore merges idempotently, keeps local collision records and preserves t
   };
   const backup = saved([e('1', { action: 'different version' }), e('2')]);
   const summary = restoreSummary(local, backup);
-  assert.deepEqual(summary, { added: 1, duplicates: 1 });
+  assert.deepEqual(summary, {
+    added: 1,
+    duplicates: 1,
+    momentsAdded: 0,
+    momentDuplicates: 0,
+  });
   const merged = mergeBackup(local, backup);
   assert.equal(merged.encounters.length, 2);
   assert.equal(merged.encounters[0].action, local.encounters[0].action);
@@ -194,8 +200,79 @@ test('an invalid setupPart, setupFrom or worryDraft is rejected', () => {
 test('a backup cannot preempt the current active encounter using the same id', () => {
   const local = { ...saved(), screen: 'active', session: e('1') };
   const backup = saved([e('1')]);
-  assert.deepEqual(restoreSummary(local, backup), { added: 0, duplicates: 1 });
+  assert.deepEqual(restoreSummary(local, backup), {
+    added: 0,
+    duplicates: 1,
+    momentsAdded: 0,
+    momentDuplicates: 0,
+  });
   const merged = mergeBackup(local, backup);
   assert.equal(merged.encounters.length, 0);
   assert.equal(merged.session, local.session);
+});
+test('moments and unknown fields survive load and restore', () => {
+  const m = (id, extra = {}) => ({
+    id,
+    createdAt: Date.UTC(2026, 10, Number(id)),
+    noticed: 'now',
+    what: 'Reaching for my phone',
+    saying: 'Just one quick look',
+    ...extra,
+  });
+  const current = {
+    ...saved([e('1')]),
+    moments: [m('2', { saying: 'Mine wins' })],
+    fromNewerBuild: { kept: true },
+  };
+  // The real load path: parse, pick the opening screen, save back as JSON.
+  const loaded = JSON.parse(
+    JSON.stringify(
+      screenOnOpen(
+        parseSaved(
+          JSON.stringify({
+            ...current,
+            moments: [m('5'), ...current.moments, m('5', { saying: 'dup' })],
+          }),
+        ),
+        Date.now(),
+      ),
+    ),
+  );
+  // Deduplicated by id and sorted by time.
+  assert.deepEqual(
+    loaded.moments.map((x) => [x.id, x.saying]),
+    [
+      ['2', 'Mine wins'],
+      ['5', 'dup'],
+    ],
+  );
+  assert.deepEqual(loaded.fromNewerBuild, { kept: true });
+  // A save from before moments existed loads with none.
+  const { moments: _, ...old } = saved([e('1')]);
+  assert.deepEqual(parseSaved(JSON.stringify(old)).moments, []);
+  // Restore adds new moments and keeps the local copy on an id clash.
+  const backup = parseSaved(
+    JSON.stringify({
+      ...saved([]),
+      moments: [
+        m('2', { saying: 'Backup loses' }),
+        m('3', { guess: 'fading' }),
+      ],
+    }),
+  );
+  assert.equal(restoreSummary(loaded, backup).momentsAdded, 1);
+  assert.equal(restoreSummary(loaded, backup).momentDuplicates, 1);
+  const merged = mergeBackup(loaded, backup);
+  assert.deepEqual(
+    merged.moments.map((x) => [x.id, x.saying]),
+    [
+      ['2', 'Mine wins'],
+      ['3', 'Just one quick look'],
+      ['5', 'dup'],
+    ],
+  );
+  assert.deepEqual(merged.fromNewerBuild, { kept: true });
+  assert.throws(() =>
+    parseSaved(JSON.stringify({ ...current, moments: [m('4', { what: '' })] })),
+  );
 });
