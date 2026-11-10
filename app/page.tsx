@@ -55,6 +55,18 @@ import {
 } from '@/lib/trail';
 import { SuggestionRequest } from '@/lib/suggestions';
 import {
+  guessChoices,
+  noticedChoices,
+  noticedLabels,
+  recognised,
+  usualLines,
+  watchedChoices,
+  watchLine,
+  type Drift,
+  type Moment,
+  type Noticed,
+} from '@/lib/moments';
+import {
   KEY,
   initial,
   parseSaved,
@@ -333,6 +345,18 @@ export default function Home() {
   const [backup, setBackup] = useState<Saved | null>(null);
   const [restoreError, setRestoreError] = useState('');
   const [restoreMessage, setRestoreMessage] = useState('');
+  // The noticing form; short enough that its text isn't saved across a reload.
+  const [noticeWhat, setNoticeWhat] = useState('');
+  const [noticeSaying, setNoticeSaying] = useState('');
+  const [noticeWhen, setNoticeWhen] = useState<Noticed>('now');
+  // After noticing: the smallest-version field, and a minute stopped early.
+  const [smallestOpen, setSmallestOpen] = useState(false);
+  const [smallestText, setSmallestText] = useState('');
+  const [watchEnded, setWatchEnded] = useState(false);
+  // The guess before a watch, saved only when the minute starts.
+  const [guessDraft, setGuessDraft] = useState<Drift | undefined>(undefined);
+  // History: older noticed moments stay folded away until asked for.
+  const [allMoments, setAllMoments] = useState(false);
   // Return: an answered question collapses to a summary until the person reopens it.
   const [reopened, setReopened] = useState<'actual' | 'urge' | 'worry' | null>(
     null,
@@ -510,6 +534,41 @@ export default function Home() {
     setSuggestionMessage('');
     patch({ screen });
   };
+  const history = s.encounters.length > 0 || s.moments.length > 0;
+  const moment = s.moments.find((m) => m.id === s.momentId);
+  const lines = usualLines(s.moments);
+  function updateMoment(id: string, change: Partial<Moment>) {
+    setS((v) => ({
+      ...v,
+      moments: v.moments.map((m) => (m.id === id ? { ...m, ...change } : m)),
+    }));
+  }
+  function startNotice() {
+    setNoticeWhat('');
+    setNoticeSaying('');
+    setNoticeWhen('now');
+    go('notice');
+  }
+  function saveNotice() {
+    const what = noticeWhat.trim();
+    if (!what) {
+      return;
+    }
+    const m: Moment = {
+      id: crypto.randomUUID(),
+      createdAt: Date.now(),
+      noticed: noticeWhen,
+      what,
+      saying: noticeSaying.trim(),
+    };
+    setSmallestOpen(false);
+    setSmallestText('');
+    patch({ moments: [...s.moments, m], momentId: m.id, screen: 'noticed' });
+  }
+  function leaveMoment() {
+    setSmallestOpen(false);
+    patch({ momentId: undefined, screen: 'map' });
+  }
   // The on-device step: used offline, when suggestions fail, and on request.
   function builtInStep(confirmed: Resistance | null) {
     const situation = s.situation.trim();
@@ -821,6 +880,19 @@ export default function Home() {
       document.title = previous;
     };
   }, [s.screen, late, timerDone]);
+  // When the watched minute runs out on its own, focus moves to its question.
+  const watching =
+    s.screen === 'watch' &&
+    moment?.watchStartedAt !== undefined &&
+    !watchEnded &&
+    now < moment.watchStartedAt + 60000;
+  const wasWatching = useRef(false);
+  useEffect(() => {
+    if (wasWatching.current && !watching && s.screen === 'watch') {
+      heading.current?.focus();
+    }
+    wasWatching.current = watching;
+  }, [watching, s.screen]);
   const actualOpen = active?.actual === null || reopened === 'actual';
   // A stop already answers the urge question (see urgeOnReturn), so Return
   // never reopens it for a stop.
@@ -892,13 +964,11 @@ export default function Home() {
           <button
             className="back"
             aria-label="Go back"
-            onClick={() =>
-              go(s.session ? 'active' : s.encounters.length ? 'map' : 'name')
-            }
+            onClick={() => go(s.session ? 'active' : history ? 'map' : 'name')}
           >
             ←
           </button>
-        ) : s.screen === 'name' && s.encounters.length > 0 ? (
+        ) : s.screen === 'name' && history ? (
           <button
             className="back"
             aria-label="Go back"
@@ -909,11 +979,20 @@ export default function Home() {
         ) : !nav &&
           s.screen !== 'name' &&
           s.screen !== 'observation' &&
-          s.screen !== 'active' ? (
+          s.screen !== 'active' &&
+          s.screen !== 'watch' ? (
           <button
             className="back"
             aria-label="Go back"
             onClick={() => {
+              if (s.screen === 'notice') {
+                go(history ? 'map' : 'name');
+                return;
+              }
+              if (s.screen === 'noticed') {
+                leaveMoment();
+                return;
+              }
               if (s.screen === 'clarify') {
                 go('name');
                 return;
@@ -939,14 +1018,15 @@ export default function Home() {
           <span className="brand">Threshold</span>
         )}
         {s.screen === 'me' && <span className="brand">Threshold</span>}
-        {s.screen === 'name' && s.encounters.length > 0 && (
+        {s.screen === 'name' && history && (
           <span className="brand">Threshold</span>
         )}
         {!nav &&
           s.screen !== 'name' &&
           s.screen !== 'observation' &&
-          s.screen !== 'active' && <span className="brand">Threshold</span>}
-        {s.screen === 'name' && s.encounters.length === 0 && (
+          s.screen !== 'active' &&
+          s.screen !== 'watch' && <span className="brand">Threshold</span>}
+        {s.screen === 'name' && !history && (
           <button className="text-button" onClick={() => go('me')}>
             Your data
           </button>
@@ -1010,6 +1090,11 @@ export default function Home() {
           >
             Continue
           </Primary>
+          {!history && (
+            <button className="text-button" onClick={startNotice}>
+              Or write down a moment of resistance
+            </button>
+          )}
           {s.encounters.length > 0 &&
             (() => {
               const current = s.situation.trim();
@@ -1541,15 +1626,316 @@ export default function Home() {
           </button>
         </section>
       )}
+      {s.screen === 'notice' && (
+        <section className="noticing">
+          {title('What’s happening?')}
+          <div className="entry notice-entry">
+            <textarea
+              aria-labelledby="screen-title"
+              value={noticeWhat}
+              maxLength={300}
+              placeholder="For example: Reaching for my phone again."
+              onChange={(e) => setNoticeWhat(e.target.value)}
+            />
+          </div>
+          <label className="field-label" htmlFor="notice-saying">
+            What’s it saying? <span className="optional">Optional</span>
+          </label>
+          <input
+            id="notice-saying"
+            className="text-input"
+            value={noticeSaying}
+            maxLength={200}
+            placeholder="For example: Not now."
+            onChange={(e) => setNoticeSaying(e.target.value)}
+          />
+          {lines.length > 0 && (
+            <div
+              className="usual-rail"
+              role="group"
+              aria-labelledby="usual-label"
+            >
+              <span className="meta usual-label" id="usual-label">
+                Its usual lines
+              </span>
+              {lines.map((line) => (
+                <button
+                  key={line}
+                  className={`usual-line ${noticeSaying.trim() === line ? 'selected' : ''}`}
+                  aria-pressed={noticeSaying.trim() === line}
+                  onClick={() => setNoticeSaying(line)}
+                >
+                  {line}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="duration-field notice-when">
+            <div className="duration-legend" id="noticed-label">
+              When did you notice?
+            </div>
+            <RadioGroup
+              className="duration-choices word-choices"
+              value={noticeWhen}
+              onValueChange={(v) => setNoticeWhen(v as Noticed)}
+              aria-labelledby="noticed-label"
+            >
+              {noticedChoices.map(([v, l]) => (
+                <label
+                  className={`scale-choice ${noticeWhen === v ? 'selected' : ''}`}
+                  key={v}
+                >
+                  <RadioGroupItem value={v} />
+                  <span>{l}</span>
+                </label>
+              ))}
+            </RadioGroup>
+          </div>
+          <Primary disabled={!noticeWhat.trim()} onClick={saveNotice}>
+            Save
+          </Primary>
+        </section>
+      )}
+      {s.screen === 'noticed' && moment && (
+        <section className="noticed">
+          {title(
+            recognised(s.moments, moment)
+              ? 'You’ve met this one before'
+              : 'You haven’t met this one before',
+          )}
+          <p className="meta noticed-echo">
+            {moment.saying
+              ? `${moment.what} · “${moment.saying}”`
+              : moment.what}
+          </p>
+          {/* Results read as Body, below the heading; context while typing. */}
+          {watchLine(moment) && (
+            <p className={`noticed-result${smallestOpen ? ' meta' : ''}`}>
+              {watchLine(moment)}
+            </p>
+          )}
+          {moment.smallest && (
+            <p className={`noticed-result${smallestOpen ? ' meta' : ''}`}>
+              Smallest thing to try: {moment.smallest}
+            </p>
+          )}
+          {smallestOpen ? (
+            <div className="smallest-field">
+              <label className="field-label" htmlFor="smallest">
+                What’s the smallest thing you’d try?
+              </label>
+              <textarea
+                id="smallest"
+                className="text-input"
+                value={smallestText}
+                maxLength={300}
+                placeholder="For example: Shoes on, decide at the door."
+                onChange={(e) => setSmallestText(e.target.value)}
+              />
+              <Primary
+                disabled={!smallestText.trim()}
+                onClick={() => {
+                  updateMoment(moment.id, { smallest: smallestText.trim() });
+                  setSmallestOpen(false);
+                  pendingFocus.current = 'screen-title';
+                }}
+              >
+                Save
+              </Primary>
+              <button
+                className="text-button"
+                onClick={() => {
+                  setSmallestOpen(false);
+                  pendingFocus.current = 'screen-title';
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <>
+              {moment.noticed === 'now' &&
+                (moment.watchStartedAt === undefined || !moment.smallest) && (
+                  <div className="noticed-options">
+                    <p>
+                      If you like, try something with it. Leaving it is just as
+                      fine.
+                    </p>
+                    {moment.watchStartedAt === undefined && (
+                      <button
+                        className="secondary"
+                        onClick={() => {
+                          setGuessDraft(undefined);
+                          setWatchEnded(false);
+                          go('watch');
+                        }}
+                      >
+                        Watch it for a minute
+                      </button>
+                    )}
+                    {!moment.smallest && (
+                      <button
+                        className="secondary"
+                        onClick={() => {
+                          setSmallestText('');
+                          setSmallestOpen(true);
+                          pendingFocus.current = 'smallest';
+                        }}
+                      >
+                        Name the smallest thing you’d try
+                      </button>
+                    )}
+                  </div>
+                )}
+              <button className="secondary noticed-done" onClick={leaveMoment}>
+                {moment.noticed === 'now' &&
+                moment.watchStartedAt === undefined &&
+                !moment.smallest
+                  ? 'Leave it for now'
+                  : 'Done'}
+              </button>
+            </>
+          )}
+        </section>
+      )}
+      {s.screen === 'watch' &&
+        moment &&
+        (() => {
+          const started = moment.watchStartedAt;
+          if (started === undefined) {
+            return (
+              <section className="watch">
+                {title('What will it do in the next minute?')}
+                <p className="meta">
+                  A guess. No answer is better than another.
+                </p>
+                <RadioGroup
+                  className="choices"
+                  value={guessDraft ?? ''}
+                  onValueChange={(v) => setGuessDraft(v as Drift)}
+                  aria-labelledby="screen-title"
+                >
+                  {guessChoices.map(([v, l]) => (
+                    <label
+                      className={`choice ${guessDraft === v ? 'selected' : ''}`}
+                      key={v}
+                    >
+                      <span>{l}</span>
+                      <RadioGroupItem value={v} />
+                    </label>
+                  ))}
+                </RadioGroup>
+                <Primary
+                  disabled={!guessDraft}
+                  onClick={() => {
+                    setWatchEnded(false);
+                    pendingFocus.current = 'screen-title';
+                    // The guess is saved only once the minute starts.
+                    updateMoment(moment.id, {
+                      guess: guessDraft,
+                      watchStartedAt: Date.now(),
+                    });
+                  }}
+                >
+                  Start the minute
+                </Primary>
+                <button
+                  className="text-button exit"
+                  onClick={() => go('noticed')}
+                >
+                  Back
+                </button>
+              </section>
+            );
+          }
+          const left = Math.max(0, Math.ceil((started + 60000 - now) / 1000));
+          if (left > 0 && !watchEnded) {
+            return (
+              <section className="active watch">
+                {title('Watching it', 'sr-only')}
+                <div
+                  className="timer"
+                  role="timer"
+                  aria-label={`${left} second${left === 1 ? '' : 's'} remaining`}
+                  style={
+                    { '--left': `${left / 60}turn` } as React.CSSProperties
+                  }
+                >
+                  {Math.floor(left / 60)}:
+                  {(left % 60).toString().padStart(2, '0')}
+                </div>
+                <p className="step-now">
+                  {moment.saying ? `“${moment.saying}”` : moment.what}
+                </p>
+                <p className="meta">
+                  Watch what it does. You don’t have to act.
+                </p>
+                <button
+                  className="text-button exit"
+                  onClick={() => {
+                    setWatchEnded(true);
+                    pendingFocus.current = 'screen-title';
+                  }}
+                >
+                  Stop early
+                </button>
+              </section>
+            );
+          }
+          return (
+            <section className="watch">
+              {title('What did it do?')}
+              {watchLine({ ...moment, watched: undefined }) && (
+                <p className="meta">
+                  {watchLine({ ...moment, watched: undefined })}
+                </p>
+              )}
+              <RadioGroup
+                className="choices"
+                value={moment.watched ?? ''}
+                onValueChange={(v) =>
+                  updateMoment(moment.id, { watched: v as Drift })
+                }
+                aria-labelledby="screen-title"
+              >
+                {watchedChoices.map(([v, l]) => (
+                  <label
+                    className={`choice ${moment.watched === v ? 'selected' : ''}`}
+                    key={v}
+                  >
+                    <span>{l}</span>
+                    <RadioGroupItem value={v} />
+                  </label>
+                ))}
+              </RadioGroup>
+              <Primary disabled={!moment.watched} onClick={() => go('noticed')}>
+                Save
+              </Primary>
+              <button
+                className="text-button exit"
+                onClick={() => {
+                  updateMoment(moment.id, { watched: undefined });
+                  go('noticed');
+                }}
+              >
+                Skip
+              </button>
+            </section>
+          );
+        })()}
       {s.screen === 'map' && (
         <section>
-          {next || steps.length > 0 ? (
-            <h1 className="sr-only" ref={heading} tabIndex={-1}>
-              Home
-            </h1>
-          ) : (
-            title('Your progress starts with one real step.')
-          )}
+          <h1 className="sr-only" ref={heading} tabIndex={-1}>
+            Home
+          </h1>
+          <div className="home-notice">
+            <Primary onClick={startNotice}>I noticed some resistance</Primary>
+            {!s.moments.length && (
+              <p className="meta">
+                Write down a moment of resistance, as it happens or afterwards.
+              </p>
+            )}
+          </div>
           {next && (
             <>
               {next.action ? (
@@ -1581,7 +1967,8 @@ export default function Home() {
                   {next.purpose?.trim() && (
                     <p className="meta">For: {next.purpose}</p>
                   )}
-                  <Primary
+                  <button
+                    className="secondary home-start"
                     onClick={() => {
                       setShowPurpose(false);
                       patch({
@@ -1598,13 +1985,14 @@ export default function Home() {
                     }}
                   >
                     Start
-                  </Primary>
+                  </button>
                 </>
               ) : (
                 <>
                   <h2>Working on</h2>
                   <p className="lead home-action">{next.situation}</p>
-                  <Primary
+                  <button
+                    className="secondary home-start"
                     onClick={() => {
                       setShowPurpose(false);
                       patch({
@@ -1621,7 +2009,7 @@ export default function Home() {
                     }}
                   >
                     Choose a step
-                  </Primary>
+                  </button>
                 </>
               )}
             </>
@@ -1665,7 +2053,7 @@ export default function Home() {
       {s.screen === 'atlas' && (
         <section>
           {title('History', 'sr-only')}
-          {!s.encounters.length && (
+          {!history && (
             <>
               <p>
                 Each step you take shows up here: what you expected, how it
@@ -1725,15 +2113,66 @@ export default function Home() {
                   </article>
                 );
               })}
-              <h2 className="section-label">Your steps</h2>
             </>
           )}
+          {s.moments.length > 0 && (
+            <>
+              <h2 className="section-label">Noticed</h2>
+              {[...s.moments]
+                .reverse()
+                .slice(0, allMoments ? undefined : 5)
+                .map((m) => (
+                  <article className="atlas-entry moment-entry" key={m.id}>
+                    <h3>
+                      {new Date(m.createdAt).toLocaleDateString(undefined, {
+                        month: 'short',
+                        day: 'numeric',
+                      })}{' '}
+                      · {noticedLabels[m.noticed]}
+                    </h3>
+                    <p>{m.what}</p>
+                    {m.saying && <p className="meta">It said: “{m.saying}”</p>}
+                    {watchLine(m) && <p className="meta">{watchLine(m)}</p>}
+                    {m.smallest && (
+                      <>
+                        <p className="meta">
+                          Smallest thing to try: {m.smallest}
+                        </p>
+                        {m.tried ? (
+                          <p className="meta">You tried it</p>
+                        ) : (
+                          <button
+                            className="text-button tried-it"
+                            onClick={() => updateMoment(m.id, { tried: true })}
+                          >
+                            I tried it
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </article>
+                ))}
+              {s.moments.length > 5 && !allMoments && (
+                <button
+                  className="text-button"
+                  onClick={() => setAllMoments(true)}
+                >
+                  Show all {s.moments.length}
+                </button>
+              )}
+            </>
+          )}
+          {s.encounters.length > 0 &&
+            (found.length > 0 || s.moments.length > 0) && (
+              <h2 className="section-label">Your steps</h2>
+            )}
           {groupBySituation(s.encounters).map((group, index) => {
             const key = group.situation.trim();
             // The newest group starts open.
             const isOpen = groupOpen[key] ?? index === 0;
-            const GroupHeading: 'h2' | 'h3' = found.length > 0 ? 'h3' : 'h2';
-            const EntryHeading: 'h3' | 'h4' = found.length > 0 ? 'h4' : 'h3';
+            const labelled = found.length > 0 || s.moments.length > 0;
+            const GroupHeading: 'h2' | 'h3' = labelled ? 'h3' : 'h2';
+            const EntryHeading: 'h3' | 'h4' = labelled ? 'h4' : 'h3';
             return (
               <details
                 className="atlas-group"

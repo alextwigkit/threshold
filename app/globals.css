@@ -286,6 +286,7 @@ textarea::placeholder {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  text-align: left;
   background: var(--primary);
   color: var(--primary-foreground);
   border: 0;
@@ -1316,9 +1317,9 @@ h2:focus {
   margin-bottom: var(--space-in);
 }
 /* Start belongs to the step above it, so it sits a block below, not a group. */
-.change-step + .primary,
-.change-step + .meta + .primary,
-.home-action + .primary {
+.change-step + .home-start,
+.change-step + .meta + .home-start,
+.home-action + .home-start {
   margin-top: var(--space-block);
 }
 /* Sits right under the step it edits, so it reads as Meta, not a peer link. */
@@ -1468,4 +1469,122 @@ details p {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Noticing resistance: Home's first action, the form, its acknowledgement and the minute. */
+.home-notice {
+  margin-bottom: var(--space-group);
+}
+.home-notice > .primary {
+  margin-top: 0;
+}
+.home-notice > .meta {
+  margin: var(--space-in) 0 0;
+}
+.notice-entry {
+  margin-bottom: var(--space-block);
+}
+.notice-entry textarea {
+  min-height: 4.5rem;
+}
+/* One line, so not the tall multi-line field height. */
+.noticing input.text-input {
+  min-height: 48px;
+}
+/* One swipeable row that runs off the screen edge, so more lines don't push
+ * Save below the fold and a cut-off chip shows there are more. Its label
+ * leads the row, so it reads as part of "What's it saying?". */
+.usual-rail {
+  display: flex;
+  align-items: center;
+  gap: var(--space-in);
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: var(--space-in) calc(-24px - env(safe-area-inset-right, 0px)) 0 0;
+  padding-right: calc(24px + env(safe-area-inset-right, 0px));
+}
+.usual-label {
+  flex: 0 0 auto;
+  margin: 0;
+}
+.usual-rail::-webkit-scrollbar {
+  display: none;
+}
+.usual-line {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  min-height: 44px;
+  padding: 8px 14px;
+  background: var(--field);
+  border: 1px solid var(--field-border);
+  border-radius: 22px;
+  color: var(--foreground);
+  font-size: var(--text-meta);
+  text-align: left;
+}
+.usual-line.selected {
+  border-color: var(--foreground);
+}
+/* Word chips size to their labels, and a selection is quiet: a supporting
+ * question with a default answer mustn't outshine the question above it. */
+.word-choices .scale-choice {
+  flex: 1 1 auto;
+  white-space: normal;
+  line-height: 1.2;
+  text-align: center;
+}
+.word-choices .scale-choice.selected {
+  background: var(--surface-strong);
+  border-color: var(--foreground);
+  color: var(--foreground);
+  font-weight: 500;
+}
+/* A separate question from "What's it saying?", so a group apart from it. */
+.notice-when {
+  margin-top: var(--space-group);
+}
+.noticed-echo {
+  margin: var(--space-in) 0 var(--space-block);
+}
+.noticed-result,
+.moment-entry > p {
+  text-wrap: pretty;
+}
+.noticed-result {
+  margin: 0 0 var(--space-pair);
+}
+.tried-it {
+  font-size: var(--text-meta);
+}
+.noticed-options {
+  margin-top: var(--space-group);
+}
+.noticed-options > .secondary {
+  margin-top: var(--space-in);
+}
+.noticed-options + .noticed-done {
+  margin-top: var(--space-in);
+}
+.noticed-done {
+  margin-top: var(--space-group);
+}
+.smallest-field {
+  margin-top: var(--space-group);
+}
+/* Save belongs to the field above it. */
+.smallest-field > .primary {
+  margin-top: var(--space-pair);
+}
+/* Each noticed moment is its own row, so a hairline and a block of space
+ * separate it from the next. */
+.moment-entry {
+  padding: var(--space-block) 0;
+  margin: 0;
+  border-bottom: 1px solid var(--border);
+}
+.moment-entry:last-of-type {
+  border-bottom: 0;
+}
+.watch .choices {
+  margin-top: var(--space-block);
 }
